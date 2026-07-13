@@ -63,12 +63,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const navPersonal = document.getElementById('nav-personal');
         const navSheets = document.getElementById('nav-sheets');
+        const navBackup = document.getElementById('nav-backup');
         
         // Hacer público el botón de Google Sheets
         if (navSheets) navSheets.style.display = 'inline-flex';
         
-        if (activeUserRole === 'Administrador' || activeUserRole === 'Dueño' || activeUserRole === 'Soporte TI / Programador') {
+        if (activeUserRole === 'Administrador' || activeUserRole === 'Dueño' || activeUserRole === 'Dueno' || activeUserRole === 'Soporte TI / Programador' || activeUserRole === 'Soporte TI') {
             if (navPersonal) navPersonal.style.display = 'inline-flex';
+        }
+
+        // Carpetas de respaldo: solo Dueño y TI
+        if (activeUserRole === 'Dueño' || activeUserRole === 'Dueno' || activeUserRole === 'Soporte TI / Programador' || activeUserRole === 'Soporte TI') {
+            if (navBackup) navBackup.style.display = 'inline-flex';
         }
 
         // 4.5. Disable restricted cards based on role

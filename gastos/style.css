@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bg-color: #0f172a;
     --card-bg: rgba(30, 38, 55, 0.7);
     --primary-accent: #818cf8;
@@ -764,3 +764,23 @@ button {
         grid-template-columns: 1fr;
     }
 }
+
+/* Responsable Grid - Modern pill buttons */
+.responsable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.responsable-grid .toggle-btn {
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.toggle-btn input[type="radio"] {
+    display: none;
+}
+
