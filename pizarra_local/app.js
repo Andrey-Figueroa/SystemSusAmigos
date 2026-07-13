@@ -46,13 +46,6 @@ async function loadOrdenes() {
 
         if (errOrdenes) throw errOrdenes;
 
-        console.log('🔍 DEBUG PIZARRA:', {
-            startOfDay: startOfDay,
-            totalOrdenesFromDB: ordenes.length,
-            ordenIds: ordenes.map(o => o.id),
-            estados: ordenes.map(o => ({ id: o.id, estado: o.estado, created_at: o.created_at }))
-        });
-
         const clienteIds = [...new Set(ordenes.map(o => o.cliente_id).filter(Boolean))];
         let clientesMap = {};
         
@@ -72,8 +65,6 @@ async function loadOrdenes() {
         showToast('Error', 'No se pudieron cargar las órdenes de la pizarra.', 'error');
     }
     
-    // Si necesitas tarjetas de prueba, se pueden inyectar aquí.
-    renderPizarra(); // Por ahora renderiza vacío.
 }
 
 function renderPizarra() {
@@ -159,15 +150,16 @@ function renderPizarra() {
             </div>
         `;
 
-        if (orden.estado === 'En proceso') {
-            contProceso.appendChild(card);
-            countP++;
-        } else if (orden.estado === 'Terminado') {
+        if (orden.estado === 'Terminado') {
             contTerminado.appendChild(card);
             countT++;
         } else if (orden.estado === 'Retirado') {
             contRetirado.appendChild(card);
             countR++;
+        } else {
+            // 'En proceso' o cualquier otro estado va a En Proceso
+            contProceso.appendChild(card);
+            countP++;
         }
     });
 
