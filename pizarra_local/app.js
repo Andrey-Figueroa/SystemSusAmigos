@@ -46,6 +46,13 @@ async function loadOrdenes() {
 
         if (errOrdenes) throw errOrdenes;
 
+        console.log('🔍 DEBUG PIZARRA:', {
+            startOfDay: startOfDay,
+            totalOrdenesFromDB: ordenes.length,
+            ordenIds: ordenes.map(o => o.id),
+            estados: ordenes.map(o => ({ id: o.id, estado: o.estado, created_at: o.created_at }))
+        });
+
         const clienteIds = [...new Set(ordenes.map(o => o.cliente_id).filter(Boolean))];
         let clientesMap = {};
         
