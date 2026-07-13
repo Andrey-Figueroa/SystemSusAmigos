@@ -226,9 +226,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // --- INICIALIZAR CONTADORES ---
             let metrics = {
-                lubricentro: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0 },
-                productos: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0 },
-                domicilio: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0 },
+                lubricentro: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
+                productos: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
+                domicilio: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
                 global: { detallado: 0, mecanica: 0, productos: 0, domicilio: 0, c_detallado: 0, c_mecanica: 0, c_productos: 0, c_domicilio: 0 },
                 vehiculos: { proceso: 0, terminado: 0, retirado: 0 },
                 gastos_efectivo: 0,
@@ -244,6 +244,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(m.includes('tarjeta')) return 'tarjeta';
                 if(m.includes('sinpe')) return 'sinpe';
                 if(m.includes('cuenta') || m.includes('cobrar') || m.includes('cxc')) return 'cxc';
+                if(m.includes('transferencia')) return 'transferencia';
+                if(m.includes('regal')) return 'regalia';
                 return null;
             };
 
@@ -324,6 +326,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('lub-sinpe-cant').innerText = metrics.lubricentro.c_sinpe;
             document.getElementById('lub-cxc-monto').innerText = formatMoney(metrics.lubricentro.cxc);
             document.getElementById('lub-cxc-cant').innerText = metrics.lubricentro.c_cxc;
+            document.getElementById('lub-transferencia-monto').innerText = formatMoney(metrics.lubricentro.transferencia);
+            document.getElementById('lub-transferencia-cant').innerText = metrics.lubricentro.c_transferencia;
+            document.getElementById('lub-regalia-monto').innerText = formatMoney(metrics.lubricentro.regalia);
+            document.getElementById('lub-regalia-cant').innerText = metrics.lubricentro.c_regalia;
 
             // Set Productos
             document.getElementById('prod-efectivo-monto').innerText = formatMoney(metrics.productos.efectivo);
@@ -334,6 +340,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('prod-sinpe-cant').innerText = metrics.productos.c_sinpe;
             document.getElementById('prod-cxc-monto').innerText = formatMoney(metrics.productos.cxc);
             document.getElementById('prod-cxc-cant').innerText = metrics.productos.c_cxc;
+            document.getElementById('prod-transferencia-monto').innerText = formatMoney(metrics.productos.transferencia);
+            document.getElementById('prod-transferencia-cant').innerText = metrics.productos.c_transferencia;
+            document.getElementById('prod-regalia-monto').innerText = formatMoney(metrics.productos.regalia);
+            document.getElementById('prod-regalia-cant').innerText = metrics.productos.c_regalia;
 
             // Set Domicilio
             document.getElementById('dom-efectivo-monto').innerText = formatMoney(metrics.domicilio.efectivo);
@@ -344,6 +354,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('dom-sinpe-cant').innerText = metrics.domicilio.c_sinpe;
             document.getElementById('dom-cxc-monto').innerText = formatMoney(metrics.domicilio.cxc);
             document.getElementById('dom-cxc-cant').innerText = metrics.domicilio.c_cxc;
+            document.getElementById('dom-transferencia-monto').innerText = formatMoney(metrics.domicilio.transferencia);
+            document.getElementById('dom-transferencia-cant').innerText = metrics.domicilio.c_transferencia;
+            document.getElementById('dom-regalia-monto').innerText = formatMoney(metrics.domicilio.regalia);
+            document.getElementById('dom-regalia-cant').innerText = metrics.domicilio.c_regalia;
 
             // Set Global
             document.getElementById('glob-detallado-monto').innerText = formatMoney(metrics.global.detallado);
@@ -365,11 +379,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const totTarjeta = metrics.lubricentro.tarjeta + metrics.productos.tarjeta + metrics.domicilio.tarjeta;
             const totSinpe = metrics.lubricentro.sinpe + metrics.productos.sinpe + metrics.domicilio.sinpe;
             const totCxc = metrics.lubricentro.cxc + metrics.productos.cxc + metrics.domicilio.cxc;
+            const totTransferencia = metrics.lubricentro.transferencia + metrics.productos.transferencia + metrics.domicilio.transferencia;
+            const totRegalia = metrics.lubricentro.regalia + metrics.productos.regalia + metrics.domicilio.regalia;
             
             const cantEfectivo = metrics.lubricentro.c_efectivo + metrics.productos.c_efectivo + metrics.domicilio.c_efectivo;
             const cantTarjeta = metrics.lubricentro.c_tarjeta + metrics.productos.c_tarjeta + metrics.domicilio.c_tarjeta;
             const cantSinpe = metrics.lubricentro.c_sinpe + metrics.productos.c_sinpe + metrics.domicilio.c_sinpe;
             const cantCxc = metrics.lubricentro.c_cxc + metrics.productos.c_cxc + metrics.domicilio.c_cxc;
+            const cantTransferencia = metrics.lubricentro.c_transferencia + metrics.productos.c_transferencia + metrics.domicilio.c_transferencia;
+            const cantRegalia = metrics.lubricentro.c_regalia + metrics.productos.c_regalia + metrics.domicilio.c_regalia;
 
             document.getElementById('tot-efectivo-monto').innerText = formatMoney(totEfectivo);
             document.getElementById('tot-efectivo-cant').innerText = cantEfectivo;
@@ -379,9 +397,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('tot-sinpe-cant').innerText = cantSinpe;
             document.getElementById('tot-cxc-monto').innerText = formatMoney(totCxc);
             document.getElementById('tot-cxc-cant').innerText = cantCxc;
+            document.getElementById('tot-transferencia-monto').innerText = formatMoney(totTransferencia);
+            document.getElementById('tot-transferencia-cant').innerText = cantTransferencia;
+            document.getElementById('tot-regalia-monto').innerText = formatMoney(totRegalia);
+            document.getElementById('tot-regalia-cant').innerText = cantRegalia;
             
-            const superTotal = totEfectivo + totTarjeta + totSinpe + totCxc;
-            const superCant = cantEfectivo + cantTarjeta + cantSinpe + cantCxc;
+            // Regalia shouldn't count towards actual incoming cash in superTotal
+            const superTotal = totEfectivo + totTarjeta + totSinpe + totCxc + totTransferencia;
+            const superCant = cantEfectivo + cantTarjeta + cantSinpe + cantCxc + cantTransferencia + cantRegalia;
             document.getElementById('tot-global-monto').innerText = formatMoney(superTotal);
             document.getElementById('tot-global-cant').innerText = superCant;
 

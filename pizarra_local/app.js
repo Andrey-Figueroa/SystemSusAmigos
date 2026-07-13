@@ -1,4 +1,4 @@
-﻿const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Auth Check
@@ -307,6 +307,8 @@ window.abrirPago = function(ordenId) {
     document.getElementById('pago-tarjeta').value = '';
     document.getElementById('pago-sinpe').value = '';
     document.getElementById('pago-cxc').value = '';
+    document.getElementById('pago-transferencia').value = '';
+    document.getElementById('pago-regalia').value = '';
     
     document.getElementById('modal-pago').style.display = 'flex';
 }
@@ -358,8 +360,10 @@ function setupPagoModal() {
         let tarjeta = parseFloat(document.getElementById('pago-tarjeta').value) || 0;
         let sinpe = parseFloat(document.getElementById('pago-sinpe').value) || 0;
         let cxc = parseFloat(document.getElementById('pago-cxc').value) || 0;
+        let transferencia = parseFloat(document.getElementById('pago-transferencia').value) || 0;
+        let regalia = parseFloat(document.getElementById('pago-regalia').value) || 0;
         
-        const suma = efectivo + tarjeta + sinpe + cxc;
+        const suma = efectivo + tarjeta + sinpe + cxc + transferencia + regalia;
         
         if (suma !== total) {
             validationMsg.textContent = `Los montos no cuadran. Suma: ₡${suma}, Total Orden: ₡${total}`;
@@ -372,6 +376,8 @@ function setupPagoModal() {
         if (tarjeta > 0) metodosSeleccionados.push("Tarjeta");
         if (sinpe > 0) metodosSeleccionados.push("Sinpe");
         if (cxc > 0) metodosSeleccionados.push("CxC");
+        if (transferencia > 0) metodosSeleccionados.push("Transferencia");
+        if (regalia > 0) metodosSeleccionados.push("Regalía");
         
         if (metodosSeleccionados.length === 0) {
             validationMsg.textContent = 'Seleccione al menos un método de pago y asigne un monto.';
@@ -395,6 +401,9 @@ function setupPagoModal() {
                     monto_tarjeta: tarjeta,
                     monto_sinpe: sinpe,
                     monto_cxc: cxc,
+                    monto_transferencia: transferencia,
+                    monto_regalia: regalia,
+                    estado: 'Pagada',
                     responsable_cobro: activeUser,
                     hora_pago: new Date().toISOString()
                 })
@@ -412,6 +421,9 @@ function setupPagoModal() {
                         monto_tarjeta: tarjeta,
                         monto_sinpe: sinpe,
                         monto_cxc: cxc,
+                        monto_transferencia: transferencia,
+                        monto_regalia: regalia,
+                        estado: 'Pagada',
                         responsable_cobro: activeUser,
                         hora_pago: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
                     };

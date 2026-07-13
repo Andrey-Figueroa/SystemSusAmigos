@@ -1,4 +1,4 @@
-﻿// Global Variables
+// Global Variables
 let activeUser = null;
 let activeUserRole = null;
 let todaySales = [];
@@ -17,6 +17,8 @@ const payEfectivo = document.getElementById('pay-efectivo');
 const payTarjeta = document.getElementById('pay-tarjeta');
 const paySinpe = document.getElementById('pay-sinpe');
 const payCxc = document.getElementById('pay-cxc');
+const payTransferencia = document.getElementById('pay-transferencia');
+const payRegalia = document.getElementById('pay-regalia');
 
 const balanceBadge = document.getElementById('balance-badge');
 const validationMsg = document.getElementById('payment-validation-msg');
@@ -103,7 +105,7 @@ function setupEventListeners() {
     });
 
     // Live Calculation of Payments
-    const payInputs = [payEfectivo, payTarjeta, paySinpe, payCxc];
+    const payInputs = [payEfectivo, payTarjeta, paySinpe, payCxc, payTransferencia, payRegalia];
     
     inputPrice.addEventListener('input', calculateBalance);
     payInputs.forEach(input => {
@@ -119,8 +121,10 @@ function setupEventListeners() {
         const tar = parseFloat(payTarjeta.value) || 0;
         const sin = parseFloat(paySinpe.value) || 0;
         const cxc = parseFloat(payCxc.value) || 0;
+        const trans = parseFloat(payTransferencia.value) || 0;
+        const reg = parseFloat(payRegalia.value) || 0;
 
-        const totalPaid = efe + tar + sin + cxc;
+        const totalPaid = efe + tar + sin + cxc + trans + reg;
 
         if (Math.abs(price - totalPaid) > 0.01) {
             showValidation('La suma de los pagos debe ser igual al Precio Total.');
@@ -134,6 +138,8 @@ function setupEventListeners() {
             monto_tarjeta: tar,
             monto_sinpe: sin,
             monto_cxc: cxc,
+            monto_transferencia: trans,
+            monto_regalia: reg,
             vendedor: activeUser
         };
 
@@ -240,8 +246,10 @@ function calculateBalance() {
     const tar = parseFloat(payTarjeta.value) || 0;
     const sin = parseFloat(paySinpe.value) || 0;
     const cxc = parseFloat(payCxc.value) || 0;
+    const trans = parseFloat(payTransferencia.value) || 0;
+    const reg = parseFloat(payRegalia.value) || 0;
 
-    const totalPaid = efe + tar + sin + cxc;
+    const totalPaid = efe + tar + sin + cxc + trans + reg;
     const diff = price - totalPaid;
 
     if (price === 0) {
@@ -325,6 +333,8 @@ function renderSales() {
         if (sale.monto_tarjeta > 0) tagsHTML += `<span class="pay-tag"><i class="fa-solid fa-credit-card"></i> Tar</span>`;
         if (sale.monto_sinpe > 0) tagsHTML += `<span class="pay-tag"><i class="fa-solid fa-mobile-screen"></i> Sinpe</span>`;
         if (sale.monto_cxc > 0) tagsHTML += `<span class="pay-tag" style="color:var(--warning-color)"><i class="fa-solid fa-file-invoice-dollar"></i> CxC</span>`;
+        if (sale.monto_transferencia > 0) tagsHTML += `<span class="pay-tag"><i class="fa-solid fa-building-columns"></i> Transf</span>`;
+        if (sale.monto_regalia > 0) tagsHTML += `<span class="pay-tag" style="color:var(--success-color)"><i class="fa-solid fa-gift"></i> Regalía</span>`;
 
         // Delete button restricted to Dueño
         const deleteBtnHTML = (activeUserRole === 'Dueño' || activeUserRole === 'Soporte TI / Programador') ? 
@@ -367,10 +377,16 @@ window.viewSaleDetails = function(id) {
         breakdownHTML += `<div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);"><i class="fa-solid fa-credit-card" style="margin-right:6px;"></i>Tarjeta</span> <strong>₡${formatNumber(sale.monto_tarjeta)}</strong></div>`;
     }
     if (sale.monto_sinpe > 0) {
-        breakdownHTML += `<div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);"><i class="fa-solid fa-mobile-screen" style="margin-right:6px;"></i>Sinpe Móvil</span> <strong>₡${formatNumber(sale.monto_sinpe)}</strong></div>`;
+        breakdownHTML += `<div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);"><i class="fa-solid fa-mobile-screen" style="margin-right:6px;"></i>Sinpe</span> <strong>₡${formatNumber(sale.monto_sinpe)}</strong></div>`;
     }
     if (sale.monto_cxc > 0) {
-        breakdownHTML += `<div style="display:flex; justify-content:space-between;"><span style="color:var(--warning-color);"><i class="fa-solid fa-file-invoice-dollar" style="margin-right:6px;"></i>Cuenta por Cobrar</span> <strong style="color:var(--warning-color);">₡${formatNumber(sale.monto_cxc)}</strong></div>`;
+        breakdownHTML += `<div style="display:flex; justify-content:space-between; color:var(--warning-color);"><span style="color:inherit;"><i class="fa-solid fa-file-invoice-dollar" style="margin-right:6px;"></i>Por Cobrar</span> <strong>₡${formatNumber(sale.monto_cxc)}</strong></div>`;
+    }
+    if (sale.monto_transferencia > 0) {
+        breakdownHTML += `<div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);"><i class="fa-solid fa-building-columns" style="margin-right:6px;"></i>Transferencia</span> <strong>₡${formatNumber(sale.monto_transferencia)}</strong></div>`;
+    }
+    if (sale.monto_regalia > 0) {
+        breakdownHTML += `<div style="display:flex; justify-content:space-between; color:var(--success-color);"><span style="color:inherit;"><i class="fa-solid fa-gift" style="margin-right:6px;"></i>Regalía</span> <strong>₡${formatNumber(sale.monto_regalia)}</strong></div>`;
     }
     
     document.getElementById('detail-payment-breakdown').innerHTML = breakdownHTML;
@@ -430,8 +446,8 @@ function updateStats() {
     let totalCxc = 0;
 
     todaySales.forEach(s => {
-        // Ingresos reales (efectivo, tarjeta, sinpe)
-        totalIngresos += (s.monto_efectivo + s.monto_tarjeta + s.monto_sinpe);
+        // Ingresos reales (efectivo, tarjeta, sinpe, transferencia)
+        totalIngresos += (s.monto_efectivo + s.monto_tarjeta + s.monto_sinpe + (s.monto_transferencia || 0));
         totalCxc += s.monto_cxc;
     });
 
