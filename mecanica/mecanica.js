@@ -1,3 +1,13 @@
+﻿// ==========================================
+// ROLE BASED UI
+// ==========================================
+(function() {
+    const userRole = localStorage.getItem('activeUserRole') || '';
+    const isMechanic = userRole.toLowerCase() === 'mecanico' || userRole.toLowerCase() === 'mecánico';
+    if (isMechanic) {
+        document.head.insertAdjacentHTML('beforeend', '<style>.btn-delete, .foto-delete { display: none !important; }</style>');
+    }
+})();
 // ===================== SUPABASE =====================
 const SUPABASE_URL = 'https://jrusddndxmcztxxmzlfc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_m1oaIAYCibEvZWgWf0KQNw_1QQpiSzM';

@@ -1,4 +1,14 @@
-﻿// Supabase is globally available from js/supabase.js
+﻿// ==========================================
+// ROLE BASED UI
+// ==========================================
+(function() {
+    const userRole = localStorage.getItem('activeUserRole') || '';
+    const isMechanic = userRole.toLowerCase() === 'mecanico' || userRole.toLowerCase() === 'mecánico';
+    if (isMechanic) {
+        document.head.insertAdjacentHTML('beforeend', '<style>button[title="Desvincular"] { display: none !important; }</style>');
+    }
+})();
+// Supabase is globally available from js/supabase.js
 
 // State
 let activeUser = null;
@@ -520,5 +530,6 @@ function showToast(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
+
 
 

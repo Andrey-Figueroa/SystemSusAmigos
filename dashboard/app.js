@@ -72,7 +72,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // 4.5. Disable restricted cards based on role
-        if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
+        if (activeUserRole === 'Mecanico' || activeUserRole === 'Mecánico') {
+            const allCards = document.querySelectorAll('.module-card');
+            allCards.forEach(card => {
+                if (card.id !== 'card-taller' && card.id !== 'card-VEHÍCULOS') {
+                    card.style.display = 'none';
+                }
+            });
+            const summarySection = document.querySelector('.daily-summary-section');
+            if (summarySection) summarySection.style.display = 'none';
+        } else if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') { && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
             const cardClientes = document.getElementById('card-clientes');
             if (cardClientes) {
                 cardClientes.classList.add('disabled-card');
@@ -427,6 +436,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadDashboardMetrics();
     }
 });
+
 
 
 
