@@ -73,36 +73,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 4.5. Disable restricted cards based on role
         if (activeUserRole === 'Mecanico' || activeUserRole === 'Mecánico') {
+            // Mecánico: solo puede acceder a Mecánica y Vehículos
             const allCards = document.querySelectorAll('.module-card');
             allCards.forEach(card => {
-                if (card.id !== 'card-taller' && card.id !== 'card-vehiculos' && card.id !== 'card-VEHÍCULOS') {
+                if (card.id !== 'card-taller' && card.id !== 'card-vehiculos') {
                     card.classList.add('disabled-card');
-                    card.style.opacity = '0.4';
+                    card.style.opacity = '0.35';
+                    card.style.pointerEvents = 'none';
+                    card.style.cursor = 'not-allowed';
                     card.setAttribute('href', '#');
-                    card.addEventListener('click', (e) => {
-                        e.preventDefault();
-                    });
                 }
             });
+            // Ocultar resumen financiero
             const summarySection = document.querySelector('.daily-summary-section');
             if (summarySection) summarySection.style.display = 'none';
         } else if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
             const cardClientes = document.getElementById('card-clientes');
             if (cardClientes) {
                 cardClientes.classList.add('disabled-card');
+                cardClientes.style.opacity = '0.35';
+                cardClientes.style.pointerEvents = 'none';
                 cardClientes.setAttribute('href', '#');
-                cardClientes.addEventListener('click', (e) => {
-                    e.preventDefault();
-                });
             }
 
             const cardVehiculos = document.getElementById('card-vehiculos');
             if (cardVehiculos) {
                 cardVehiculos.classList.add('disabled-card');
+                cardVehiculos.style.opacity = '0.35';
+                cardVehiculos.style.pointerEvents = 'none';
                 cardVehiculos.setAttribute('href', '#');
-                cardVehiculos.addEventListener('click', (e) => {
-                    e.preventDefault();
-                });
             }
         }
 

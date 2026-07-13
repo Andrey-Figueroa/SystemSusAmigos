@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -39,7 +39,7 @@
                 <div class="avatar">
                     <i class="fa-solid fa-user-check"></i>
                 </div>
-                <button id="btn-logout" class="btn-logout" title="Cerrar SesiÃ³n">
+                <button id="btn-logout" class="btn-logout" title="Cerrar Sesión">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Salir</span>
                 </button>
@@ -50,12 +50,12 @@
         <main class="dashboard-content">
             <div class="welcome-banner">
                 <h1>Panel de Control</h1>
-                <p>Bienvenido al Sistema de GestiÃ³n de Servicios Automotrices. AquÃ­ se listarÃ¡n y administrarÃ¡n los procesos de tu taller.</p>
+                <p>Bienvenido al Sistema de Gestión de Servicios Automotrices. Aquí se listarán y administrarán los procesos de tu taller.</p>
             </div>
 
             <!-- Access Modules Grid -->
             <div class="modules-section">
-                <h2 class="section-title">MÃ³dulos del Sistema</h2>
+                <h2 class="section-title">Módulos del Sistema</h2>
                 <div class="modules-grid">
                     
                     <!-- Operaciones & Ventas -->
@@ -63,7 +63,7 @@
                         <div class="card-icon"><i class="fa-solid fa-cash-register"></i></div>
                         <div class="card-content">
                             <h3>Vender / Atender</h3>
-                            <p>Punto de venta, Ã³rdenes y facturaciÃ³n.</p>
+                            <p>Punto de venta, órdenes y facturación.</p>
                         </div>
                     </a>
 
@@ -79,16 +79,16 @@
                         <div class="card-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
                         <div class="card-content">
                             <h3>Cuentas por Cobrar</h3>
-                            <p>GestiÃ³n de crÃ©ditos y saldos pendientes.</p>
+                            <p>Gestión de créditos y saldos pendientes.</p>
                         </div>
                     </a>
 
                     <!-- Taller -->
-                    <a href="../Mecánica/index.html" id="card-taller" class="module-card card-orange">
+                    <a href="../mecanica/index.html" id="card-taller" class="module-card card-orange">
                         <div class="card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
                         <div class="card-content">
-                            <h3>Ãrea de Mecánica</h3>
-                            <p>Panel de trabajo para tÃ©cnicos y mecÃ¡nicos.</p>
+                            <h3>Área de Mecánica</h3>
+                            <p>Panel de trabajo para técnicos y mecánicos.</p>
                         </div>
                     </a>
 
@@ -98,7 +98,7 @@
                             <i class="fa-solid fa-money-bill-transfer"></i></div>
                         <div class="card-content">
                             <h3>Gastos Diarios</h3>
-                            <p>Registro de salidas y compras del dÃ­a.</p>
+                            <p>Registro de salidas y compras del día.</p>
                         </div>
                     </a>
 
@@ -119,11 +119,11 @@
                         </div>
                     </a>
 
-                    <a href="../VEHÍCULOS/index.html" id="card-VEHÍCULOS" class="module-card card-indigo">
+                    <a href="../vehiculos/index.html" id="card-vehiculos" class="module-card card-indigo">
                         <div class="card-icon"><i class="fa-solid fa-car"></i></div>
                         <div class="card-content">
-                            <h3>Datos VEHÍCULOS</h3>
-                            <p>Historial y registro de automÃ³viles.</p>
+                            <h3>Datos Vehículos</h3>
+                            <p>Historial y registro de automóviles.</p>
                         </div>
                     </a>
 
@@ -168,7 +168,7 @@
                 </div>
 
                 <!-- VEHÍCULOS Status (Pizarra) -->
-                <div class="dash-VEHÍCULOS-status">
+                <div class="dash-vehiculos-status">
                     <div class="veh-status-box">
                         <span class="veh-label text-orange">EN PROCESO</span>
                         <span class="veh-val" id="veh-proceso">0</span>
@@ -297,7 +297,7 @@
     <div id="pos-modal" class="modal-overlay">
         <div class="modal-content pos-modal-content">
             <div class="modal-header">
-                <h2>Â¿QuÃ© tipo de operaciÃ³n realizarÃ¡s?</h2>
+                <h2>¿Qué tipo de operación realizarás?</h2>
                 <button class="btn-close" id="btn-close-pos"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
@@ -306,14 +306,14 @@
                     <div class="pos-option-card" data-action="domicilio">
                         <div class="pos-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-house-chimney-medical"></i></div>
                         <h3>Servicio a Domicilio</h3>
-                        <p>Rescates, baterÃ­as o mecÃ¡nicos mÃ³viles fuera del taller.</p>
+                        <p>Rescates, baterías o mecánicos móviles fuera del taller.</p>
                     </div>
 
                     <!-- Local Comercial -->
                     <div class="pos-option-card" data-action="local">
                         <div class="pos-icon" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1);"><i class="fa-solid fa-shop"></i></div>
                         <h3>Local Comercial</h3>
-                        <p>Ingreso de VEHÍCULOS, Mecánica, revisiÃ³n o detallado.</p>
+                        <p>Ingreso de vehículos, mecánica, revisión o detallado.</p>
                     </div>
 
                     <!-- Productos -->
