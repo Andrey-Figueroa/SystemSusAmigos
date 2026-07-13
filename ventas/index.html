@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Venta | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="pos-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-box-open logo-icon"></i>
+                <span class="brand-text">Venta de Productos</span>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Cajero: <strong id="display-user">...</strong></span>
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area (Split Screen) -->
+        <main class="pos-content">
+            <!-- Left Side: Registration Form -->
+            <section class="pos-form-section">
+                <div class="form-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 class="section-title" style="margin-bottom: 0;"><i class="fa-solid fa-cart-plus"></i> Nueva Venta</h2>
+                        <span style="font-size: 13px; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 12px;" id="responsable-text">Responsable: ...</span>
+                    </div>
+                    
+                    <form id="sale-form">
+                        <div class="form-group mb-4">
+                            <label for="product-name">Descripción del Producto</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-tag"></i>
+                                <input type="text" id="product-name" placeholder="Ej. Aceite Sintético 5W30" required autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-5">
+                            <label for="product-price">Precio Total (CRC)</label>
+                            <div class="input-wrapper price-input-wrapper">
+                                <i class="fa-solid fa-colon-sign"></i>
+                                <input type="number" id="product-price" placeholder="0" min="1" step="1" required class="large-number-input">
+                            </div>
+                        </div>
+
+                        <div class="split-payments-container">
+                            <div class="payment-header">
+                                <h3><i class="fa-solid fa-wallet"></i> Métodos de Pago</h3>
+                                <span class="balance-badge" id="balance-badge">Falta: ₡0</span>
+                            </div>
+                            
+                            <div class="payment-methods-grid">
+                                <!-- Efectivo -->
+                                <div class="payment-box">
+                                    <label class="toggle-btn">
+                                        <input type="checkbox" class="pay-toggle" data-target="pay-efectivo-container">
+                                        <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                                    </label>
+                                    <div id="pay-efectivo-container" class="pay-input-container" style="display: none;">
+                                        <input type="number" id="pay-efectivo" class="pay-input" placeholder="0" min="0" step="1">
+                                    </div>
+                                </div>
+                                <!-- Tarjeta -->
+                                <div class="payment-box">
+                                    <label class="toggle-btn">
+                                        <input type="checkbox" class="pay-toggle" data-target="pay-tarjeta-container">
+                                        <i class="fa-solid fa-credit-card"></i> Tarjeta
+                                    </label>
+                                    <div id="pay-tarjeta-container" class="pay-input-container" style="display: none;">
+                                        <input type="number" id="pay-tarjeta" class="pay-input" placeholder="0" min="0" step="1">
+                                    </div>
+                                </div>
+                                <!-- Sinpe -->
+                                <div class="payment-box">
+                                    <label class="toggle-btn">
+                                        <input type="checkbox" class="pay-toggle" data-target="pay-sinpe-container">
+                                        <i class="fa-solid fa-mobile-screen"></i> Sinpe Móvil
+                                    </label>
+                                    <div id="pay-sinpe-container" class="pay-input-container" style="display: none;">
+                                        <input type="number" id="pay-sinpe" class="pay-input" placeholder="0" min="0" step="1">
+                                    </div>
+                                </div>
+                                <!-- CXC -->
+                                <div class="payment-box cxc-box">
+                                    <label class="toggle-btn">
+                                        <input type="checkbox" class="pay-toggle" data-target="pay-cxc-container">
+                                        <i class="fa-solid fa-file-invoice-dollar"></i> Por Cobrar
+                                    </label>
+                                    <div id="pay-cxc-container" class="pay-input-container" style="display: none;">
+                                        <input type="number" id="pay-cxc" class="pay-input" placeholder="0" min="0" step="1">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validation Feedback -->
+                            <div id="payment-validation-msg" class="validation-msg"></div>
+                        </div>
+
+                        <button type="submit" id="btn-submit-sale" class="btn-submit-sale" disabled>
+                            <i class="fa-solid fa-check"></i> Registrar Venta
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Side: Today's Sales (Receipt List) -->
+            <section class="pos-receipts-section">
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <h2 class="section-title"><i class="fa-solid fa-receipt"></i> Ventas de Hoy</h2>
+                        <div class="date-badge" id="today-date-badge">...</div>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="today-stats">
+                        <div class="stat-mini">
+                            <span class="stat-label">Total Ingresos</span>
+                            <span class="stat-value text-green" id="stat-total">₡0</span>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-label">Cuentas por Cobrar</span>
+                            <span class="stat-value text-orange" id="stat-cxc">₡0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="receipts-list-container">
+                        <ul id="sales-list" class="sales-list">
+                            <!-- Injected via JS -->
+                        </ul>
+                        <div id="sales-empty-state" class="empty-state">
+                            <i class="fa-solid fa-cash-register"></i>
+                            <p>Aún no hay ventas registradas hoy.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Sale Details Modal -->
+    <div id="sale-details-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Detalles de la Venta</h2>
+                <button class="btn-close" id="btn-close-details"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <i class="fa-solid fa-box-open" style="font-size: 40px; color: var(--success-color); margin-bottom: 12px;"></i>
+                    <h3 id="detail-product" style="font-size: 20px; font-weight: 600;">Producto</h3>
+                    <p id="detail-time" style="color: var(--text-secondary); font-size: 13px;">Fecha y Hora</p>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                        <span style="color: var(--text-secondary);">Responsable:</span>
+                        <strong id="detail-seller">...</strong>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Desglose de Pago</h4>
+                    <div id="detail-payment-breakdown" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                        <!-- Breakdown injected via JS -->
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 16px; margin-top: 8px;">
+                        <span style="font-size: 18px; font-weight: 600;">TOTAL</span>
+                        <span id="detail-total" style="font-size: 18px; font-weight: 700; color: var(--success-color); font-family: 'JetBrains Mono', monospace;">₡0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=4"></script>
+</body>
+</html>
+

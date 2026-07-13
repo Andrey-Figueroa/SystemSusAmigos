@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-users logo-icon"></i>
+                <span class="brand-text">Gestión de Clientes</span>
+            </div>
+            
+            <div class="user-profile">
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Action Bar (Search & Add) -->
+            <div class="action-bar">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por nombre o número de teléfono..." class="search-input">
+                </div>
+                <button id="btn-add-client" class="btn-primary">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Nuevo Cliente</span>
+                </button>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Teléfono</th>
+                            <th>Última Visita</th>
+                            <th>Registro</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="fa-solid fa-users-slash"></i>
+                    <h3>No hay clientes registrados</h3>
+                    <p>Comienza agregando tu primer cliente a la base de datos.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Client Modal -->
+    <div id="client-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Registrar Nuevo Cliente</h2>
+                <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="client-form" class="modal-body">
+                <input type="hidden" id="client-id">
+                
+                <div class="form-group">
+                    <label for="client-name">Nombre Completo</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="client-name" placeholder="Ej. Juan Pérez" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="client-phone">Número de Teléfono</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="client-phone" placeholder="Ej. 8888-8888" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-save-client">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Details Modal (toString equivalent) -->
+    <div id="details-modal" class="modal-overlay">
+        <div class="modal-content details-card">
+            <div class="modal-header">
+                <h2>Ficha del Cliente</h2>
+                <button class="btn-close" id="btn-close-details"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="client-profile-header">
+                    <div class="profile-avatar"><i class="fa-solid fa-user-large"></i></div>
+                    <div class="profile-title">
+                        <h3 id="detail-name">Nombre del Cliente</h3>
+                        <span id="detail-phone" class="tag"><i class="fa-solid fa-phone"></i> Teléfono</span>
+                    </div>
+                </div>
+                
+                <div class="client-stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-box">
+                        <span class="stat-label">Última Visita</span>
+                        <strong class="stat-value" id="detail-last-visit">-</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Cliente Desde</span>
+                        <strong class="stat-value" id="detail-created-at">-</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Saldo Pendiente (CxC)</span>
+                        <strong class="stat-value" id="detail-saldo-cxc" style="color: var(--gold);">-</strong>
+                    </div>
+                </div>
+
+                <div class="vehicles-section mt-4">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h4><i class="fa-solid fa-car"></i> Vehículos Asignados</h4>
+                        <button class="btn-icon view" title="Vincular Vehículo" id="btn-open-assign-vehicle"><i class="fa-solid fa-link"></i></button>
+                    </div>
+                    <div id="assigned-vehicles-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub-Modal to search and assign a vehicle -->
+    <div id="assign-vehicle-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; border-color: var(--secondary-accent);">
+            <div class="modal-header" style="background: rgba(79, 172, 254, 0.1);">
+                <h2 style="font-size: 18px;">Vincular Vehículo</h2>
+                <button class="btn-close" id="btn-close-assign-vehicle"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Buscar Vehículo (Placa, Marca o Modelo)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="assign-vehicle-search" placeholder="Escribe la placa..." autocomplete="off">
+                    </div>
+                </div>
+                <div id="assign-vehicle-results" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
+                    <!-- Dropdown results -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=4"></script>
+</body>
+</html>
+

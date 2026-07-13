@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicio a Domicilio | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css?v=20">
+    <!-- Include local_comercial CSS for wizard styles -->
+    <link rel="stylesheet" href="../local_comercial/style.css">
+    <link rel="stylesheet" href="../pizarra_local/style.css">
+    <style>
+        /* Override some local_comercial styles to fit in split screen */
+        .pos-content {
+            display: flex;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+        .pos-form-section {
+            flex: 1;
+            padding: 40px !important;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+        .pos-receipts-section {
+            width: 360px !important;
+            min-width: 360px !important;
+            flex-shrink: 0;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .wizard-container {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        .step-card {
+            padding: 24px;
+        }
+    </style>
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="pos-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-house-chimney logo-icon"></i>
+                <span class="brand-text">Servicio a Domicilio</span>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Responsable: <strong id="display-user">...</strong></span>
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="pos-content">
+            
+            <!-- Left Side: Wizard -->
+            <section class="pos-form-section">
+                <!-- Wizard Progress Indicator -->
+                <div class="wizard-progress-single" id="wizard-progress-single" style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px;">
+                    <div class="step-circle" id="current-step-num" style="background: var(--primary-accent); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">1</div>
+                    <span class="step-label" id="current-step-name" style="font-weight: 600; font-size: 20px; color: white;">Agenda y Cliente</span>
+                </div>
+
+                <div class="wizard-container">
+                    
+                    <!-- STEP 1: CLIENTE Y AGENDA -->
+                    <div class="wizard-step active" id="step-1">
+                        <div class="step-card">
+                            <h2><i class="fa-solid fa-user-magnifying-glass"></i> Identificar Cliente y Agendar</h2>
+                            <p class="step-desc">Ingresa el número de teléfono del cliente para buscarlo en el sistema y la hora agendada.</p>
+                            
+                            <div class="form-group mb-3" style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: white;">Hora Agendada</label>
+                                <input type="time" id="hora-agendada" class="form-control" style="width: 100%; max-width: 200px;" required>
+                            </div>
+
+                            <form id="search-client-form" class="search-box">
+                                <i class="fa-solid fa-phone"></i>
+                                <input type="text" id="phone-search" placeholder="Ej. 88888888" autocomplete="off" required>
+                                <button type="submit" id="btn-search-client" class="btn-primary">Buscar</button>
+                            </form>
+
+                            <div id="client-result-area" style="display: none; margin-top: 24px;">
+                                <div class="client-found-card" id="client-found-card" style="display: none;">
+                                    <div class="client-info-display">
+                                        <i class="fa-solid fa-circle-check" style="color: var(--success-color); font-size: 24px;"></i>
+                                        <div>
+                                            <h3 id="found-client-name">Nombre Cliente</h3>
+                                            <p id="found-client-phone">88888888</p>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-top: 16px;">
+                                        <label>Dirección del Domicilio</label>
+                                        <input type="text" id="found-client-address" class="form-control" placeholder="Provincia, Cantón, Señas..." required>
+                                    </div>
+                                    <button id="btn-continue-step2" class="btn-primary" style="width: 100%; margin-top: 16px;">Continuar a Vehículo <i class="fa-solid fa-arrow-right"></i></button>
+                                </div>
+
+                                <form class="client-new-form" id="client-new-form" style="display: none;">
+                                    <div class="alert-info" style="margin-bottom: 16px;">
+                                        <i class="fa-solid fa-circle-info"></i> Cliente nuevo. Regístralo rápidamente.
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nombre Completo</label>
+                                        <input type="text" id="new-client-name" class="form-control" placeholder="Nombre completo del cliente" required>
+                                    </div>
+                                    <div class="form-group" style="margin-top: 16px;">
+                                        <label>Dirección del Domicilio</label>
+                                        <input type="text" id="new-client-address" class="form-control" placeholder="Provincia, Cantón, Señas..." required>
+                                    </div>
+                                    <button type="submit" id="btn-register-client" class="btn-primary" style="width: 100%; margin-top: 16px;">Registrar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: VEHÍCULO -->
+                    <div class="wizard-step" id="step-2">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Cambiar Cliente</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Selección de Vehículo</h2>
+                            <p class="step-desc">Cliente: <strong id="current-client-display" style="color:var(--primary-accent);"></strong></p>
+
+                            <div id="vehicles-grid" class="vehicles-grid" style="margin: 24px 0;"></div>
+
+                            <div class="new-vehicle-section">
+                                <button id="btn-show-new-vehicle" class="btn-secondary" style="width: 100%; border-style: dashed; justify-content: center;">
+                                    <i class="fa-solid fa-plus"></i> Ingresar un vehículo nuevo
+                                </button>
+
+                                <div id="new-vehicle-form-container" class="new-vehicle-form" style="display: none; margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color);">
+                                    <h3>Registrar Vehículo Nuevo</h3>
+                                    <form id="form-new-vehicle" style="margin-top: 16px;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                            <div class="form-group">
+                                                <label>Placa (Obligatorio)</label>
+                                                <input type="text" id="veh-placa" class="form-control" required style="text-transform: uppercase;">
+                                            </div>
+                                            <div class="form-group" style="position: relative;">
+                                                <label>Marca</label>
+                                                <input type="text" id="veh-marca" class="form-control" autocomplete="off" style="text-transform: uppercase;" placeholder="Ej: TOYOTA">
+                                                <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #1a1b26; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Modelo</label>
+                                                <input type="text" id="veh-modelo" class="form-control">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Año</label>
+                                                <input type="number" id="veh-año" class="form-control" min="1900">
+                                            </div>
+                                            <div class="form-group" style="grid-column: span 2;">
+                                                <label>Tipo (Afecta los servicios disponibles)</label>
+                                                <select id="veh-tipo" class="form-control" required>
+                                                    <option value="">Seleccione...</option>
+                                                    <option value="SEDAN">SEDAN</option>
+                                                    <option value="4x4 o Pick Up">4x4 o Pick Up</option>
+                                                    <option value="MOTO">MOTO</option>
+                                                    <option value="MicroBus">MicroBus</option>
+                                                    <option value="Camion">Camion</option>
+                                                    <option value="Cuadra">Cuadra</option>
+                                                    <option value="Side by Side">Side by Side</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                                            <button type="button" id="btn-cancel-new-vehicle" class="btn-secondary">Cancelar</button>
+                                            <button type="submit" id="btn-save-vehicle" class="btn-primary" style="flex: 1;">Guardar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: SERVICIOS MAESTROS -->
+                    <div class="wizard-step" id="step-3">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(2)"><i class="fa-solid fa-arrow-left"></i> Cambiar Vehículo</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-list-check"></i> Selección de Servicios</h2>
+                            <p class="step-desc">Vehículo seleccionado: <strong id="current-vehicle-display" style="color:var(--primary-accent);"></strong></p>
+
+                            <div class="checkbox-group-cards" id="services-master-list" style="margin-top: 24px;">
+                                <label class="checkbox-card">
+                                    <input type="checkbox" value="Detallado y lavado" class="service-checkbox">
+                                    <div class="checkbox-card-content">
+                                        <i class="fa-solid fa-hands-bubbles"></i>
+                                        <span>Detallado y lavado</span>
+                                    </div>
+                                </label>
+                                <label class="checkbox-card">
+                                    <input type="checkbox" value="Detallados especiales" class="service-checkbox">
+                                    <div class="checkbox-card-content">
+                                        <i class="fa-solid fa-star"></i>
+                                        <span>Detallados especiales</span>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <div id="error-step3" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio.</div>
+                            <button class="btn-primary" onclick="processStep3()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: TIPO DE DETALLADO -->
+                    <div class="wizard-step" id="step-4">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(3)"><i class="fa-solid fa-arrow-left"></i> Volver a Servicios</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-spray-can-sparkles"></i> Tipo de Detallado</h2>
+                            <p class="step-desc">Selecciona el paquete de detallado a realizar.</p>
+
+                            <div class="radio-group-cards grid-2" style="margin-top: 24px;">
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado clasico"><div class="radio-card-content"><span>Clásico</span></div></label>
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado premium"><div class="radio-card-content"><span>Premium</span></div></label>
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado Gold"><div class="radio-card-content"><span>Gold</span></div></label>
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Abrillantado premium"><div class="radio-card-content"><span>Abrillantado Premium</span></div></label>
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Hidrosellado Ceramico"><div class="radio-card-content"><span>Hidrosellado Cerámico</span></div></label>
+                                <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado ceramico"><div class="radio-card-content"><span>Detallado Cerámico</span></div></label>
+                                <label class="radio-card" style="grid-column: span 2;"><input type="radio" name="detallado_tipo" value="Promocion" id="radio-promocion"><div class="radio-card-content"><span>Promoción Especial</span></div></label>
+                            </div>
+                            
+                            <div id="promo-input-container" style="display: none; margin-top: 16px;">
+                                <label style="color:var(--text-secondary); font-size:14px; margin-bottom:8px; display:block;">Detalle de la promoción:</label>
+                                <input type="text" id="promo-detalle" class="form-control" placeholder="Escribe la promoción aquí...">
+                            </div>
+
+                            <div id="error-step4" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona un tipo de detallado.</div>
+                            <button class="btn-primary" onclick="processStep4()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: EXTRAS DE DETALLADO (Interior/Alfombras) -->
+                    <div class="wizard-step" id="step-5">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(4)"><i class="fa-solid fa-arrow-left"></i> Volver a Tipo</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-pump-soap"></i> Opciones de Interior</h2>
+                            
+                            <div class="extra-section">
+                                <h3>1. Detallador Interior</h3>
+                                <div class="radio-group-cards grid-2">
+                                    <label class="radio-card"><input type="radio" name="extra_interior" value="Nize"><div class="radio-card-content"><span>Nize</span></div></label>
+                                    <label class="radio-card"><input type="radio" name="extra_interior" value="Trapo humedo"><div class="radio-card-content"><span>Trapo Húmedo</span></div></label>
+                                    <label class="radio-card" id="card-mate"><input type="radio" name="extra_interior" value="Mate"><div class="radio-card-content"><span>Mate</span></div></label>
+                                    <label class="radio-card" id="card-brillante"><input type="radio" name="extra_interior" value="Brillante"><div class="radio-card-content"><span>Brillante</span></div></label>
+                                </div>
+                                <small id="interior-warning" style="color:var(--warning-color); display:none; margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Mate y Brillante no están disponibles para Detallado Clásico.</small>
+                            </div>
+
+                            <div class="extra-section" style="margin-top: 24px;">
+                                <h3>2. Aromatizante Interior</h3>
+                                <div class="radio-group-cards grid-2">
+                                    <label class="radio-card"><input type="radio" name="extra_aroma" value="Limon"><div class="radio-card-content"><span>Limón</span></div></label>
+                                    <label class="radio-card"><input type="radio" name="extra_aroma" value="Frutos rojos"><div class="radio-card-content"><span>Frutos Rojos</span></div></label>
+                                    <label class="radio-card"><input type="radio" name="extra_aroma" value="Carro nuevo"><div class="radio-card-content"><span>Carro Nuevo</span></div></label>
+                                    <label class="radio-card"><input type="radio" name="extra_aroma" value="Sin aromatizante"><div class="radio-card-content"><span>Sin Aromatizante</span></div></label>
+                                </div>
+                            </div>
+
+                            <div class="extra-section" style="margin-top: 24px;">
+                                <h3>3. Nize en Alfombras</h3>
+                                <div class="radio-group-cards grid-2">
+                                    <label class="radio-card"><input type="radio" name="extra_alfombras" value="Si"><div class="radio-card-content"><span>SÍ</span></div></label>
+                                    <label class="radio-card"><input type="radio" name="extra_alfombras" value="No"><div class="radio-card-content"><span>NO</span></div></label>
+                                </div>
+                            </div>
+
+                            <div id="error-step5" style="color: var(--danger-color); margin-top: 16px; display: none;">Completa todas las opciones extras.</div>
+                            <button class="btn-primary" onclick="processStep5()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 6: DETALLADOS ESPECIALES -->
+                    <div class="wizard-step" id="step-6">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(6))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Detallados Especiales</h2>
+                            <p class="step-desc">Seleccione uno o varios servicios especiales.</p>
+                            
+                            <div class="checkbox-group-cards grid-2" style="margin-top: 24px;" id="especiales-list">
+                                <label class="checkbox-card"><input type="checkbox" value="Pulido de silvines" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de silvines</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Pulido de vidrios" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de vidrios</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Pulido de parabrisas" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de parabrisas</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Pulido de carroceria" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de carrocería</span></div></label>
+                                
+                                <!-- Moto hidden options -->
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de motor" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de motor</span></div></label>
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Tapiceria profunda" class="especial-cb"><div class="checkbox-card-content"><span>Tapicería profunda</span></div></label>
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de chasis" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de chasis</span></div></label>
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Lluvia grafita" class="especial-cb"><div class="checkbox-card-content"><span>Lluvia grafita</span></div></label>
+                            </div>
+
+                            <div id="error-step6" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio especial.</div>
+                            <button class="btn-primary" onclick="processStep6()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 7: EXTRAS FINALES -->
+                    <div class="wizard-step" id="step-7">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(7))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-sparkles"></i> Extras Finales</h2>
+                            <p class="step-desc">Puede seleccionar varios extras o "Ninguno".</p>
+                            
+                            <div class="checkbox-group-cards grid-2" style="margin-top: 24px;">
+                                <label class="checkbox-card" style="grid-column: span 2;">
+                                    <input type="checkbox" value="Ninguno" class="extra-final-cb" id="extra-ninguno" onchange="toggleNingunoExtra(this)">
+                                    <div class="checkbox-card-content" style="background: rgba(239,68,68,0.1); border-color: var(--danger-color);"><span>Ninguno</span></div>
+                                </label>
+                                
+                                <label class="checkbox-card"><input type="checkbox" value="Cera premium" class="extra-final-cb"><div class="checkbox-card-content"><span>Cera premium</span></div></label>
+                                
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de interior" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de interior</span></div></label>
+                                <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de asientos" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de asientos</span></div></label>
+                                
+                                <label class="checkbox-card"><input type="checkbox" value="Anti empañante" class="extra-final-cb"><div class="checkbox-card-content"><span>Anti empañante</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Repelente de vidrios" class="extra-final-cb"><div class="checkbox-card-content"><span>Repelente de vidrios</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Sellador ceramico" class="extra-final-cb"><div class="checkbox-card-content"><span>Sellador cerámico</span></div></label>
+                                <label class="checkbox-card"><input type="checkbox" value="Partes negras exteriores" class="extra-final-cb"><div class="checkbox-card-content"><span>Partes negras exteriores</span></div></label>
+                            </div>
+
+                            <div id="error-step7" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos una opción.</div>
+                            <button class="btn-primary" onclick="processStep7()" style="width: 100%; margin-top: 24px;">Ir al Resumen <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 8: COBRO -->
+                    <div class="wizard-step" id="step-8">
+                        <div class="step-card">
+                            <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(8))"><i class="fa-solid fa-arrow-left"></i> Cambiar Servicios</button>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-file-invoice-dollar"></i> Cobro y Registro</h2>
+                            
+                            <div class="alert-info" style="margin: 24px 0;">
+                                <p style="margin-bottom: 8px;"><strong>Atendido por:</strong> <span id="cobro-asesor" style="color:white;">...</span></p>
+                                <details open>
+                                    <summary style="cursor: pointer; color: var(--primary-accent); font-weight: 600;">Ver Resumen de la Orden</summary>
+                                    <ul style="list-style:none; padding-top: 12px; font-size: 14px;" id="resumen-final">
+                                        <!-- Llenado por JS -->
+                                    </ul>
+                                </details>
+                            </div>
+
+                            <div class="form-section-box highlight-box" style="margin-top: 24px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px;">
+                                <div class="form-group mb-4">
+                                    <label for="orden-total" style="display: block; margin-bottom: 8px;">Total Estimado a Cobrar (CRC)</label>
+                                    <input type="number" id="orden-total" class="form-control" placeholder="0" min="1" step="1" required style="font-size: 24px; padding: 12px; font-weight: bold; background: rgba(255,255,255,0.05);">
+                                </div>
+                            </div>
+                            
+                            <button id="btn-submit-final" class="btn-primary" style="width: 100%; margin-top: 24px; padding: 16px; font-size: 18px;">
+                                <i class="fa-solid fa-paper-plane"></i> Registrar Orden a Domicilio
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Right Side: Today's Orders (Pizarra Style) -->
+            <section class="pos-receipts-section">
+                <div class="receipt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h2 class="section-title" style="font-size: 18px; margin: 0;"><i class="fa-solid fa-list-check"></i> Domicilios Hoy</h2>
+                    <div class="date-badge" id="today-date-badge" style="background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 12px; font-size: 12px;">...</div>
+                </div>
+                
+                <div class="today-stats" style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div class="stat-mini" style="flex: 1; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; text-align: center;">
+                        <span class="stat-label" style="display: block; font-size: 12px; color: var(--text-secondary);">Total Órdenes</span>
+                        <span class="stat-value text-blue" id="stat-count" style="display: block; font-size: 20px; font-weight: bold; color: #3b82f6;">0</span>
+                    </div>
+                    <div class="stat-mini" style="flex: 1; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; text-align: center;">
+                        <span class="stat-label" style="display: block; font-size: 12px; color: var(--text-secondary);">Ingresos</span>
+                        <span class="stat-value text-green" id="stat-total" style="display: block; font-size: 20px; font-weight: bold; color: #10b981;">₡0</span>
+                    </div>
+                </div>
+                
+                <div class="receipts-list-container">
+                    <div id="domicilio-board" class="domicilio-board">
+                        <!-- Cards Injected via JS -->
+                    </div>
+                    <div id="board-empty-state" class="empty-state" style="text-align: center; padding: 40px 0; color: var(--text-secondary);">
+                        <i class="fa-solid fa-house-circle-check" style="font-size: 48px; opacity: 0.5; margin-bottom: 16px;"></i>
+                        <p>No hay órdenes a domicilio hoy.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Payment Modal Cloned from Pizarra Local -->
+    <div id="modal-pago-domicilio" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Registrar Pago</h2>
+                <button class="btn-close" onclick="cerrarModalPago()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Orden: <strong id="pago-orden-id">#</strong></p>
+                <h3 class="total-monto" style="text-align: center; color: var(--success-color); font-size: 2rem; font-weight: 800; margin: 20px 0 30px 0; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; font-family: 'JetBrains Mono', monospace;">Total a Pagar: <span id="pago-total">₡0</span></h3>
+                
+                <form id="form-pago-domicilio">
+                    <!-- Hidden field to store actual total for validation -->
+                    <input type="hidden" id="pago-total-real">
+                    
+                    <p style="margin-bottom: 10px; color: var(--text-secondary);">Seleccione los métodos de pago y asigne los montos:</p>
+                    <div class="payment-methods-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <!-- Efectivo -->
+                        <div class="payment-box" style="display: flex; flex-direction: column; gap: 8px;">
+                            <label class="toggle-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; color: var(--text-secondary); font-weight: 600; transition: 0.3s;">
+                                <input type="checkbox" class="pay-toggle" data-target="modal-pay-efectivo-container" style="display: none;">
+                                <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                            </label>
+                            <div id="modal-pay-efectivo-container" class="pay-input-container" style="display: none; margin-top: 8px;">
+                                <input type="number" id="modal-pay-efectivo" class="pay-input form-control modal-pay-input" placeholder="0" min="0" step="1" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 18px; text-align: right;">
+                            </div>
+                        </div>
+                        <!-- Tarjeta -->
+                        <div class="payment-box" style="display: flex; flex-direction: column; gap: 8px;">
+                            <label class="toggle-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; color: var(--text-secondary); font-weight: 600; transition: 0.3s;">
+                                <input type="checkbox" class="pay-toggle" data-target="modal-pay-tarjeta-container" style="display: none;">
+                                <i class="fa-solid fa-credit-card"></i> Tarjeta
+                            </label>
+                            <div id="modal-pay-tarjeta-container" class="pay-input-container" style="display: none; margin-top: 8px;">
+                                <input type="number" id="modal-pay-tarjeta" class="pay-input form-control modal-pay-input" placeholder="0" min="0" step="1" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 18px; text-align: right;">
+                            </div>
+                        </div>
+                        <!-- Sinpe -->
+                        <div class="payment-box" style="display: flex; flex-direction: column; gap: 8px;">
+                            <label class="toggle-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; color: var(--text-secondary); font-weight: 600; transition: 0.3s;">
+                                <input type="checkbox" class="pay-toggle" data-target="modal-pay-sinpe-container" style="display: none;">
+                                <i class="fa-solid fa-mobile-screen"></i> Sinpe Móvil
+                            </label>
+                            <div id="modal-pay-sinpe-container" class="pay-input-container" style="display: none; margin-top: 8px;">
+                                <input type="number" id="modal-pay-sinpe" class="pay-input form-control modal-pay-input" placeholder="0" min="0" step="1" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 18px; text-align: right;">
+                            </div>
+                        </div>
+                        <!-- CxC -->
+                        <div class="payment-box cxc-box" style="display: flex; flex-direction: column; gap: 8px;">
+                            <label class="toggle-btn" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; color: var(--text-secondary); font-weight: 600; transition: 0.3s;">
+                                <input type="checkbox" class="pay-toggle" data-target="modal-pay-cxc-container" style="display: none;">
+                                <i class="fa-solid fa-file-invoice-dollar"></i> Por Cobrar
+                            </label>
+                            <div id="modal-pay-cxc-container" class="pay-input-container" style="display: none; margin-top: 8px;">
+                                <input type="number" id="modal-pay-cxc" class="pay-input form-control modal-pay-input" placeholder="0" min="0" step="1" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; color: var(--warning-color); font-family: 'JetBrains Mono', monospace; font-size: 18px; text-align: right;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="modal-payment-validation-msg" class="validation-msg" style="color: var(--danger-color); margin-top: 10px; display: none;"></div>
+
+                    <button type="submit" id="btn-submit-pago" class="btn-primary" style="width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent)); color: white; border-radius: 14px; font-size: 1.1rem; font-weight: 600; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); border: none; cursor: pointer;">
+                        <i class="fa-solid fa-check"></i> Guardar Pago
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=24"></script>
+</body>
+</html>
+

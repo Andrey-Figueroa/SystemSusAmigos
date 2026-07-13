@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Vehículos | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-car logo-icon"></i>
+                <span class="brand-text">Gestión de Vehículos</span>
+            </div>
+            
+            <div class="user-profile">
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Action Bar (Search & Add) -->
+            <div class="action-bar">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por placa, marca o modelo..." class="search-input">
+                </div>
+                <button id="btn-add-vehicle" class="btn-primary">
+                    <i class="fa-solid fa-car-side"></i>
+                    <span>Nuevo Vehículo</span>
+                </button>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Vehículo</th>
+                            <th>Tipo / Año</th>
+                            <th>Dueños / Clientes</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehicles-table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="fa-solid fa-car-burst"></i>
+                    <h3>No hay vehículos registrados</h3>
+                    <p>Comienza agregando el primer vehículo al taller.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Vehicle Modal -->
+    <div id="vehicle-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Registrar Nuevo Vehículo</h2>
+                <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="vehicle-form" class="modal-body">
+                <input type="hidden" id="vehicle-is-editing" value="false">
+                
+                <div class="form-group">
+                    <label for="vehicle-placa">Número de Placa</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-hashtag"></i>
+                        <input type="text" id="vehicle-placa" placeholder="Ej. ABC123" required style="text-transform: uppercase;">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="vehicle-marca">Marca</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-industry"></i>
+                            <select id="vehicle-marca" required class="custom-select">
+                                <option value="" disabled selected>Seleccionar Marca</option>
+                                <!-- Injected via JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-modelo">Modelo</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-car-side"></i>
+                            <input type="text" id="vehicle-modelo" placeholder="Ej. Corolla" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="vehicle-anio">Año</label>
+                        <div class="input-wrapper">
+                            <i class="fa-regular fa-calendar-days"></i>
+                            <input type="number" id="vehicle-anio" placeholder="Ej. 2024" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicle-tipo">Tipo</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-truck-pickup"></i>
+                            <select id="vehicle-tipo" required class="custom-select">
+                                <option value="" disabled selected>Tipo de Vehículo</option>
+                                <option value="Sedán">Sedán</option>
+                                <option value="SUV">SUV</option>
+                                <option value="Hatchback">Hatchback</option>
+                                <option value="Pick-Up">Pick-Up</option>
+                                <option value="Coupé">Coupé</option>
+                                <option value="Van">Van / Microbús</option>
+                                <option value="Camioneta">Camioneta</option>
+                                <option value="Camión">Camión</option>
+                                <option value="Motocicleta">Motocicleta</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-save-vehicle">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Vehículo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Details & Assign Client Modal -->
+    <div id="details-modal" class="modal-overlay">
+        <div class="modal-content details-card">
+            <div class="modal-header">
+                <h2>Ficha del Vehículo</h2>
+                <button class="btn-close" id="btn-close-details"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="vehicle-profile-header">
+                    <div class="profile-avatar"><i class="fa-solid fa-car"></i></div>
+                    <div class="profile-title">
+                        <h3 id="detail-placa">PLACA</h3>
+                        <span id="detail-vehicle-name" class="tag"><i class="fa-solid fa-tag"></i> Marca Modelo</span>
+                    </div>
+                </div>
+                
+                <div class="client-stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-label">Año</span>
+                        <strong class="stat-value" id="detail-anio">-</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Tipo</span>
+                        <strong class="stat-value" id="detail-tipo">-</strong>
+                    </div>
+                </div>
+
+                <!-- Assigned Clients Section -->
+                <div class="owners-section mt-4">
+                    <div class="section-header">
+                        <h4><i class="fa-solid fa-users"></i> Clientes Asociados</h4>
+                        <button class="btn-icon view" title="Vincular Cliente" id="btn-open-assign"><i class="fa-solid fa-link"></i></button>
+                    </div>
+                    
+                    <div id="assigned-clients-list" class="assigned-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sub-Modal to search and assign a client -->
+    <div id="assign-client-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; border-color: var(--secondary-accent);">
+            <div class="modal-header" style="background: rgba(79, 172, 254, 0.1);">
+                <h2 style="font-size: 18px;">Vincular Cliente al Vehículo</h2>
+                <button class="btn-close" id="btn-close-assign"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assign-target-placa">
+                <div class="form-group">
+                    <label>Buscar Cliente (Nombre o Teléfono)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="assign-search-input" placeholder="Buscar..." autocomplete="off">
+                    </div>
+                </div>
+                <div id="assign-results" class="assign-results">
+                    <!-- Dropdown results -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=4"></script>
+</body>
+</html>
+

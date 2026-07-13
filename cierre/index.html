@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cierre de Operaciones | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Common Global Styles (From Ventas) -->
+    <link rel="stylesheet" href="../ventas/style.css">
+    <!-- Specific Styles for Cierre -->
+    <link rel="stylesheet" href="style.css?v=2">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="pos-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-cash-register logo-icon"></i>
+                <span class="brand-text">Cierre de Operaciones</span>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Sesión activa: <strong id="display-user">...</strong></span>
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="pos-content form-centered-layout">
+            <section class="pos-form-section" style="max-width: 650px; margin: 0 auto; width: 100%;">
+                <div class="form-card">
+                    <div class="card-header-flex">
+                        <div>
+                            <h2 class="section-title" style="margin-bottom: 5px;">
+                                <i class="fa-solid fa-vault"></i> Procesar Cierre
+                            </h2>
+                            <p class="section-subtitle">Completa el formulario para realizar el cierre del turno operativo.</p>
+                        </div>
+                        <span id="responsable-badge" class="badge-responsable">
+                            <i class="fa-solid fa-user-lock"></i> <span id="responsable-text">Cargando...</span>
+                        </span>
+                    </div>
+                    
+                    <form id="cierre-form">
+                        
+                        <!-- Drag & Drop Zone -->
+                        <div class="form-group mb-5">
+                            <label>Comprobante o Voucher (Obligatorio)</label>
+                            <div class="dropzone-container" id="dropzone">
+                                <input type="file" id="file-input" accept="image/*" hidden>
+                                <div class="dropzone-content">
+                                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                                    <h3>Arrastra tu imagen aquí</h3>
+                                    <p>o haz clic para explorar tus archivos</p>
+                                </div>
+                                <div class="dropzone-preview" id="dropzone-preview" style="display: none;">
+                                    <i class="fa-solid fa-file-image file-icon"></i>
+                                    <span id="file-name" class="file-name">voucher.jpg</span>
+                                    <button type="button" class="btn-remove-file" id="btn-remove-file">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Inconvenientes / Comentarios -->
+                        <div class="form-group mb-5">
+                            <label for="comentarios-cierre">Novedades o Inconvenientes (Opcional)</label>
+                            <div class="input-wrapper textarea-wrapper">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <textarea id="comentarios-cierre" rows="4" placeholder="Describe cualquier eventualidad ocurrida durante el turno..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="justify-content: flex-end; margin-top: 30px;">
+                            <button type="submit" class="btn-primary btn-large w-100" id="btn-procesar-cierre">
+                                <i class="fa-solid fa-lock"></i> Procesar Cierre
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    
+    <!-- Application Script -->
+    <script src="app.js?v=6"></script>
+</body>
+</html>
+

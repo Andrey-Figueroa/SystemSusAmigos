@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Personal | NeuraLoom Auto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../dashboard/style.css"> <!-- Import dashboard styles for consistency -->
+    <link rel="stylesheet" href="style.css"> <!-- Specific styles for this module -->
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-gears logo-icon"></i>
+                <span class="brand-text">NeuraLoom Auto</span>
+                <nav class="main-nav">
+                    <a href="../dashboard/index.html" class="nav-link">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Volver al Panel</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Hola, <strong id="display-user">Usuario</strong> <span id="display-role" class="role-badge">Rol</span></span>
+                <div class="avatar">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <button id="btn-logout" class="btn-logout" title="Cerrar Sesión">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-content personal-content">
+            <div class="module-header">
+                <div class="welcome-banner">
+                    <h1>Gestión de Personal</h1>
+                    <p>Administra a los empleados del taller. Crea nuevos perfiles, asigna cuentas de acceso y gestiona sus estados.</p>
+                </div>
+                <button id="btn-add-staff" class="btn-primary">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Agregar Personal</span>
+                </button>
+            </div>
+
+            <!-- Staff Table -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Cuenta de Acceso</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staff-table-body">
+                        <!-- Rows will be injected here by app.js -->
+                        <tr>
+                            <td colspan="5" class="text-center">Cargando personal...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Adding Staff -->
+    <div id="modal-add-staff" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nuevo Miembro del Personal</h2>
+                <button class="btn-close-modal" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="form-add-staff" class="modal-form">
+                <div class="input-group">
+                    <label for="staff-name">Nombre Completo</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="staff-name" name="staff-name" placeholder="Ej. Carlos Rodríguez" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="staff-role">Rol Asignado</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-briefcase input-icon"></i>
+                        <select id="staff-role" name="staff-role" required>
+                            <option value="" disabled selected>Selecciona un rol...</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Cajero">Cajero</option>
+                            <option value="Dueño">Dueño</option>
+                            <option value="Mecánico">Mecánico</option>
+                            <option value="Detallador">Detallador</option>
+                            <option value="Soporte TI / Programador">Soporte TI / Programador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions mt-3">
+                    <div class="remember-me checkbox-group">
+                        <input type="checkbox" id="require-account">
+                        <label for="require-account">¿Requiere cuenta de acceso al sistema?</label>
+                    </div>
+                </div>
+
+                <div id="account-fields" class="account-fields hidden">
+                    <div class="input-group mt-3">
+                        <label for="staff-email">Correo Electrónico (Login)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="staff-email" name="staff-email" placeholder="correo@ejemplo.com">
+                        </div>
+                    </div>
+
+                    <div class="input-group mt-3">
+                        <label for="staff-password">Contraseña Provisional</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" id="staff-password" name="staff-password" placeholder="Mínimo 6 caracteres">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-submit-staff">
+                        <span>Guardar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js?v=5"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=6"></script>
+</body>
+</html>
+

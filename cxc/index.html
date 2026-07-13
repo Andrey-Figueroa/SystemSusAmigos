@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuentas por Cobrar | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-file-invoice-dollar logo-icon"></i>
+                <span class="brand-text">Cuentas por Cobrar</span>
+            </div>
+            <div class="user-profile">
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Action Bar (Search & Add) -->
+            <div class="action-bar">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por cliente, fecha o placa..." class="search-input">
+                </div>
+                <button id="btn-add-cxc" class="btn-primary" onclick="openWizard()">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nueva Cuenta Manual</span>
+                </button>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Vehículo (Placa)</th>
+                            <th>Fecha</th>
+                            <th>Concepto / Descripción</th>
+                            <th>Monto Total</th>
+                            <th>Saldo Pendiente</th>
+                            <th>Origen</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cxc-table-body">
+                        <!-- Demo rows (se reemplazarán por JS con datos reales) -->
+                        <tr>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar-sm">JR</div>
+                                    <div>
+                                        <div class="client-name-cell">Juan Rodríguez</div>
+                                        <div class="client-phone-cell">8888-1234</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="placa-tag">ABC-123</span></td>
+                            <td class="date-cell">10 Jul 2026</td>
+                            <td>Cambio de aceite y filtros</td>
+                            <td class="amount-cell">₡25,000</td>
+                            <td class="amount-cell pending">₡25,000</td>
+                            <td><span class="badge badge-manual">Manual</span></td>
+                            <td><span class="badge badge-pendiente">Pendiente</span></td>
+                            <td>
+                                <div class="actions-cell">
+                                    <button class="btn-icon view" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+                                    <button class="btn-icon edit" title="Registrar abono"><i class="fa-solid fa-hand-holding-dollar"></i></button>
+                                    <button class="btn-icon delete" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="client-cell">
+                                    <div class="client-avatar-sm">ML</div>
+                                    <div>
+                                        <div class="client-name-cell">María López</div>
+                                        <div class="client-phone-cell">7777-5678</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="placa-tag">XYZ-789</span></td>
+                            <td class="date-cell">05 Jul 2026</td>
+                            <td>Detallado premium + pulido</td>
+                            <td class="amount-cell">₡40,000</td>
+                            <td class="amount-cell pending">₡20,000</td>
+                            <td><span class="badge badge-auto">Local Comercial</span></td>
+                            <td><span class="badge badge-parcial">Parcial</span></td>
+                            <td>
+                                <div class="actions-cell">
+                                    <button class="btn-icon view" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+                                    <button class="btn-icon edit" title="Registrar abono"><i class="fa-solid fa-hand-holding-dollar"></i></button>
+                                    <button class="btn-icon delete" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <h3>No hay cuentas por cobrar</h3>
+                    <p>Agrega una nueva cuenta manualmente o las órdenes con cuenta pendiente aparecerán aquí.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         WIZARD MODAL — Cuenta Manual por Cobrar
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="wizard-overlay" class="wizard-overlay">
+        <div class="wizard-panel">
+
+            <!-- Wizard Header -->
+            <div class="wizard-header">
+                <div class="wizard-title">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Nueva Cuenta por Cobrar Manual</span>
+                </div>
+                <button class="btn-close" onclick="closeWizard()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="wizard-progress">
+                <div class="step active" id="prog-step-1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Cliente</span>
+                </div>
+                <div class="step-line" id="line-1-2"></div>
+                <div class="step" id="prog-step-2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Vehículo</span>
+                </div>
+                <div class="step-line" id="line-2-3"></div>
+                <div class="step" id="prog-step-3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Detalle Deuda</span>
+                </div>
+            </div>
+
+            <!-- Wizard Body -->
+            <div class="wizard-body">
+
+                <!-- ── PASO 1: CLIENTE ── -->
+                <div class="wizard-step active" id="step-1">
+                    <h3><i class="fa-solid fa-user-magnifying-glass"></i> Identificar Cliente</h3>
+                    <p class="step-desc">Busca al cliente por nombre o número de teléfono.</p>
+
+                    <form id="search-client-form" class="search-box" onsubmit="searchClient(event)">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="client-search-input" placeholder="Nombre o teléfono del cliente..." autocomplete="off">
+                        <button type="submit" class="btn-primary">Buscar</button>
+                    </form>
+
+                    <!-- Resultado: cliente encontrado -->
+                    <div id="client-found-card" class="client-found-card" style="display:none; margin-top:20px;">
+                        <div class="client-info-display">
+                            <i class="fa-solid fa-circle-check" style="color: var(--success-color); font-size: 28px;"></i>
+                            <div>
+                                <h3 id="found-client-name">—</h3>
+                                <p id="found-client-phone">—</p>
+                            </div>
+                        </div>
+                        <button id="btn-continue-step2" class="btn-primary" style="width:100%; margin-top:16px;" onclick="goToStep(2)">
+                            Continuar a Vehículo <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Resultado: cliente no encontrado → registrar nuevo -->
+                    <div id="client-new-form-container" class="client-new-form" style="display:none; margin-top:20px;">
+                        <div class="alert-info">
+                            <i class="fa-solid fa-circle-info"></i> Cliente no encontrado. Regístralo rápidamente.
+                        </div>
+                        <form id="new-client-form" style="margin-top:16px;" onsubmit="registerNewClient(event)">
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" id="new-client-name" class="form-control" placeholder="Nombre completo del cliente" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="text" id="new-client-phone-input" class="form-control" placeholder="Ej. 8888-1234" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="width:100%; margin-top:8px;">
+                                Registrar y Continuar <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ── PASO 2: VEHÍCULO ── -->
+                <div class="wizard-step" id="step-2">
+                    <button class="btn-secondary btn-back-step" onclick="goToStep(1)">
+                        <i class="fa-solid fa-arrow-left"></i> Cambiar Cliente
+                    </button>
+                    <h3 style="margin-top:16px;"><i class="fa-solid fa-car"></i> Selección de Vehículo</h3>
+                    <p class="step-desc">Cliente: <strong id="current-client-display" style="color:var(--primary-accent);"></strong></p>
+
+                    <!-- Grid de vehículos vinculados -->
+                    <div id="vehicles-grid" class="vehicles-grid" style="margin: 20px 0;"></div>
+
+                    <!-- Sin vehículos o agregar nuevo -->
+                    <div class="new-vehicle-section">
+                        <button id="btn-show-new-vehicle" class="btn-secondary" style="width:100%; border-style:dashed; justify-content:center;" onclick="toggleNewVehicleForm()">
+                            <i class="fa-solid fa-plus"></i> Ingresar un vehículo nuevo
+                        </button>
+                        <div id="new-vehicle-form-container" style="display:none; margin-top:20px; padding:24px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid var(--border-color);">
+                            <h4 style="margin-bottom:16px;"><i class="fa-solid fa-car-side"></i> Registrar Vehículo Nuevo</h4>
+                            <form id="form-new-vehicle" onsubmit="saveNewVehicle(event)">
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                    <div class="form-group">
+                                        <label>Placa (Obligatorio)</label>
+                                        <input type="text" id="veh-placa" class="form-control" placeholder="ABC-123" required style="text-transform:uppercase;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Marca</label>
+                                        <input type="text" id="veh-marca" class="form-control" placeholder="Toyota">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Modelo</label>
+                                        <input type="text" id="veh-modelo" class="form-control" placeholder="Corolla">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Año</label>
+                                        <input type="number" id="veh-año" class="form-control" placeholder="2020" min="1900">
+                                    </div>
+                                    <div class="form-group" style="grid-column:span 2;">
+                                        <label>Tipo</label>
+                                        <select id="veh-tipo" class="form-control" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="SEDAN">SEDAN</option>
+                                            <option value="SUV">SUV</option>
+                                            <option value="PICKUP">PICKUP</option>
+                                            <option value="HATCHBACK">HATCHBACK</option>
+                                            <option value="MOTO">MOTO</option>
+                                            <option value="OTRO">OTRO</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:12px; margin-top:20px;">
+                                    <button type="button" class="btn-secondary" onclick="toggleNewVehicleForm()">Cancelar</button>
+                                    <button type="submit" class="btn-primary" style="flex:1;">
+                                        Guardar y Continuar <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── PASO 3: DETALLE DE LA DEUDA ── -->
+                <div class="wizard-step" id="step-3">
+                    <button class="btn-secondary btn-back-step" onclick="goToStep(2)">
+                        <i class="fa-solid fa-arrow-left"></i> Cambiar Vehículo
+                    </button>
+                    <h3 style="margin-top:16px;"><i class="fa-solid fa-file-lines"></i> Detalle de la Cuenta</h3>
+                    <p class="step-desc">
+                        Cliente: <strong id="summary-client" style="color:var(--primary-accent);"></strong> &nbsp;|&nbsp;
+                        Vehículo: <strong id="summary-vehicle" style="color:var(--primary-accent);"></strong>
+                    </p>
+
+                    <form id="cxc-detail-form" onsubmit="submitCxC(event)">
+                        <div class="form-group">
+                            <label>Concepto / Descripción de la Deuda</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-file-alt"></i>
+                                <input type="text" id="cxc-concept" class="form-control" style="padding-left:44px;" placeholder="Ej. Cambio de aceite y filtros, Mecánica general..." required>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div class="form-group">
+                                <label>Monto Total de la Deuda</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-dollar-sign"></i>
+                                    <input type="number" id="cxc-amount" class="form-control" style="padding-left:44px;" placeholder="0.00" min="0" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de la Deuda</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-calendar"></i>
+                                    <input type="date" id="cxc-date" class="form-control" style="padding-left:44px;" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Observaciones (Opcional)</label>
+                            <textarea id="cxc-notes" class="form-control" rows="3" placeholder="Ej. Servicio prestado antes de instalar el sistema..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="width:100%; margin-top:8px; background:var(--success-color);">
+                            <i class="fa-solid fa-check-double"></i> Registrar Cuenta por Cobrar
+                        </button>
+                    </form>
+                </div>
+
+            </div><!-- /wizard-body -->
+        </div><!-- /wizard-panel -->
+    </div><!-- /wizard-overlay -->
+
+    <!-- ═══════════════════════════════════════════════════════════
+         MODAL — Registrar Abono / Saldar Cuenta
+         ═══════════════════════════════════════════════════════════ -->
+    <div id="abono-overlay" class="modal-overlay">
+        <div class="modal-content abono-card">
+
+            <!-- Header -->
+            <div class="modal-header">
+                <div>
+                    <h2 id="abono-modal-title">Registrar Pago</h2>
+                    <p id="abono-orden-ref" style="color:var(--text-secondary); font-size:14px; margin-top:4px;"></p>
+                </div>
+                <button class="btn-close" onclick="closeAbonoModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Total destacado -->
+            <div class="abono-total-display">
+                <span class="abono-total-label">Saldo Pendiente</span>
+                <span class="abono-total-amount" id="abono-total-big">₡0</span>
+            </div>
+
+            <div class="modal-body">
+                <form id="abono-form" onsubmit="submitAbono(event)">
+                    <input type="hidden" id="abono-cxc-id">
+                    <input type="hidden" id="abono-tipo-hidden" value="parcial">
+
+                    <!-- Selector: Abono parcial o Saldar total -->
+                    <div class="abono-type-selector">
+                        <button type="button" id="btn-tipo-abono"  class="abono-type-btn active" onclick="setAbonoType('parcial')">
+                            <i class="fa-solid fa-coins"></i> Abono Parcial
+                        </button>
+                        <button type="button" id="btn-tipo-saldar" class="abono-type-btn" onclick="setAbonoType('total')">
+                            <i class="fa-solid fa-circle-check"></i> Saldar Total
+                        </button>
+                    </div>
+
+                    <!-- Monto a abonar (solo en abono parcial) -->
+                    <div class="form-group" id="abono-monto-group" style="margin-bottom:20px;">
+                        <label>Monto a Abonar</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-dollar-sign"></i>
+                            <input type="number" id="abono-monto-input" class="form-control"
+                                   style="padding-left:44px; font-size:20px; font-weight:600;"
+                                   placeholder="0" min="1" step="1" required>
+                        </div>
+                        <small id="abono-monto-hint" style="color:var(--text-secondary); font-size:12px;"></small>
+                    </div>
+
+                    <!-- Mensaje al saldar total -->
+                    <div id="abono-saldar-msg" style="display:none; margin-bottom:20px;">
+                        <div class="alert-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                            Se registrará el saldo completo y el estado cambiará a <strong>Pagado</strong>.
+                        </div>
+                    </div>
+
+                    <!-- Métodos de pago -->
+                    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">Seleccione el método de pago:</p>
+                    <div class="pay-methods-grid">
+                        <label class="pay-method-card">
+                            <input type="radio" name="metodo_pago" value="Efectivo" checked>
+                            <div class="pay-method-content">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                                <span>Efectivo</span>
+                            </div>
+                        </label>
+                        <label class="pay-method-card">
+                            <input type="radio" name="metodo_pago" value="Tarjeta">
+                            <div class="pay-method-content">
+                                <i class="fa-solid fa-credit-card"></i>
+                                <span>Tarjeta</span>
+                            </div>
+                        </label>
+                        <label class="pay-method-card">
+                            <input type="radio" name="metodo_pago" value="Sinpe">
+                            <div class="pay-method-content">
+                                <i class="fa-solid fa-mobile-screen-button"></i>
+                                <span>Sinpe Móvil</span>
+                            </div>
+                        </label>
+                        <label class="pay-method-card">
+                            <input type="radio" name="metodo_pago" value="Transferencia">
+                            <div class="pay-method-content">
+                                <i class="fa-solid fa-building-columns"></i>
+                                <span>Transferencia</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Notas opcionales -->
+                    <div class="form-group" style="margin-top:20px;">
+                        <label>Notas (Opcional)</label>
+                        <input type="text" id="abono-notas" class="form-control"
+                               placeholder="Ej. Comprobante #12345...">
+                    </div>
+
+                    <!-- Botón de guardar -->
+                    <button type="submit" id="btn-submit-abono" class="btn-guardar-pago">
+                        <i class="fa-solid fa-check"></i> Guardar Pago
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+
+    <!-- Supabase SDK via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=4"></script>
+</body>
+</html>
+

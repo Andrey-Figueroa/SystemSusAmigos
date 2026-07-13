@@ -1,0 +1,344 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-gears logo-icon"></i>
+                <span class="brand-text">NeuraLoom Auto</span>
+                <nav class="main-nav">
+                    <a href="../personal/index.html" id="nav-personal" class="nav-link" style="display: none;">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>Personal</span>
+                    </a>
+                    <a href="https://docs.google.com/spreadsheets/d/1msYzwqhPAyRn8JnYQdu3MsX7xRVHsCbvqd-olb6x104/edit?usp=sharing" id="nav-sheets" target="_blank" class="nav-link" style="display: none; color: #10b981;">
+                        <i class="fa-solid fa-table-list"></i>
+                        <span>Google Sheets</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Hola, <strong id="display-user">Usuario</strong> <span id="display-role" class="role-badge">Rol</span></span>
+                <div class="avatar">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <button id="btn-logout" class="btn-logout" title="Cerrar SesiÃ³n">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-content">
+            <div class="welcome-banner">
+                <h1>Panel de Control</h1>
+                <p>Bienvenido al Sistema de GestiÃ³n de Servicios Automotrices. AquÃ­ se listarÃ¡n y administrarÃ¡n los procesos de tu taller.</p>
+            </div>
+
+            <!-- Access Modules Grid -->
+            <div class="modules-section">
+                <h2 class="section-title">MÃ³dulos del Sistema</h2>
+                <div class="modules-grid">
+                    
+                    <!-- Operaciones & Ventas -->
+                    <a href="#" id="card-pos" class="module-card card-cyan">
+                        <div class="card-icon"><i class="fa-solid fa-cash-register"></i></div>
+                        <div class="card-content">
+                            <h3>Vender / Atender</h3>
+                            <p>Punto de venta, Ã³rdenes y facturaciÃ³n.</p>
+                        </div>
+                    </a>
+
+                    <a href="../pizarra_local/index.html" id="card-pizarra" class="module-card card-blue">
+                        <div class="card-icon"><i class="fa-solid fa-tv"></i></div>
+                        <div class="card-content">
+                            <h3>Pizarra del Local</h3>
+                            <p>Control de estado y flujo de VEHÍCULOS.</p>
+                        </div>
+                    </a>
+
+                    <a href="../cxc/index.html" id="card-creditos" class="module-card card-purple">
+                        <div class="card-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <div class="card-content">
+                            <h3>Cuentas por Cobrar</h3>
+                            <p>GestiÃ³n de crÃ©ditos y saldos pendientes.</p>
+                        </div>
+                    </a>
+
+                    <!-- Taller -->
+                    <a href="../Mecánica/index.html" id="card-taller" class="module-card card-orange">
+                        <div class="card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        <div class="card-content">
+                            <h3>Ãrea de Mecánica</h3>
+                            <p>Panel de trabajo para tÃ©cnicos y mecÃ¡nicos.</p>
+                        </div>
+                    </a>
+
+                    <!-- Finanzas -->
+                    <a href="../gastos/index.html" id="card-gastos" class="module-card card-red">
+                        <div class="card-icon">
+                            <i class="fa-solid fa-money-bill-transfer"></i></div>
+                        <div class="card-content">
+                            <h3>Gastos Diarios</h3>
+                            <p>Registro de salidas y compras del dÃ­a.</p>
+                        </div>
+                    </a>
+
+                    <a href="../cierre/index.html" id="card-cierre" class="module-card card-green">
+                        <div class="card-icon"><i class="fa-solid fa-vault"></i></div>
+                        <div class="card-content">
+                            <h3>Cierre de Operaciones</h3>
+                            <p>Corte de caja y resumen diario.</p>
+                        </div>
+                    </a>
+
+                    <!-- Bases de Datos -->
+                    <a href="../clientes/index.html" id="card-clientes" class="module-card card-teal">
+                        <div class="card-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="card-content">
+                            <h3>Datos Clientes</h3>
+                            <p>Directorio y CRM de clientes.</p>
+                        </div>
+                    </a>
+
+                    <a href="../VEHÍCULOS/index.html" id="card-VEHÍCULOS" class="module-card card-indigo">
+                        <div class="card-icon"><i class="fa-solid fa-car"></i></div>
+                        <div class="card-content">
+                            <h3>Datos VEHÍCULOS</h3>
+                            <p>Historial y registro de automÃ³viles.</p>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Resumen de Operaciones -->
+            <div class="daily-summary-section mt-5" id="resumen-operaciones">
+                <div class="summary-header">
+                    <h2><i class="fa-solid fa-chart-line"></i> Resumen de Operaciones</h2>
+                    <div class="summary-datetime" id="current-datetime">
+                        Actualizando fecha y hora...
+                    </div>
+                </div>
+                
+                <!-- Indicadores Clave -->
+                <div class="dash-section-title">INDICADORES CLAVE</div>
+                <div class="dash-kpi-grid">
+                    <div class="dash-kpi-box">
+                        <span class="kpi-label">TICKET PROMEDIO</span>
+                        <span class="kpi-value" id="kpi-ticket">₡0</span>
+                    </div>
+                    <div class="dash-kpi-box">
+                        <span class="kpi-label">CAJA INICIAL</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" id="input-caja-inicial" class="kpi-input" value="40000" step="1000">
+                            <button id="btn-update-caja" title="Notificar Cambio" style="background:transparent; border:none; color:var(--primary-accent); font-size:18px; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                    <div class="dash-kpi-box box-highlight">
+                        <span class="kpi-label">DINERO EN CAJA</span>
+                        <span class="kpi-value text-green" id="kpi-dinero-caja">₡0</span>
+                    </div>
+                    <div class="dash-kpi-box">
+                        <span class="kpi-label">GASTOS EN EFECTIVO</span>
+                        <span class="kpi-value text-red" id="kpi-gastos">₡0</span>
+                    </div>
+                    <div class="dash-kpi-box">
+                        <span class="kpi-label">CIERRE EFECTIVO</span>
+                        <span class="kpi-value text-orange" id="kpi-cierre-efectivo">₡0</span>
+                    </div>
+                </div>
+
+                <!-- VEHÍCULOS Status (Pizarra) -->
+                <div class="dash-VEHÍCULOS-status">
+                    <div class="veh-status-box">
+                        <span class="veh-label text-orange">EN PROCESO</span>
+                        <span class="veh-val" id="veh-proceso">0</span>
+                    </div>
+                    <div class="veh-status-box">
+                        <span class="veh-label text-yellow">TERMINADO</span>
+                        <span class="veh-val" id="veh-terminado">0</span>
+                    </div>
+                    <div class="veh-status-box">
+                        <span class="veh-label text-green">RETIRADO</span>
+                        <span class="veh-val" id="veh-retirado">0</span>
+                    </div>
+                </div>
+
+                <div class="dash-section-title mt-4">DESGLOSE DE VENTAS POR CATEGORÍA</div>
+                
+                <!-- Tablas de Desglose -->
+                <div class="dash-tables-grid">
+                    <!-- 1. Lubricentro & Detallado -->
+                    <div class="dash-table-card">
+                        <h4 class="table-title text-orange">Lubricentro & Detallado</h4>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>RUBRO</th>
+                                    <th class="text-right">MONTO</th>
+                                    <th class="text-center">VEHÍCULOS/VENTAS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Efectivo</td><td class="text-right" id="lub-efectivo-monto">₡0</td><td class="text-center" id="lub-efectivo-cant">0</td></tr>
+                                <tr><td>Tarjeta</td><td class="text-right" id="lub-tarjeta-monto">₡0</td><td class="text-center" id="lub-tarjeta-cant">0</td></tr>
+                                <tr><td>Sinpe</td><td class="text-right" id="lub-sinpe-monto">₡0</td><td class="text-center" id="lub-sinpe-cant">0</td></tr>
+                                <tr><td>Cuenta por cobrar</td><td class="text-right" id="lub-cxc-monto">₡0</td><td class="text-center" id="lub-cxc-cant">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 2. Venta de Productos -->
+                    <div class="dash-table-card">
+                        <h4 class="table-title text-yellow">Venta de Productos</h4>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>RUBRO</th>
+                                    <th class="text-right">MONTO</th>
+                                    <th class="text-center">VEHÍCULOS/VENTAS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Efectivo</td><td class="text-right" id="prod-efectivo-monto">₡0</td><td class="text-center" id="prod-efectivo-cant">0</td></tr>
+                                <tr><td>Tarjeta crédito / débito</td><td class="text-right" id="prod-tarjeta-monto">₡0</td><td class="text-center" id="prod-tarjeta-cant">0</td></tr>
+                                <tr><td>SINPE Móvil</td><td class="text-right" id="prod-sinpe-monto">₡0</td><td class="text-center" id="prod-sinpe-cant">0</td></tr>
+                                <tr><td>Cuenta por cobrar</td><td class="text-right" id="prod-cxc-monto">₡0</td><td class="text-center" id="prod-cxc-cant">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 3. Servicios a Domicilio -->
+                    <div class="dash-table-card">
+                        <h4 class="table-title text-yellow">Servicios a Domicilio</h4>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>RUBRO</th>
+                                    <th class="text-right">MONTO</th>
+                                    <th class="text-center">VEHÍCULOS/VENTAS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Efectivo</td><td class="text-right" id="dom-efectivo-monto">₡0</td><td class="text-center" id="dom-efectivo-cant">0</td></tr>
+                                <tr><td>Tarjeta crédito / débito</td><td class="text-right" id="dom-tarjeta-monto">₡0</td><td class="text-center" id="dom-tarjeta-cant">0</td></tr>
+                                <tr><td>SINPE Móvil</td><td class="text-right" id="dom-sinpe-monto">₡0</td><td class="text-center" id="dom-sinpe-cant">0</td></tr>
+                                <tr><td>Cuenta por cobrar</td><td class="text-right" id="dom-cxc-monto">₡0</td><td class="text-center" id="dom-cxc-cant">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 4. Reporte Global -->
+                    <div class="dash-table-card">
+                        <h4 class="table-title text-red">Reporte Global</h4>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>RUBRO</th>
+                                    <th class="text-right">MONTO</th>
+                                    <th class="text-center">VEHÍCULOS/VENTAS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Detallado</td><td class="text-right" id="glob-detallado-monto">₡0</td><td class="text-center" id="glob-detallado-cant">0</td></tr>
+                                <tr><td>Mecánica</td><td class="text-right" id="glob-mecanica-monto">₡0</td><td class="text-center" id="glob-mecanica-cant">0</td></tr>
+                                <tr><td>Productos</td><td class="text-right" id="glob-productos-monto">₡0</td><td class="text-center" id="glob-productos-cant">0</td></tr>
+                                <tr><td>Domicilio</td><td class="text-right" id="glob-domicilio-monto">₡0</td><td class="text-center" id="glob-domicilio-cant">0</td></tr>
+                                <tr class="table-total"><td>Total</td><td class="text-right" id="glob-total-monto">₡0</td><td class="text-center" id="glob-total-cant">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 5. Ventas globales Sus Amigos -->
+                    <div class="dash-table-card">
+                        <h4 class="table-title text-red">Ventas globales Sus Amigos</h4>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>RUBRO</th>
+                                    <th class="text-right">MONTO</th>
+                                    <th class="text-center"># VEHÍCULOS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Efectivo</td><td class="text-right" id="tot-efectivo-monto">₡0</td><td class="text-center" id="tot-efectivo-cant">0</td></tr>
+                                <tr><td>Tarjeta</td><td class="text-right" id="tot-tarjeta-monto">₡0</td><td class="text-center" id="tot-tarjeta-cant">0</td></tr>
+                                <tr><td>SINPE Móvil</td><td class="text-right" id="tot-sinpe-monto">₡0</td><td class="text-center" id="tot-sinpe-cant">0</td></tr>
+                                <tr><td>Cuenta por cobrar</td><td class="text-right" id="tot-cxc-monto">₡0</td><td class="text-center" id="tot-cxc-cant">0</td></tr>
+                                <tr class="table-total"><td>Ventas globales</td><td class="text-right" id="tot-global-monto">₡0</td><td class="text-center" id="tot-global-cant">0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- POS (Vender/Atender) Modal -->
+    <div id="pos-modal" class="modal-overlay">
+        <div class="modal-content pos-modal-content">
+            <div class="modal-header">
+                <h2>Â¿QuÃ© tipo de operaciÃ³n realizarÃ¡s?</h2>
+                <button class="btn-close" id="btn-close-pos"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="pos-options-grid">
+                    <!-- Domicilio -->
+                    <div class="pos-option-card" data-action="domicilio">
+                        <div class="pos-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-house-chimney-medical"></i></div>
+                        <h3>Servicio a Domicilio</h3>
+                        <p>Rescates, baterÃ­as o mecÃ¡nicos mÃ³viles fuera del taller.</p>
+                    </div>
+
+                    <!-- Local Comercial -->
+                    <div class="pos-option-card" data-action="local">
+                        <div class="pos-icon" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1);"><i class="fa-solid fa-shop"></i></div>
+                        <h3>Local Comercial</h3>
+                        <p>Ingreso de VEHÍCULOS, Mecánica, revisiÃ³n o detallado.</p>
+                    </div>
+
+                    <!-- Productos -->
+                    <div class="pos-option-card" data-action="productos">
+                        <div class="pos-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);"><i class="fa-solid fa-box-open"></i></div>
+                        <h3>Venta de Productos</h3>
+                        <p>Venta por mostrador de repuestos, lubricantes y accesorios.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Client Configuration -->
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=6" charset="utf-8"></script>
+</body>
+</html>
+
+
+
+
+
+
+

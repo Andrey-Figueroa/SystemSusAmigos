@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizarra del Local - Sistema Sus Amigos</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navbar Superior -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-chess-board logo-icon"></i>
+                <h1>Pizarra del Local</h1>
+            </div>
+            <div class="navbar-actions">
+                <span class="user-greeting">Usuario: <strong id="display-user">...</strong></span>
+                <button class="btn-back" onclick="window.location.href='../dashboard/index.html'">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+                </button>
+            </div>
+        </header>
+
+        <!-- Contenido Kanban -->
+        <main class="kanban-board">
+            
+            <!-- Columna: En Proceso -->
+            <div class="kanban-column" id="col-en-proceso">
+                <div class="kanban-header">
+                    <h2><i class="fa-solid fa-hammer"></i> En Proceso</h2>
+                    <span class="badge" id="count-proceso">0</span>
+                </div>
+                <div class="kanban-cards-container" id="container-proceso">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Columna: Terminado -->
+            <div class="kanban-column" id="col-terminado">
+                <div class="kanban-header terminados-header">
+                    <h2><i class="fa-solid fa-check-double"></i> Terminados</h2>
+                    <span class="badge" id="count-terminado">0</span>
+                </div>
+                <div class="kanban-cards-container parking-lot" id="container-terminado">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Columna: Retirado -->
+            <div class="kanban-column" id="col-retirado">
+                <div class="kanban-header retirados-header">
+                    <h2><i class="fa-solid fa-flag-checkered"></i> Retirados (Hoy)</h2>
+                    <span class="badge" id="count-retirado">0</span>
+                </div>
+                <div class="kanban-cards-container" id="container-retirado">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Pago -->
+    <div id="modal-pago" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Registrar Pago</h2>
+                <button class="btn-close" id="btn-close-pago"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Orden: <strong id="pago-orden-id">#</strong> - <span id="pago-placa"></span></p>
+                <h3 class="total-monto">Total a Pagar: <span id="pago-total">₡0</span></h3>
+                
+                <form id="form-pago">
+                    <p style="margin-bottom: 10px; color: var(--text-secondary);">Seleccione los métodos de pago y asigne los montos:</p>
+                    <div class="payment-methods-grid">
+                        <!-- Efectivo -->
+                        <div class="payment-box">
+                            <label class="toggle-btn">
+                                <input type="checkbox" class="pay-toggle" data-target="pay-efectivo-container">
+                                <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                            </label>
+                            <div id="pay-efectivo-container" class="pay-input-container" style="display: none;">
+                                <input type="number" id="pago-efectivo" class="pay-input" placeholder="0" min="0" step="1">
+                            </div>
+                        </div>
+                        <!-- Tarjeta -->
+                        <div class="payment-box">
+                            <label class="toggle-btn">
+                                <input type="checkbox" class="pay-toggle" data-target="pay-tarjeta-container">
+                                <i class="fa-solid fa-credit-card"></i> Tarjeta
+                            </label>
+                            <div id="pay-tarjeta-container" class="pay-input-container" style="display: none;">
+                                <input type="number" id="pago-tarjeta" class="pay-input" placeholder="0" min="0" step="1">
+                            </div>
+                        </div>
+                        <!-- Sinpe -->
+                        <div class="payment-box">
+                            <label class="toggle-btn">
+                                <input type="checkbox" class="pay-toggle" data-target="pay-sinpe-container">
+                                <i class="fa-solid fa-mobile-screen"></i> Sinpe Móvil
+                            </label>
+                            <div id="pay-sinpe-container" class="pay-input-container" style="display: none;">
+                                <input type="number" id="pago-sinpe" class="pay-input" placeholder="0" min="0" step="1">
+                            </div>
+                        </div>
+                        <!-- CxC -->
+                        <div class="payment-box cxc-box">
+                            <label class="toggle-btn">
+                                <input type="checkbox" class="pay-toggle" data-target="pay-cxc-container">
+                                <i class="fa-solid fa-file-invoice-dollar"></i> Por Cobrar
+                            </label>
+                            <div id="pay-cxc-container" class="pay-input-container" style="display: none;">
+                                <input type="number" id="pago-cxc" class="pay-input" placeholder="0" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="payment-validation-msg" class="validation-msg" style="color: var(--danger-color); margin-top: 10px; display: none;"></div>
+
+                    <button type="submit" class="btn-primary" id="btn-guardar-pago" style="width:100%; margin-top: 20px;">
+                        <i class="fa-solid fa-check"></i> Guardar Pago
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tostadas -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="../js/supabase.js?v=2"></script>
+    <script src="app.js?v=2"></script>
+</body>
+</html>
+

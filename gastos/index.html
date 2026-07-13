@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Gastos | NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="pos-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-money-bill-transfer logo-icon"></i>
+                <span class="brand-text">Registrar Gastos</span>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Autoriza: <strong id="display-user">...</strong></span>
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area (Split Screen) -->
+        <main class="pos-content">
+            <!-- Left Side: Registration Form -->
+            <section class="pos-form-section">
+                <div class="form-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 class="section-title" style="margin-bottom: 0;"><i class="fa-solid fa-money-bill-wave"></i> Nuevo Gasto</h2>
+                    </div>
+                    
+                    <form id="expense-form">
+                        <div class="form-group mb-5">
+                            <label for="expense-amount">Monto del gasto <span class="required">*</span></label>
+                            <div class="input-wrapper price-input-wrapper">
+                                <i class="fa-solid fa-colon-sign"></i>
+                                <input type="number" id="expense-amount" placeholder="0" min="1" step="1" required class="large-number-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label>Responsable <span class="required">*</span></label>
+                            <div class="responsable-grid" id="responsable-container">
+                                <!-- Botones de personal cargados dinámicamente -->
+                                <p style="color: var(--text-secondary); font-size: 14px;">Cargando personal...</p>
+                            </div>
+                            <input type="hidden" id="expense-responsable" required>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="expense-desc">Descripción del gasto <span class="required">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-tag"></i>
+                                <input type="text" id="expense-desc" placeholder="Ej: Compra de jabón, pago de servicios..." required autocomplete="off">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-submit-expense" class="btn-submit">
+                            Registrar gastos <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Side: Today's Expenses -->
+            <section class="pos-receipts-section">
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <h2 class="section-title"><i class="fa-solid fa-receipt"></i> Gastos de Hoy</h2>
+                        <div class="date-badge" id="today-date-badge">...</div>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="today-stats">
+                        <div class="stat-mini full-width">
+                            <span class="stat-label">Total Gastado (Efectivo)</span>
+                            <span class="stat-value text-red" id="stat-total">₡0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="receipts-list-container">
+                        <ul id="expenses-list" class="sales-list">
+                            <!-- Injected via JS -->
+                        </ul>
+                        <div id="expenses-empty-state" class="empty-state">
+                            <i class="fa-solid fa-wallet"></i>
+                            <p>Aún no hay gastos registrados hoy.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Expense Details Modal -->
+    <div id="expense-details-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Detalles del Gasto</h2>
+                <button class="btn-close" id="btn-close-details"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <i class="fa-solid fa-money-bill-transfer" style="font-size: 40px; color: #ef4444; margin-bottom: 12px;"></i>
+                    <h3 id="detail-desc" style="font-size: 20px; font-weight: 600;">Gasto</h3>
+                    <p id="detail-time" style="color: var(--text-secondary); font-size: 13px;">Fecha y Hora</p>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                        <span style="color: var(--text-secondary);">Entregado a (Responsable):</span>
+                        <strong id="detail-responsable">...</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
+                        <span style="color: var(--text-secondary);">Autorizado por:</span>
+                        <strong id="detail-autoriza">...</strong>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Desglose de Pago</h4>
+                    <div id="detail-payment-breakdown" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                            <span><i class="fa-solid fa-money-bill-wave" style="color: var(--text-secondary); width: 20px;"></i> Efectivo</span>
+                            <span id="detail-efectivo" style="font-family: 'JetBrains Mono', monospace;">₡0</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 16px; margin-top: 8px;">
+                        <span style="font-size: 18px; font-weight: 600;">TOTAL</span>
+                        <span id="detail-total" style="font-size: 18px; font-weight: 700; color: #ef4444; font-family: 'JetBrains Mono', monospace;">₡0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tostadas -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <!-- Application Script -->
+    <script src="app.js?v=4"></script>
+</body>
+</html>
+

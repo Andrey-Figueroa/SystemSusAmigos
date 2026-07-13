@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Comercial - NeuraLoom Auto</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css?v=32">
+    <!-- Auth Guard -->
+    <script src="../js/auth_guard.js"></script>
+</head>
+<body>
+    <div class="pos-layout">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <i class="fa-solid fa-store logo-icon"></i>
+                <span class="brand-text">Local Comercial</span>
+            </div>
+            
+            <div class="user-profile">
+                <span class="user-greeting">Asesor: <strong id="display-user">...</strong></span>
+                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Volver al Dashboard</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="pos-content">
+
+            <!-- Wizard Progress Indicator (Single Step) -->
+            <div class="wizard-progress-single" id="wizard-progress-single" style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px;">
+                <div class="step-circle" id="current-step-num" style="background: var(--primary-accent); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">1</div>
+                <span class="step-label" id="current-step-name" style="font-weight: 600; font-size: 20px; color: white;">Cliente</span>
+            </div>
+
+            <div class="wizard-container">
+                <!-- STEP 1: CLIENTE -->
+                <div class="wizard-step active" id="step-1">
+                    <div class="step-card">
+                        <h2><i class="fa-solid fa-user-magnifying-glass"></i> Identificar Cliente</h2>
+                        <p class="step-desc">Ingresa el número de teléfono del cliente para buscarlo en el sistema.</p>
+                        
+                        <form id="search-client-form" class="search-box">
+                            <i class="fa-solid fa-phone"></i>
+                            <input type="text" id="phone-search" placeholder="Ej. 88888888" autocomplete="off" required>
+                            <button type="submit" id="btn-search-client" class="btn-primary">Buscar</button>
+                        </form>
+
+                        <div id="client-result-area" style="display: none; margin-top: 24px;">
+                            <!-- Pregunta de Espera -->
+                            <div class="waiting-room-section" style="margin-bottom: 24px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border-color);">
+                                <label style="display: block; margin-bottom: 12px; font-weight: 600; color: white;">¿El cliente se queda a esperar o hay que llamarlo?</label>
+                                <div class="radio-group-cards grid-2">
+                                    <label class="radio-card">
+                                        <input type="radio" name="cliente_espera" value="En sala de espera" checked>
+                                        <div class="radio-card-content">
+                                            <i class="fa-solid fa-couch"></i>
+                                            <span>Se queda a esperar</span>
+                                        </div>
+                                    </label>
+                                    <label class="radio-card">
+                                        <input type="radio" name="cliente_espera" value="Llamar cuando esté listo">
+                                        <div class="radio-card-content">
+                                            <i class="fa-solid fa-phone-volume"></i>
+                                            <span>Llamar al terminar</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="client-found-card" id="client-found-card" style="display: none;">
+                                <div class="client-info-display">
+                                    <i class="fa-solid fa-circle-check" style="color: var(--success-color); font-size: 24px;"></i>
+                                    <div>
+                                        <h3 id="found-client-name">Nombre Cliente</h3>
+                                        <p id="found-client-phone">88888888</p>
+                                    </div>
+                                </div>
+                                <button id="btn-continue-step2" class="btn-primary" style="width: 100%; margin-top: 16px;">Continuar a Vehículo <i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+
+                            <form class="client-new-form" id="client-new-form" style="display: none;">
+                                <div class="alert-info" style="margin-bottom: 16px;">
+                                    <i class="fa-solid fa-circle-info"></i> Cliente nuevo. Regístralo rápidamente.
+                                </div>
+                                <div class="form-group">
+                                    <label>Nombre Completo</label>
+                                    <input type="text" id="new-client-name" class="form-control" placeholder="Nombre completo del cliente" required>
+                                </div>
+                                <button type="submit" id="btn-register-client" class="btn-primary" style="width: 100%; margin-top: 16px;">Registrar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: VEHÍCULO -->
+                <div class="wizard-step" id="step-2">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Cambiar Cliente</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Selección de Vehículo</h2>
+                        <p class="step-desc">Cliente: <strong id="current-client-display" style="color:var(--primary-accent);"></strong> (<span id="current-espera-display"></span>)</p>
+
+                        <div class="search-box" style="margin-bottom: 20px; position: relative;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 12px; color: var(--text-muted);"></i>
+                            <input type="text" id="global-vehicle-search" class="form-control" placeholder="Buscar placa existente globalmente..." style="padding-left: 45px; text-transform: uppercase;">
+                        </div>
+                        <div id="global-vehicle-results" style="display: none; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px;"></div>
+
+                        <div id="vehicles-grid" class="vehicles-grid" style="margin: 24px 0;"></div>
+
+                        <div class="new-vehicle-section">
+                            <button id="btn-show-new-vehicle" class="btn-secondary" style="width: 100%; border-style: dashed; justify-content: center;">
+                                <i class="fa-solid fa-plus"></i> Ingresar un vehículo nuevo
+                            </button>
+
+                            <div id="new-vehicle-form-container" class="new-vehicle-form" style="display: none; margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color);">
+                                <h3>Registrar Vehículo Nuevo</h3>
+                                <form id="form-new-vehicle" style="margin-top: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                        <div class="form-group">
+                                            <label>Placa (Obligatorio)</label>
+                                            <input type="text" id="veh-placa" class="form-control" required style="text-transform: uppercase;">
+                                        </div>
+                                        <div class="form-group" style="position: relative;">
+                                            <label>Marca</label>
+                                            <input type="text" id="veh-marca" class="form-control" autocomplete="off" style="text-transform: uppercase;" placeholder="Ej: TOYOTA">
+                                            <i class="fa-solid fa-chevron-down" style="position: absolute; right: 15px; top: 40px; color: var(--text-muted); pointer-events: none; font-size: 12px;"></i>
+                                            <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #1a1b26; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
+                                                <!-- Las opciones se inyectan por JS -->
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Modelo</label>
+                                            <input type="text" id="veh-modelo" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Año</label>
+                                            <input type="number" id="veh-año" class="form-control" min="1900">
+                                        </div>
+                                        <div class="form-group" style="grid-column: span 2;">
+                                            <label>Tipo (Afecta los servicios disponibles)</label>
+                                            <select id="veh-tipo" class="form-control" required>
+                                                <option value="">Seleccione...</option>
+                                                <option value="SEDAN">SEDAN</option>
+                                                <option value="SUV">SUV</option>
+                                                <option value="PICKUP">PICKUP</option>
+                                                <option value="HATCHBACK">HATCHBACK</option>
+                                                <option value="MOTO">MOTO</option>
+                                                <option value="OTRO">OTRO</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                                        <button type="button" id="btn-cancel-new-vehicle" class="btn-secondary">Cancelar</button>
+                                        <button type="submit" id="btn-save-vehicle" class="btn-primary" style="flex: 1;">Guardar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: SERVICIOS MAESTROS -->
+                <div class="wizard-step" id="step-3">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(2)"><i class="fa-solid fa-arrow-left"></i> Cambiar Vehículo</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-list-check"></i> Selección de Servicios</h2>
+                        <p class="step-desc">Vehículo seleccionado: <strong id="current-vehicle-display" style="color:var(--primary-accent);"></strong></p>
+
+                        <div class="checkbox-group-cards" id="services-master-list" style="margin-top: 24px;">
+                            <label class="checkbox-card">
+                                <input type="checkbox" value="Detallado y lavado" class="service-checkbox">
+                                <div class="checkbox-card-content">
+                                    <i class="fa-solid fa-hands-bubbles"></i>
+                                    <span>Detallado y lavado</span>
+                                </div>
+                            </label>
+                            <label class="checkbox-card">
+                                <input type="checkbox" value="Detallados especiales" class="service-checkbox">
+                                <div class="checkbox-card-content">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>Detallados especiales</span>
+                                </div>
+                            </label>
+                            <label class="checkbox-card" id="card-mecanica">
+                                <input type="checkbox" value="Mecanica" class="service-checkbox">
+                                <div class="checkbox-card-content">
+                                    <i class="fa-solid fa-wrench"></i>
+                                    <span>Mecánica</span>
+                                </div>
+                            </label>
+                            <label class="checkbox-card" id="card-pendientes">
+                                <input type="checkbox" value="Entrada pero servicios pendientes" class="service-checkbox">
+                                <div class="checkbox-card-content">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                    <span>Entrada (Servicios Pendientes)</span>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div id="error-step3" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio.</div>
+                        <button class="btn-primary" onclick="processStep3()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: TIPO DE DETALLADO -->
+                <div class="wizard-step" id="step-4">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(3)"><i class="fa-solid fa-arrow-left"></i> Volver a Servicios</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-spray-can-sparkles"></i> Tipo de Detallado</h2>
+                        <p class="step-desc">Selecciona el paquete de detallado a realizar.</p>
+
+                        <div class="radio-group-cards grid-2" style="margin-top: 24px;">
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado clasico"><div class="radio-card-content"><span>Clásico</span></div></label>
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado premium"><div class="radio-card-content"><span>Premium</span></div></label>
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado Gold"><div class="radio-card-content"><span>Gold</span></div></label>
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Abrillantado premium"><div class="radio-card-content"><span>Abrillantado Premium</span></div></label>
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Hidrosellado Ceramico"><div class="radio-card-content"><span>Hidrosellado Cerámico</span></div></label>
+                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado ceramico"><div class="radio-card-content"><span>Detallado Cerámico</span></div></label>
+                            <label class="radio-card" style="grid-column: span 2;"><input type="radio" name="detallado_tipo" value="Promocion" id="radio-promocion"><div class="radio-card-content"><span>Promoción Especial</span></div></label>
+                        </div>
+                        
+                        <div id="promo-input-container" style="display: none; margin-top: 16px;">
+                            <label style="color:var(--text-secondary); font-size:14px; margin-bottom:8px; display:block;">Detalle de la promoción:</label>
+                            <input type="text" id="promo-detalle" class="form-control" placeholder="Escribe la promoción aquí...">
+                        </div>
+
+                        <div id="error-step4" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona un tipo de detallado.</div>
+                        <button class="btn-primary" onclick="processStep4()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: EXTRAS DE DETALLADO (Interior/Alfombras) -->
+                <div class="wizard-step" id="step-5">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(4)"><i class="fa-solid fa-arrow-left"></i> Volver a Tipo</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-pump-soap"></i> Opciones de Interior</h2>
+                        
+                        <div class="extra-section">
+                            <h3>1. Detallador Interior</h3>
+                            <div class="radio-group-cards grid-2">
+                                <label class="radio-card"><input type="radio" name="extra_interior" value="Nize"><div class="radio-card-content"><span>Nize</span></div></label>
+                                <label class="radio-card"><input type="radio" name="extra_interior" value="Trapo humedo"><div class="radio-card-content"><span>Trapo Húmedo</span></div></label>
+                                <label class="radio-card" id="card-mate"><input type="radio" name="extra_interior" value="Mate"><div class="radio-card-content"><span>Mate</span></div></label>
+                                <label class="radio-card" id="card-brillante"><input type="radio" name="extra_interior" value="Brillante"><div class="radio-card-content"><span>Brillante</span></div></label>
+                            </div>
+                            <small id="interior-warning" style="color:var(--warning-color); display:none; margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Mate y Brillante no están disponibles para Detallado Clásico.</small>
+                        </div>
+
+                        <div class="extra-section" style="margin-top: 24px;">
+                            <h3>2. Aromatizante Interior</h3>
+                            <div class="radio-group-cards grid-2">
+                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Limon"><div class="radio-card-content"><span>Limón</span></div></label>
+                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Frutos rojos"><div class="radio-card-content"><span>Frutos Rojos</span></div></label>
+                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Carro nuevo"><div class="radio-card-content"><span>Carro Nuevo</span></div></label>
+                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Sin aromatizante"><div class="radio-card-content"><span>Sin Aromatizante</span></div></label>
+                            </div>
+                        </div>
+
+                        <div class="extra-section" style="margin-top: 24px;">
+                            <h3>3. Nize en Alfombras</h3>
+                            <div class="radio-group-cards grid-2">
+                                <label class="radio-card"><input type="radio" name="extra_alfombras" value="Si"><div class="radio-card-content"><span>SÍ</span></div></label>
+                                <label class="radio-card"><input type="radio" name="extra_alfombras" value="No"><div class="radio-card-content"><span>NO</span></div></label>
+                            </div>
+                        </div>
+
+                        <div id="error-step5" style="color: var(--danger-color); margin-top: 16px; display: none;">Completa todas las opciones extras.</div>
+                        <button class="btn-primary" onclick="processStep5()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 6: DETALLADOS ESPECIALES -->
+                <div class="wizard-step" id="step-6">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(6))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Detallados Especiales</h2>
+                        <p class="step-desc">Seleccione uno o varios servicios especiales.</p>
+                        
+                        <div class="checkbox-group-cards grid-2" style="margin-top: 24px;" id="especiales-list">
+                            <label class="checkbox-card"><input type="checkbox" value="Pulido de silvines" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de silvines</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Pulido de vidrios" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de vidrios</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Pulido de parabrisas" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de parabrisas</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Pulido de carroceria" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de carrocería</span></div></label>
+                            
+                            <!-- Moto hidden options -->
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de motor" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de motor</span></div></label>
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Tapiceria profunda" class="especial-cb"><div class="checkbox-card-content"><span>Tapicería profunda</span></div></label>
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de chasis" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de chasis</span></div></label>
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lluvia grafita" class="especial-cb"><div class="checkbox-card-content"><span>Lluvia grafita</span></div></label>
+                        </div>
+
+                        <div id="error-step6" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio especial.</div>
+                        <button class="btn-primary" onclick="processStep6()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 7: MECANICA CATEGORIAS -->
+                <div class="wizard-step" id="step-7">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(7))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-gears"></i> Mecánica (Categorías)</h2>
+                        <p class="step-desc">Seleccione las partes del vehículo que requieren ayuda mecánica.</p>
+                        
+                        <div class="checkbox-group-cards grid-2" style="margin-top: 24px;" id="mecanica-cat-list">
+                            <label class="checkbox-card"><input type="checkbox" value="Llantas" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Llantas</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Sistema de frenos" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Sistema de frenos</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Lubricacion y Fluidos" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Lubricación y Fluidos</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Motor" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Motor</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Sistema Electrico" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Sistema Eléctrico</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Aire acondicionado" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Aire acondicionado</span></div></label>
+                            
+                            <label class="checkbox-card" style="grid-column: span 2;"><input type="checkbox" value="Mantenimiento general" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Mantenimiento General</span></div></label>
+                            
+                            <label class="checkbox-card" style="grid-column: span 2;">
+                                <input type="checkbox" value="Promociones mecanicas" class="mecanica-cat-cb" onchange="document.getElementById('promo-mec-container').style.display = this.checked ? 'block' : 'none'">
+                                <div class="checkbox-card-content"><span>Promociones Mecánicas</span></div>
+                            </label>
+                            <div id="promo-mec-container" style="display:none; grid-column:span 2;"><input type="text" id="promo-mec-text" class="form-control" placeholder="Describa la promoción..."></div>
+
+                            <label class="checkbox-card" style="grid-column: span 2;">
+                                <input type="checkbox" value="Otro" class="mecanica-cat-cb" onchange="document.getElementById('otro-mec-container').style.display = this.checked ? 'block' : 'none'">
+                                <div class="checkbox-card-content"><span>Otro</span></div>
+                            </label>
+                            <div id="otro-mec-container" style="display:none; grid-column:span 2;"><input type="text" id="otro-mec-text" class="form-control" placeholder="Describa el otro servicio..."></div>
+                        </div>
+
+                        <div id="error-step7" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos una categoría o ingresa el texto correspondiente.</div>
+                        <button class="btn-primary" onclick="processStep7()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 8: MECANICA DETALLES (Generado Dinámicamente) -->
+                <div class="wizard-step" id="step-8">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(8))"><i class="fa-solid fa-arrow-left"></i> Volver a Categorías</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-screwdriver-wrench"></i> Detalles Mecánicos</h2>
+                        <p class="step-desc">Seleccione los servicios específicos para cada categoría.</p>
+                        
+                        <div id="mecanica-dynamic-container" style="margin-top: 24px;">
+                            <!-- Inyectado por JS -->
+                        </div>
+
+                        <div id="error-step8" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio por categoría mostrada.</div>
+                        <button class="btn-primary" onclick="processStep8()" style="width: 100%; margin-top: 24px;">Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 9: EXTRAS FINALES -->
+                <div class="wizard-step" id="step-9">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(9))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-sparkles"></i> Extras Finales</h2>
+                        <p class="step-desc">Puede seleccionar varios extras o "Ninguno".</p>
+                        
+                        <div class="checkbox-group-cards grid-2" style="margin-top: 24px;">
+                            <label class="checkbox-card" style="grid-column: span 2;">
+                                <input type="checkbox" value="Ninguno" class="extra-final-cb" id="extra-ninguno" onchange="toggleNingunoExtra(this)">
+                                <div class="checkbox-card-content" style="background: rgba(239,68,68,0.1); border-color: var(--danger-color);"><span>Ninguno</span></div>
+                            </label>
+                            
+                            <label class="checkbox-card"><input type="checkbox" value="Cera premium" class="extra-final-cb"><div class="checkbox-card-content"><span>Cera premium</span></div></label>
+                            
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de interior" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de interior</span></div></label>
+                            <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de asientos" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de asientos</span></div></label>
+                            
+                            <label class="checkbox-card"><input type="checkbox" value="Anti empañante" class="extra-final-cb"><div class="checkbox-card-content"><span>Anti empañante</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Repelente de vidrios" class="extra-final-cb"><div class="checkbox-card-content"><span>Repelente de vidrios</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Sellador ceramico" class="extra-final-cb"><div class="checkbox-card-content"><span>Sellador cerámico</span></div></label>
+                            <label class="checkbox-card"><input type="checkbox" value="Partes negras exteriores" class="extra-final-cb"><div class="checkbox-card-content"><span>Partes negras exteriores</span></div></label>
+                        </div>
+
+                        <div id="error-step9" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos una opción.</div>
+                        <button class="btn-primary" onclick="processStep9()" style="width: 100%; margin-top: 24px;">Ir al Resumen <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 10: COBRO / RESUMEN -->
+                <div class="wizard-step" id="step-10">
+                    <div class="step-card">
+                        <button class="btn-secondary btn-back-step" onclick="goToStep(getPreviousStep(10))"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-file-invoice-dollar"></i> Cobro y Cierre</h2>
+                        <p class="step-desc">Ingresa los montos de los servicios y finaliza la orden.</p>
+                        
+                        <div class="alert-info" style="margin: 24px 0;">
+                            <p style="margin-bottom: 8px;"><strong>Atendido por:</strong> <span id="cobro-asesor" style="color:white;">...</span></p>
+                            <details>
+                                <summary style="cursor: pointer; color: var(--primary-accent); font-weight: 600;">Ver Resumen de la Orden</summary>
+                                <ul style="list-style:none; padding-top: 12px; font-size: 14px;" id="resumen-final">
+                                    <!-- Llenado por JS -->
+                                </ul>
+                            </details>
+                        </div>
+
+                        <form id="form-cobro">
+                            <div id="cobro-detallado-container" class="form-group" style="display: none; margin-bottom: 16px;">
+                                <label style="font-weight: 600; color: white;"><i class="fa-solid fa-soap"></i> Monto (Lavacar / Detallado)</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 18px; color: var(--text-secondary);">₡</span>
+                                    <input type="number" id="monto-detallado" class="form-control" style="flex: 1;" placeholder="0" min="0">
+                                </div>
+                            </div>
+
+                            <div id="cobro-mecanico-container" class="form-group" style="display: none; margin-bottom: 16px;">
+                                <label style="font-weight: 600; color: white;"><i class="fa-solid fa-wrench"></i> Monto (Mecánica)</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 18px; color: var(--text-secondary);">₡</span>
+                                    <input type="number" id="monto-mecanica" class="form-control" style="flex: 1;" placeholder="0" min="0">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 24px; margin-top: 24px;">
+                                <label style="font-weight: 600; color: white;"><i class="fa-solid fa-comment-dots"></i> Observaciones del cliente o pertenencias</label>
+                                <textarea id="cobro-observaciones" class="form-control" rows="3" placeholder="Ej. Lentes en guantera, golpe en puerta derecha... (Opcional)"></textarea>
+                            </div>
+
+                            <button type="submit" id="btn-finalizar-orden" class="btn-primary" style="width: 100%; background: var(--success-color);"><i class="fa-solid fa-check-double"></i> Guardar Orden</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script src="app.js?v=37"></script>
+</body>
+</html>
+
