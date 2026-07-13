@@ -808,14 +808,15 @@ function setupStep10() {
 
             let nuevaOrden;
             if (isEditingOrdenId) {
-                if (GOOGLE_SHEETS_WEBHOOK_URL.trim() !== "" && window.originalOrderDataForAlert) {
+                if (window.originalOrderDataForAlert) {
+                    const EMAIL_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
                     const alertPayload = {
                         action: 'edit_alert',
                         modulo: 'Local Comercial',
                         usuario: activeUser,
                         detalle: JSON.stringify(window.originalOrderDataForAlert, null, 2)
                     };
-                    fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                    fetch(EMAIL_WEBHOOK_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'text/plain' },
