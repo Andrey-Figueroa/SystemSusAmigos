@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NeuraLoom Auto - Dashboard Application Logic with Supabase
  */
 
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             const summarySection = document.querySelector('.daily-summary-section');
             if (summarySection) summarySection.style.display = 'none';
-        } else if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') { && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
+        } else if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
             const cardClientes = document.getElementById('card-clientes');
             if (cardClientes) {
                 cardClientes.classList.add('disabled-card');
