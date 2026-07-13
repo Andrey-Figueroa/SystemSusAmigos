@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -130,63 +130,32 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- STEP 2: VEHÍCULO -->
+                                     <!-- STEP 2: TIPO DE VEHÍCULO -->
                     <div class="wizard-step" id="step-2">
                         <div class="step-card">
                             <button class="btn-secondary btn-back-step" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Cambiar Cliente</button>
-                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Selección de Vehículo</h2>
+                            <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Tipo de Vehículo</h2>
                             <p class="step-desc">Cliente: <strong id="current-client-display" style="color:var(--primary-accent);"></strong></p>
 
-                            <div id="vehicles-grid" class="vehicles-grid" style="margin: 24px 0;"></div>
-
-                            <div class="new-vehicle-section">
-                                <button id="btn-show-new-vehicle" class="btn-secondary" style="width: 100%; border-style: dashed; justify-content: center;">
-                                    <i class="fa-solid fa-plus"></i> Ingresar un vehículo nuevo
-                                </button>
-
-                                <div id="new-vehicle-form-container" class="new-vehicle-form" style="display: none; margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color);">
-                                    <h3>Registrar Vehículo Nuevo</h3>
-                                    <form id="form-new-vehicle" style="margin-top: 16px;">
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                            <div class="form-group">
-                                                <label>Placa (Obligatorio)</label>
-                                                <input type="text" id="veh-placa" class="form-control" required style="text-transform: uppercase;">
-                                            </div>
-                                            <div class="form-group" style="position: relative;">
-                                                <label>Marca</label>
-                                                <input type="text" id="veh-marca" class="form-control" autocomplete="off" style="text-transform: uppercase;" placeholder="Ej: TOYOTA">
-                                                <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #1a1b26; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Modelo</label>
-                                                <input type="text" id="veh-modelo" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Año</label>
-                                                <input type="number" id="veh-año" class="form-control" min="1900">
-                                            </div>
-                                            <div class="form-group" style="grid-column: span 2;">
-                                                <label>Tipo (Afecta los servicios disponibles)</label>
-                                                <select id="veh-tipo" class="form-control" required>
-                                                    <option value="">Seleccione...</option>
-                                                    <option value="SEDAN">SEDAN</option>
-                                                    <option value="4x4 o Pick Up">4x4 o Pick Up</option>
-                                                    <option value="MOTO">MOTO</option>
-                                                    <option value="MicroBus">MicroBus</option>
-                                                    <option value="Camion">Camion</option>
-                                                    <option value="Cuadra">Cuadra</option>
-                                                    <option value="Side by Side">Side by Side</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div style="display: flex; gap: 12px; margin-top: 24px;">
-                                            <button type="button" id="btn-cancel-new-vehicle" class="btn-secondary">Cancelar</button>
-                                            <button type="submit" id="btn-save-vehicle" class="btn-primary" style="flex: 1;">Guardar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
-                                        </div>
-                                    </form>
-                                </div>
+                            <div style="margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color);">
+                                <form id="form-domicilio-tipo">
+                                    <div class="form-group">
+                                        <label>Tipo (Afecta los servicios disponibles)</label>
+                                        <select id="veh-tipo-domicilio" class="form-control" required style="font-size: 16px; padding: 12px;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="SEDAN">SEDAN</option>
+                                            <option value="4x4 o Pick Up">4x4 o Pick Up</option>
+                                            <option value="MOTO">MOTO</option>
+                                            <option value="MicroBus">MicroBus</option>
+                                            <option value="Camion">Camion</option>
+                                            <option value="Cuadra">Cuadra</option>
+                                            <option value="Side by Side">Side by Side</option>
+                                        </select>
+                                    </div>
+                                    <div style="margin-top: 24px;">
+                                        <button type="submit" class="btn-primary" style="width: 100%;">Guardar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

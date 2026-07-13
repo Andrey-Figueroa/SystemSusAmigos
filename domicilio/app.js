@@ -1,4 +1,4 @@
-﻿const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
 
 // Global Variables
 let activeUser = null;
@@ -262,127 +262,34 @@ function setupStep1() {
 }
 
 // ==========================================
-// STEP 2: VEHÍCULO
+// STEP 2: TIPO DE VEHÍCULO
 // ==========================================
 function setupStep2() {
-    const btnShowNewVeh = document.getElementById('btn-show-new-vehicle');
-    const formNewVehContainer = document.getElementById('new-vehicle-form-container');
-    const formNewVeh = document.getElementById('form-new-vehicle');
-    const btnCancelVeh = document.getElementById('btn-cancel-new-vehicle');
+    const formTipo = document.getElementById('form-domicilio-tipo');
 
-    btnShowNewVeh.addEventListener('click', () => {
-        btnShowNewVeh.style.display = 'none';
-        formNewVehContainer.style.display = 'block';
-    });
-
-    btnCancelVeh.addEventListener('click', () => {
-        formNewVehContainer.style.display = 'none';
-        btnShowNewVeh.style.display = 'flex';
-        formNewVeh.reset();
-    });
-
-    formNewVeh.addEventListener('submit', async (e) => {
+    formTipo.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const placa = document.getElementById('veh-placa').value.trim().toUpperCase();
-        const marca = document.getElementById('veh-marca').value.trim();
-        const modelo = document.getElementById('veh-modelo').value.trim();
-        const ano = document.getElementById('veh-año').value;
-        const tipo = document.getElementById('veh-tipo').value;
+        const tipo = document.getElementById('veh-tipo-domicilio').value;
+        if (!tipo) {
+            showToast('Error', 'Selecciona el tipo de vehículo.', 'error');
+            return;
+        }
 
-        currentVehiclePlaca = placa;
-        currentVehicleMarca = marca;
-        currentVehicleModelo = modelo;
-        currentVehicleAno = ano;
+        currentVehiclePlaca = 'N/A';
+        currentVehicleMarca = '';
+        currentVehicleModelo = '';
+        currentVehicleAno = '';
         currentVehicleTipo = tipo;
         
-        // Guardamos relacional igual que en local comercial
-        const btn = document.getElementById('btn-save-vehicle');
-        btn.disabled = true;
-        try {
-            const { data: vehData, error: vehError } = await window.supabase.from('vehiculos')
-                .insert([{ placa, marca, modelo, anio: ano || null, tipo }]).select();
-            
-            if (vehError) {
-                if (vehError.code === '23505') {
-                    throw new Error('Ya existe un vehículo registrado con esta placa. Usa el buscador de arriba para asignarlo.');
-                }
-                throw vehError;
-            }
-            
-            let vid = vehData ? vehData[0].id : null;
-            if(!vid) { throw new Error('No se pudo procesar la placa.'); }
-
-            // Vincular al cliente
-            const { error: linkErr } = await window.supabase.from('cliente_vehiculo').insert([{ cliente_id: currentClientId, vehiculo_placa: placa }]);
-            if (linkErr && linkErr.code !== '23505') throw linkErr;
-
-            goToStep(3);
-        } catch (err) {
-            console.error(err);
-            showToast('Error', err.message || 'Error guardando el vehículo.', 'error');
-        } finally { btn.disabled = false; }
+        goToStep(3);
     });
 }
 
 async function loadClientVehicles() {
-    const grid = document.getElementById('vehicles-grid');
-    grid.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Cargando vehículos...</div>';
-    document.getElementById('new-vehicle-form-container').style.display = 'none';
-    document.getElementById('btn-show-new-vehicle').style.display = 'flex';
-
-    if (!currentClientId) {
-        grid.innerHTML = '<p class="text-secondary" style="text-align:center;">Cliente nuevo, no tiene vehículos registrados.</p>';
-        return;
-    }
-
-    try {
-        const { data, error } = await window.supabase
-            .from('cliente_vehiculo')
-            .select('vehiculos(*)')
-            .eq('cliente_id', currentClientId);
-
-        if (error) throw error;
-
-        grid.innerHTML = '';
-        
-        if (data && data.length > 0) {
-            data.forEach(link => {
-                const veh = link.vehiculos;
-                if(!veh) return;
-
-                const isMoto = veh.tipo === 'MOTO';
-                const icon = isMoto ? '<i class="fa-solid fa-motorcycle"></i>' : '<i class="fa-solid fa-car"></i>';
-                
-                const card = document.createElement('div');
-                card.className = 'vehicle-select-card';
-                card.innerHTML = `
-                    <div style="display:flex; align-items:center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color);">
-                        <div style="font-size: 24px; color: var(--primary-accent);">${icon}</div>
-                        <div>
-                            <h4 style="margin:0; color: white;">${veh.placa ? veh.placa.toUpperCase() : 'SIN PLACA'}</h4>
-                            <p style="margin:0; font-size: 14px; color: var(--text-secondary);">${veh.tipo || 'OTRO'} - ${veh.modelo || 'N/A'}</p>
-                        </div>
-                    </div>
-                `;
-                card.addEventListener('click', () => {
-                    currentVehiclePlaca = veh.placa;
-                    currentVehicleMarca = veh.marca || '';
-                    currentVehicleModelo = veh.modelo || '';
-                    currentVehicleAno = veh.año || veh.ano || '';
-                    currentVehicleTipo = veh.tipo || 'SEDAN';
-                    
-                    goToStep(3);
-                });
-                grid.appendChild(card);
-            });
-        } else {
-            grid.innerHTML = '<p class="text-secondary" style="text-align:center;">Este cliente no tiene vehículos guardados.</p>';
-        }
-    } catch (err) {
-        console.error('Error loading vehicles:', err);
-        grid.innerHTML = '<p class="text-danger" style="text-align:center;">Error al cargar vehículos.</p>';
-    }
+    // En domicilio ya no cargamos vehículos de la BD
+    // Solo actualizamos el nombre del cliente en el UI del paso 2
+    document.getElementById('current-client-display').textContent = currentClientName;
 }
 
 // ==========================================
