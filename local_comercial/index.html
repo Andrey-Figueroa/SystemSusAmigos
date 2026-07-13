@@ -112,7 +112,7 @@
 
                         <div class="form-group" style="margin-top: 24px;">
                             <label style="font-weight: 600; color: white;">Tipo de Vehículo</label>
-                            <select id="veh-tipo-temp" class="form-control" required>
+                            <select id="veh-tipo-temp" class="form-control" required onchange="if(window.updateServicesByTipo) window.updateServicesByTipo()">
                                 <option value="">Seleccione...</option>
                                 <option value="SEDAN">SEDAN</option>
                                 <option value="SUV">SUV</option>
