@@ -97,10 +97,10 @@ function renderPizarra() {
 
         // Botones de acción avanzada
         let moveBtnHtml = '';
-        if (orden.estado === 'En proceso') {
-            moveBtnHtml = `<button class="btn-move" title="Pasar a Terminado" onclick="cambiarEstado(${orden.id}, 'Terminado')"><i class="fa-solid fa-check-double"></i></button>`;
-        } else if (orden.estado === 'Terminado') {
+        if (orden.estado === 'Terminado') {
             moveBtnHtml = `<button class="btn-move" title="Pasar a Retirado" onclick="cambiarEstado(${orden.id}, 'Retirado')"><i class="fa-solid fa-flag-checkered"></i></button>`;
+        } else if (orden.estado !== 'Retirado') {
+            moveBtnHtml = `<button class="btn-move" title="Pasar a Terminado" onclick="cambiarEstado(${orden.id}, 'Terminado')"><i class="fa-solid fa-check-double"></i></button>`;
         }
         
         let payBtnHtml = '';
