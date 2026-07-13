@@ -1,4 +1,4 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+﻿const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
 let gastosData = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -324,3 +324,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+

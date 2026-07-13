@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async () => {
+﻿document.addEventListener('DOMContentLoaded', async () => {
     // UI Elements
     const displayUser = document.getElementById('display-user');
     const displayRole = document.getElementById('display-role');
@@ -315,3 +315,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize
     checkSession();
 });
+
+

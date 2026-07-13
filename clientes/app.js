@@ -1,4 +1,4 @@
-// supabase is already globally available from js/supabase.js
+﻿// supabase is already globally available from js/supabase.js
 
 // State
 let activeUser = null;
@@ -525,3 +525,5 @@ function showToast(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
+
+

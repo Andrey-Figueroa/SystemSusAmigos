@@ -1,4 +1,4 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+﻿const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
 
 // Global Variables
 let activeUser = null;
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     activeUserRole = localStorage.getItem('activeUserRole');
     
     if (!activeUser) {
-        window.location.href = '../index.html';
+        window.location.href = '../login/index.html';
         return;
     }
     
@@ -1253,3 +1253,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+

@@ -1,4 +1,4 @@
-// Global Variables
+﻿// Global Variables
 let activeUser = null;
 let activeUserRole = null;
 let todaySales = [];
@@ -468,3 +468,5 @@ function showToast(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 400);
     }, 4000);
 }
+
+

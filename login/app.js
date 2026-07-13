@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NeuraLoom Auto - Login Application Logic with Supabase
  */
 
@@ -241,3 +241,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+

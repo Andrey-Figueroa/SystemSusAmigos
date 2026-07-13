@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════════
 //  CUENTAS POR COBRAR — app.js  (Supabase conectado)
 //  Flujo 1 : Cuenta Manual   → wizard de 3 pasos
 //  Flujo 2 : Automático      → insertado desde local_comercial / domicilio
@@ -770,3 +770,5 @@ window.CxC = {
         }
     },
 };
+
+

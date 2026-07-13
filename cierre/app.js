@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+﻿document.addEventListener('DOMContentLoaded', () => {
     // 1. Authentication Check
     const activeUser = localStorage.getItem('activeUser');
     const activeUserRole = localStorage.getItem('activeUserRole');
@@ -201,3 +201,5 @@ function showToast(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+

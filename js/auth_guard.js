@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
     const activeUser = localStorage.getItem('activeUser');
     const activeUserRole = localStorage.getItem('activeUserRole');
     
@@ -31,3 +31,5 @@
         }
     }
 })();
+
+
