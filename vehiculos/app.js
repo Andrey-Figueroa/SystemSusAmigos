@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // ROLE BASED UI
 // ==========================================
 (function() {
@@ -78,10 +78,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         activeUserRole = activeUserRoleStr;
 
         // Security check: Block unauthorized access
-        if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
+        const allowedRoles = ['Administrador', 'Dueño', 'Dueno', 'Soporte TI / Programador', 'Soporte TI', 'Mecanico', 'Mecánico'];
+        if (!allowedRoles.includes(activeUserRole)) {
             alert('Acceso Denegado por rol.');
             window.location.href = '../dashboard/index.html';
             return;
+        }
+
+        // Mecánicos: ocultar botones de agregar, eliminar y desvincular
+        const isMechanic = activeUserRole === 'Mecanico' || activeUserRole === 'Mecánico';
+        if (isMechanic) {
+            if (btnAddVehicle) btnAddVehicle.style.display = 'none';
         }
 
         // 2. Populate Selects
