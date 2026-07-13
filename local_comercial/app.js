@@ -1,4 +1,4 @@
-﻿const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
 
 let activeUser = null;
 let activeUserRole = null;
@@ -89,6 +89,8 @@ async function cargarOrdenParaEdicion(id) {
             .single();
             
         if (error || !orden) throw error;
+        
+        window.originalOrderDataForAlert = orden;
         
         let clienteData = {};
         if (orden.cliente_id) {
@@ -764,7 +766,6 @@ function setupStep10() {
         btn.disabled = true;
 
         try {
-            // 1. Guardar en Supabase tabla `ordenes`
             const orderPayload = {
                 cliente_id: currentClientId,
                 vehiculo_id: currentVehicleId,
@@ -793,8 +794,34 @@ function setupStep10() {
                 extra_alfombras: ordenData.extra_alfombras
             };
 
+            if (isEditingOrdenId) {
+                orderPayload.metodo_pago = 'Pendiente';
+                orderPayload.monto_efectivo = 0;
+                orderPayload.monto_tarjeta = 0;
+                orderPayload.monto_sinpe = 0;
+                orderPayload.monto_cxc = 0;
+                orderPayload.monto_transferencia = 0;
+                orderPayload.monto_regalia = 0;
+                orderPayload.hora_pago = null;
+                orderPayload.responsable_cobro = null;
+            }
+
             let nuevaOrden;
             if (isEditingOrdenId) {
+                if (GOOGLE_SHEETS_WEBHOOK_URL.trim() !== "" && window.originalOrderDataForAlert) {
+                    const alertPayload = {
+                        action: 'edit_alert',
+                        modulo: 'Local Comercial',
+                        usuario: activeUser,
+                        detalle: JSON.stringify(window.originalOrderDataForAlert, null, 2)
+                    };
+                    fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(alertPayload)
+                    }).catch(e => console.error(e));
+                }
                 const { data, error } = await window.supabase
                     .from('ordenes')
                     .update(orderPayload)

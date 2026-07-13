@@ -666,6 +666,20 @@ function setupStep8() {
 
             let nuevaOrden;
             if (isEditingOrdenId) {
+                if (GOOGLE_SHEETS_WEBHOOK_URL.trim() !== "" && window.originalOrderDataForAlert) {
+                    const alertPayload = {
+                        action: 'edit_alert',
+                        modulo: 'Servicios a Domicilio',
+                        usuario: activeUser,
+                        detalle: JSON.stringify(window.originalOrderDataForAlert, null, 2)
+                    };
+                    fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(alertPayload)
+                    }).catch(e => console.error(e));
+                }
                 const { data, error } = await window.supabase
                     .from('ordenes_domicilio')
                     .update(orderPayload)
@@ -803,19 +817,13 @@ async function loadTodayDomicilios() {
                 payBtnHtml = `<button class="btn-pay" title="Pagado" disabled style="opacity:0.5; cursor:not-allowed;"><i class="fa-solid fa-check"></i></button>`;
             }
 
-            let editBtnHtml = '';
+            let editBtnHtml = `<button class="btn-edit" title="Editar Domicilio" onclick="modificarDomicilio('${ord.id}')"><i class="fa-solid fa-pencil"></i></button>`;
             let deleteBtnHtml = '';
             
             const activeUserRole = localStorage.getItem('activeUserRole');
 
-            if (isPagado) {
-                editBtnHtml = `<button class="btn-edit" title="Bloqueado" disabled style="opacity:0.5; cursor:not-allowed;"><i class="fa-solid fa-pencil"></i></button>`;
-                deleteBtnHtml = `<button class="btn-delete" title="Bloqueado" disabled style="opacity:0.5; cursor:not-allowed;"><i class="fa-solid fa-trash-can"></i></button>`;
-            } else {
-                editBtnHtml = `<button class="btn-edit" title="Editar Domicilio" onclick="modificarDomicilio('${ord.id}')"><i class="fa-solid fa-pencil"></i></button>`;
-                if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
-                    deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="deleteDomicilio('${ord.id}')"><i class="fa-solid fa-trash-can"></i></button>`;
-                }
+            if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
+                deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="deleteDomicilio('${ord.id}')"><i class="fa-solid fa-trash-can"></i></button>`;
             }
 
             const card = document.createElement('div');
@@ -1044,6 +1052,7 @@ window.modificarDomicilio = function(id) {
         return;
     }
 
+    window.originalOrderDataForAlert = ordenToEdit;
     isEditingOrdenId = id;
     
     // Restaurar estado global

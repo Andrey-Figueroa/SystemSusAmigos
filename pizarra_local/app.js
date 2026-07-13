@@ -118,19 +118,13 @@ function renderPizarra() {
             payBtnHtml = `<button class="btn-pay" title="Pagado" disabled><i class="fa-solid fa-check"></i></button>`;
         }
 
-        let editBtnHtml = '';
+        let editBtnHtml = `<button class="btn-edit" title="Añadir / Editar Servicios" onclick="window.location.href='../local_comercial/index.html?editar_orden=${orden.id}'"><i class="fa-solid fa-pencil"></i></button>`;
         let deleteBtnHtml = '';
         
         const activeUserRole = localStorage.getItem('activeUserRole');
 
-        if (isPagado || orden.estado === 'Retirado' || orden.estado === 'Terminado') {
-            editBtnHtml = `<button class="btn-edit" title="Bloqueado" disabled style="opacity:0.5; cursor:not-allowed;"><i class="fa-solid fa-pencil"></i></button>`;
-            deleteBtnHtml = `<button class="btn-delete" title="Bloqueado" disabled style="opacity:0.5; cursor:not-allowed;"><i class="fa-solid fa-trash-can"></i></button>`;
-        } else {
-            editBtnHtml = `<button class="btn-edit" title="Añadir / Editar Servicios" onclick="window.location.href='../local_comercial/index.html?editar_orden=${orden.id}'"><i class="fa-solid fa-pencil"></i></button>`;
-            if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
-                deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="eliminarOrden(${orden.id})"><i class="fa-solid fa-trash-can"></i></button>`;
-            }
+        if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
+            deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="eliminarOrden(${orden.id})"><i class="fa-solid fa-trash-can"></i></button>`;
         }
 
         card.innerHTML = `
