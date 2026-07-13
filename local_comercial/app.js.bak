@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const editId = urlParams.get('editar_orden');
 
     setupStep1();
-    setupStep8();
     setupStep2();
     setupStep3();
     setupStep4();
@@ -73,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupStep6();
     setupStep7();
     setupStep8();
+    setupStep9();
     setupStep10();
     
     if (editId) {
@@ -127,7 +127,7 @@ async function cargarOrdenParaEdicion(id) {
         ordenData.extras_finales = orden.extras_finales || [];
         
         // Jump to Step 3 (Servicios Maestros) because they need to re-select what to do
-        goToStep(2);
+        goToStep(3);
         
     } catch (err) {
         console.error('Error cargando orden:', err);
@@ -139,13 +139,13 @@ async function cargarOrdenParaEdicion(id) {
 // NAVIGATION LOGIC
 // ==========================================
 window.getPreviousStep = function(currentStep) {
-    if (currentStep === 5) return 2; // De Especiales regresa a Servicios
-    if (currentStep === 6) return 2; // De Mecanica Categorias regresa a Servicios
-    if (currentStep === 7) return 6; // De Mecanica Detalles regresa a Categorias
-    if (currentStep === 8) return 2; // El regreso para extras varía, por defecto a Servicios
+    if (currentStep === 6) return 3; // De Especiales regresa a Servicios
+    if (currentStep === 7) return 3; // De Mecanica Categorias regresa a Servicios
+    if (currentStep === 8) return 7; // De Mecanica Detalles regresa a Categorias
+    if (currentStep === 9) return 3; // El regreso exacto para el 9 puede variar, pero por defecto a 3. En UI mejor usar botones fijos donde tenga sentido.
     
-    if (isEditingOrdenId && currentStep === 2) return 2; // No volver a Cliente si edita
-    if (isEditingOrdenId && currentStep === 10) return 10; // Evitar retrocesos extraños al editar si aplica
+    // Si estamos editando y tratar de volver al paso 2 desde el 3
+    if (isEditingOrdenId && currentStep === 3) return 3; 
     
     return currentStep - 1;
 }
@@ -160,9 +160,9 @@ window.goToStep = function(stepNum) {
 
     // Update the single progress indicator
     const stepNames = {
-        1: "Cliente", 2: "Servicios", 3: "Detallado", 4: "Interior", 
-        5: "Especiales", 6: "Mecánica", 7: "Detalles Mecánicos", 8: "Extras Finales", 
-        9: "Vehículo", 10: "Cobro"
+        1: "Cliente", 2: "Vehículo", 3: "Servicios", 4: "Detallado", 
+        5: "Interior", 6: "Especiales", 7: "Mecánica", 8: "Detalles Mecánicos", 
+        9: "Extras Finales", 10: "Cobro"
     };
     const circle = document.getElementById('current-step-num');
     const label = document.getElementById('current-step-name');
@@ -174,39 +174,19 @@ window.goToStep = function(stepNum) {
     document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
     document.getElementById(`step-${stepNum}`).classList.add('active');
 
-    if (stepNum === 9) {
+    if (stepNum === 2) {
         document.getElementById('current-client-display').textContent = currentClientName;
         document.getElementById('current-espera-display').textContent = currentEspera;
         loadClientVehicles();
     }
     
-    if (stepNum === 2) {
-        window.updateServicesByTipo = function() {
-            const select = document.getElementById('veh-tipo-temp');
-            const masterList = document.getElementById('services-master-list');
-            if (select.value) {
-                masterList.style.display = 'flex';
-                const isMoto = (select.value === 'MOTO');
-                document.getElementById('card-mecanica').style.display = isMoto ? 'none' : 'flex';
-                document.getElementById('card-pendientes').style.display = isMoto ? 'none' : 'flex';
-                if (isMoto) {
-                    const cbMec = document.querySelector('input[value="Mecanica"]');
-                    if(cbMec) cbMec.checked = false;
-                    const cbPend = document.querySelector('input[value="Entrada pero servicios pendientes"]');
-                    if(cbPend) cbPend.checked = false;
-                }
-            } else {
-                masterList.style.display = 'none';
-            }
-        };
-        if(!document.getElementById('veh-tipo-temp').value) {
-            document.getElementById('services-master-list').style.display = 'none';
-        } else {
-            window.updateServicesByTipo();
-        }
+    if (stepNum === 3) {
+        // Lógica: Si es MOTO ocultar mecánica y pendientes
+        document.getElementById('card-mecanica').style.display = isMoto ? 'none' : 'flex';
+        document.getElementById('card-pendientes').style.display = isMoto ? 'none' : 'flex';
     }
 
-    if (stepNum === 4) {
+    if (stepNum === 5) {
         // Bloqueo condicional si eligió Clásico
         const isClasico = (ordenData.detallado_tipo === 'Detallado clasico');
         const cardMate = document.getElementById('card-mate');
@@ -227,18 +207,18 @@ window.goToStep = function(stepNum) {
         }
     }
 
-    if (stepNum === 5) {
+    if (stepNum === 6) {
         // Ocultar opciones de no-moto
         document.querySelectorAll('.auto-only').forEach(el => {
             el.style.display = isMoto ? 'none' : 'flex';
         });
     }
 
-    if (stepNum === 7) {
+    if (stepNum === 8) {
         renderMecanicaDetalles();
     }
 
-    if (stepNum === 8) {
+    if (stepNum === 9) {
         // Ocultar protector interior si es moto
         document.querySelectorAll('.auto-only').forEach(el => {
             el.style.display = isMoto ? 'none' : 'flex';
@@ -253,19 +233,19 @@ window.goToStep = function(stepNum) {
 // Funciones de ruteo del árbol (Lógica de saltos)
 function proceedFromDetalladoLavadoExtras() {
     if (ordenData.servicios_maestros.includes('Detallados especiales')) {
-        goToStep(4);
-    } else if (ordenData.servicios_maestros.includes('Mecanica')) {
         goToStep(6);
+    } else if (ordenData.servicios_maestros.includes('Mecanica')) {
+        goToStep(7);
     } else {
-        goToStep(7); // Siempre a extras finales si eligió Detallado
+        goToStep(9); // Siempre a extras finales si eligió Detallado
     }
 }
 
 function proceedFromDetalladosEspeciales() {
     if (ordenData.servicios_maestros.includes('Mecanica')) {
-        goToStep(6);
+        goToStep(7);
     } else {
-        goToStep(7); // Siempre a extras finales si eligió Detallados Especiales
+        goToStep(9); // Siempre a extras finales si eligió Detallados Especiales
     }
 }
 
@@ -275,7 +255,7 @@ function proceedFromMecanicaCategorias() {
     const hasSpecific = ordenData.mecanica_categorias.some(c => MECANICA_OPTIONS[c]);
     
     if (hasSpecific) {
-        goToStep(7);
+        goToStep(8);
     } else {
         proceedFromMecanicaDetalles();
     }
@@ -367,7 +347,7 @@ function setupStep1() {
     });
 }
 
-function setupStep8() {
+function setupStep2() {
     const btnShowNew = document.getElementById('btn-show-new-vehicle');
     const formContainer = document.getElementById('new-vehicle-form-container');
     const newVehicleForm = document.getElementById('form-new-vehicle');
@@ -412,7 +392,7 @@ function setupStep8() {
             currentVehicleTipo = tipo;
             currentVehicleModel = document.getElementById('veh-modelo').value;
             currentVehicleMarca = document.getElementById('veh-marca').value;
-            goToStep(2);
+            goToStep(3);
         } catch (err) {
             console.error(err);
             showToast('Error', err.message || 'Error guardando el vehículo.', 'error');
@@ -513,7 +493,7 @@ window.vincularVehiculoGlobal = async function(vid, placa, tipo, modelo, marca) 
         currentVehicleTipo = tipo;
         currentVehicleModel = modelo;
         currentVehicleMarca = marca;
-        goToStep(2);
+        goToStep(3);
     } catch (err) {
         console.error(err);
         showToast('Error', 'No se pudo vincular el vehículo', 'error');
@@ -544,7 +524,7 @@ async function loadClientVehicles() {
                 currentVehicleTipo = v.tipo || 'OTRO';
                 currentVehicleModel = v.modelo || 'Vehículo';
                 currentVehicleMarca = v.marca || '';
-                goToStep(2);
+                goToStep(3);
             });
             grid.appendChild(card);
         });
@@ -554,23 +534,11 @@ async function loadClientVehicles() {
 // ==========================================
 // STEP 3: SERVICIOS MAESTROS
 // ==========================================
-function setupStep2() {
-    window.processStep2 = function() {
-        const tipoSel = document.getElementById('veh-tipo-temp').value;
-        const err = document.getElementById('error-step2');
-        if (!tipoSel) {
-            err.textContent = "Seleccione el tipo de vehículo.";
-            err.style.display = 'block';
-            return;
-        }
-        currentVehicleTipo = tipoSel;
-        
+function setupStep3() {
+    window.processStep3 = function() {
         const checkboxes = document.querySelectorAll('.service-checkbox:checked');
-        if (checkboxes.length === 0) { 
-            err.textContent = "Selecciona al menos un servicio.";
-            err.style.display = 'block'; 
-            return; 
-        }
+        const err = document.getElementById('error-step3');
+        if (checkboxes.length === 0) { err.style.display = 'block'; return; }
         err.style.display = 'none';
         
         ordenData.servicios_maestros = Array.from(checkboxes).map(c => c.value);
@@ -578,11 +546,11 @@ function setupStep2() {
         if (ordenData.servicios_maestros.includes('Entrada pero servicios pendientes')) {
             goToStep(10); // Cobro directo
         } else if (ordenData.servicios_maestros.includes('Detallado y lavado')) {
-            goToStep(3);
-        } else if (ordenData.servicios_maestros.includes('Detallados especiales')) {
             goToStep(4);
-        } else if (ordenData.servicios_maestros.includes('Mecanica')) {
+        } else if (ordenData.servicios_maestros.includes('Detallados especiales')) {
             goToStep(6);
+        } else if (ordenData.servicios_maestros.includes('Mecanica')) {
+            goToStep(7);
         }
     }
 }
@@ -590,10 +558,10 @@ function setupStep2() {
 // ==========================================
 // STEP 4 & 5: DETALLADO
 // ==========================================
-function setupStep3() {
-    window.processStep3 = function() {
+function setupStep4() {
+    window.processStep4 = function() {
         const selected = document.querySelector('input[name="detallado_tipo"]:checked');
-        const err = document.getElementById('error-step3');
+        const err = document.getElementById('error-step4');
         if (!selected) { err.style.display = 'block'; return; }
         
         if (selected.value === 'Promocion') {
@@ -607,17 +575,17 @@ function setupStep3() {
             // Motos no tienen extras de interior
             proceedFromDetalladoLavadoExtras();
         } else {
-            goToStep(4);
+            goToStep(5);
         }
     }
 }
 
-function setupStep4() {
-    window.processStep4 = function() {
+function setupStep5() {
+    window.processStep5 = function() {
         const interior = document.querySelector('input[name="extra_interior"]:checked');
         const aroma = document.querySelector('input[name="extra_aroma"]:checked');
         const alfombras = document.querySelector('input[name="extra_alfombras"]:checked');
-        const err = document.getElementById('error-step4');
+        const err = document.getElementById('error-step5');
         
         if (!interior || !aroma || !alfombras) { err.style.display = 'block'; return; }
         err.style.display = 'none';
@@ -633,10 +601,10 @@ function setupStep4() {
 // ==========================================
 // STEP 6: ESPECIALES
 // ==========================================
-function setupStep5() {
-    window.processStep5 = function() {
+function setupStep6() {
+    window.processStep6 = function() {
         const checkboxes = document.querySelectorAll('.especial-cb:checked');
-        const err = document.getElementById('error-step5');
+        const err = document.getElementById('error-step6');
         if (checkboxes.length === 0) { err.style.display = 'block'; return; }
         err.style.display = 'none';
         
@@ -648,10 +616,10 @@ function setupStep5() {
 // ==========================================
 // STEP 7: MECANICA CATEGORIAS
 // ==========================================
-function setupStep6() {
-    window.processStep6 = function() {
+function setupStep7() {
+    window.processStep7 = function() {
         const checkboxes = document.querySelectorAll('.mecanica-cat-cb:checked');
-        const err = document.getElementById('error-step6');
+        const err = document.getElementById('error-step7');
         if (checkboxes.length === 0) { err.style.display = 'block'; return; }
         
         let cats = [];
@@ -711,8 +679,8 @@ function renderMecanicaDetalles() {
     });
 }
 
-function setupStep7() {
-    window.processStep7 = function() {
+function setupStep8() {
+    window.processStep8 = function() {
         let isValid = true;
         ordenData.mecanica_detalles = {};
         const catsRendered = Array.from(new Set(Array.from(document.querySelectorAll('.mec-det-cb')).map(cb => cb.dataset.cat)));
@@ -734,7 +702,7 @@ function setupStep7() {
             ordenData.mecanica_detalles[cat] = arr;
         });
 
-        const err = document.getElementById('error-step7');
+        const err = document.getElementById('error-step8');
         if (!isValid) { err.style.display = 'block'; return; }
         err.style.display = 'none';
 
@@ -753,7 +721,7 @@ window.toggleNingunoExtra = function(checkbox) {
     }
 }
 
-function setupStep8() {
+function setupStep9() {
     document.querySelectorAll('.extra-final-cb').forEach(cb => {
         cb.addEventListener('change', (e) => {
             if(e.target.id !== 'extra-ninguno' && e.target.checked) {
@@ -762,9 +730,9 @@ function setupStep8() {
         });
     });
 
-    window.processStep8 = function() {
+    window.processStep9 = function() {
         const checked = document.querySelectorAll('.extra-final-cb:checked');
-        const err = document.getElementById('error-step8');
+        const err = document.getElementById('error-step9');
         if(checked.length === 0) { err.style.display = 'block'; return; }
         err.style.display = 'none';
 
