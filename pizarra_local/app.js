@@ -31,27 +31,21 @@ function getVehicleIcon(tipo) {
 
 async function loadOrdenes() {
     try {
-        // Obtener la fecha local (ignorando UTC para el inicio del día)
-        const tzDate = new Date();
-        tzDate.setMinutes(tzDate.getMinutes() - tzDate.getTimezoneOffset());
-        const hoyStr = tzDate.toISOString().split('T')[0];
-        
-        // Supabase guarda en UTC, así que le pedimos desde la medianoche de la zona horaria actual (aprox -06:00).
-        // Si el usuario no está en -06:00, usamos el offset local.
-        const offsetHours = -tzDate.getTimezoneOffset() / 60;
-        const offsetSign = offsetHours >= 0 ? '+' : '-';
-        const offsetStr = offsetSign + String(Math.abs(offsetHours)).padStart(2, '0') + ':00';
-        
-        const startOfDay = `${hoyStr}T00:00:00${offsetStr}`;
+        // Calcular inicio del día en hora local de Costa Rica (-06:00)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const startOfDay = `${year}-${month}-${day}T00:00:00-06:00`;
 
         const { data: ordenes, error: errOrdenes } = await window.supabase
             .from('ordenes')
             .select('*')
-            .gte('created_at', startOfDay) // Traer SOLO las de hoy
+            .gte('created_at', startOfDay)
             .order('id', { ascending: true });
 
         if (errOrdenes) throw errOrdenes;
-        
+
         const clienteIds = [...new Set(ordenes.map(o => o.cliente_id).filter(Boolean))];
         let clientesMap = {};
         
