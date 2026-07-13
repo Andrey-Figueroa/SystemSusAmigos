@@ -75,8 +75,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (activeUserRole === 'Mecanico' || activeUserRole === 'Mecánico') {
             const allCards = document.querySelectorAll('.module-card');
             allCards.forEach(card => {
-                if (card.id !== 'card-taller' && card.id !== 'card-VEHÍCULOS') {
-                    card.style.display = 'none';
+                if (card.id !== 'card-taller' && card.id !== 'card-vehiculos' && card.id !== 'card-VEHÍCULOS') {
+                    card.classList.add('disabled-card');
+                    card.style.opacity = '0.4';
+                    card.setAttribute('href', '#');
+                    card.addEventListener('click', (e) => {
+                        e.preventDefault();
+                    });
                 }
             });
             const summarySection = document.querySelector('.daily-summary-section');
@@ -436,6 +441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadDashboardMetrics();
     }
 });
+
 
 
 
