@@ -253,11 +253,11 @@ window.goToStep = function(stepNum) {
 // Funciones de ruteo del árbol (Lógica de saltos)
 function proceedFromDetalladoLavadoExtras() {
     if (ordenData.servicios_maestros.includes('Detallados especiales')) {
-        goToStep(4);
+        goToStep(5);
     } else if (ordenData.servicios_maestros.includes('Mecanica')) {
         goToStep(6);
     } else {
-        goToStep(7); // Siempre a extras finales si eligió Detallado
+        goToStep(8); // Siempre a extras finales si eligió Detallado
     }
 }
 
@@ -265,7 +265,7 @@ function proceedFromDetalladosEspeciales() {
     if (ordenData.servicios_maestros.includes('Mecanica')) {
         goToStep(6);
     } else {
-        goToStep(7); // Siempre a extras finales si eligió Detallados Especiales
+        goToStep(8); // Siempre a extras finales si eligió Detallados Especiales
     }
 }
 
@@ -386,7 +386,8 @@ function setupStep8() {
     newVehicleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const placa = document.getElementById('veh-placa').value.trim().toUpperCase();
-        const tipo = document.getElementById('veh-tipo').value;
+        // El tipo ya viene asignado del step 2 al HTML (veh-tipo)
+        const tipo = document.getElementById('veh-tipo').value || currentVehicleTipo || 'OTRO';
         const btn = document.getElementById('btn-save-vehicle');
         btn.disabled = true;
         try {
@@ -397,7 +398,7 @@ function setupStep8() {
                 if (vehError.code === '23505') {
                     throw new Error('Ya existe un vehículo registrado con esta placa. Usa el buscador de arriba para asignarlo.');
                 }
-                throw error;
+                throw vehError; // FIX: changed from error to vehError
             }
             
             let vid = vehData ? vehData[0].id : null;
