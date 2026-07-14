@@ -224,9 +224,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data: ventas, error: errVentas } = await window.supabase.from('ventas_productos_diarias').select('*').gte('created_at', startOfDay);
             const { data: domicilio, error: errDomicilio } = await window.supabase.from('ordenes_domicilio').select('*').gte('created_at', startOfDay);
             const { data: gastos, error: errGastos } = await window.supabase.from('gastos').select('*').gte('created_at', startOfDay);
+            const { data: abonos, error: errAbonos } = await window.supabase.from('cxc_abonos').select('*').gte('fecha', startOfDay);
             
-            if (errOrdenes || errVentas || errDomicilio || errGastos) {
-                console.error("Error fetching metrics", { errOrdenes, errVentas, errDomicilio, errGastos });
+            if (errOrdenes || errVentas || errDomicilio || errGastos || errAbonos) {
+                console.error("Error fetching metrics", { errOrdenes, errVentas, errDomicilio, errGastos, errAbonos });
                 return;
             }
 
@@ -235,6 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lubricentro: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
                 productos: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
                 domicilio: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
+                abonos: { efectivo: 0, tarjeta: 0, sinpe: 0, transferencia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_transferencia: 0 },
                 global: { detallado: 0, mecanica: 0, productos: 0, domicilio: 0, c_detallado: 0, c_mecanica: 0, c_productos: 0, c_domicilio: 0 },
                 vehiculos: { proceso: 0, terminado: 0, retirado: 0 },
                 gastos_efectivo: 0,
@@ -360,7 +362,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            // 4. Procesar Gastos en Efectivo
+            // Procesar Abonos de hoy
+            abonos.forEach(a => {
+                const monto = parseFloat(a.monto_abono) || 0;
+                if (monto > 0) {
+                    const m = (a.metodo_pago || '').toLowerCase();
+                    if (m.includes('efectivo')) { metrics.abonos.efectivo += monto; metrics.abonos.c_efectivo++; }
+                    else if (m.includes('tarjeta')) { metrics.abonos.tarjeta += monto; metrics.abonos.c_tarjeta++; }
+                    else if (m.includes('sinpe')) { metrics.abonos.sinpe += monto; metrics.abonos.c_sinpe++; }
+                    else if (m.includes('transferencia')) { metrics.abonos.transferencia += monto; metrics.abonos.c_transferencia++; }
+                }
+            });
+
+            // Procesar gastos de hoy
             gastos.forEach(g => {
                 const total = parseFloat(g.monto) || 0;
                 // Todos los gastos salen de caja (efectivo)
@@ -411,8 +425,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('dom-transferencia-cant').innerText = metrics.domicilio.c_transferencia;
             document.getElementById('dom-regalia-monto').innerText = formatMoney(metrics.domicilio.regalia);
             document.getElementById('dom-regalia-cant').innerText = metrics.domicilio.c_regalia;
+            
+            // Abonos
+            document.getElementById('abono-efectivo-monto').innerText = formatMoney(metrics.abonos.efectivo);
+            document.getElementById('abono-efectivo-cant').innerText = metrics.abonos.c_efectivo;
+            document.getElementById('abono-tarjeta-monto').innerText = formatMoney(metrics.abonos.tarjeta);
+            document.getElementById('abono-tarjeta-cant').innerText = metrics.abonos.c_tarjeta;
+            document.getElementById('abono-sinpe-monto').innerText = formatMoney(metrics.abonos.sinpe);
+            document.getElementById('abono-sinpe-cant').innerText = metrics.abonos.c_sinpe;
+            document.getElementById('abono-transferencia-monto').innerText = formatMoney(metrics.abonos.transferencia);
+            document.getElementById('abono-transferencia-cant').innerText = metrics.abonos.c_transferencia;
 
-            // Set Global
+            // Global Totals
             document.getElementById('glob-detallado-monto').innerText = formatMoney(metrics.global.detallado);
             document.getElementById('glob-detallado-cant').innerText = metrics.global.c_detallado;
             document.getElementById('glob-mecanica-monto').innerText = formatMoney(metrics.global.mecanica);
@@ -428,18 +452,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('glob-total-cant').innerText = globCant;
 
             // Ventas Totales Sus Amigos
-            const totEfectivo = metrics.lubricentro.efectivo + metrics.productos.efectivo + metrics.domicilio.efectivo;
-            const totTarjeta = metrics.lubricentro.tarjeta + metrics.productos.tarjeta + metrics.domicilio.tarjeta;
-            const totSinpe = metrics.lubricentro.sinpe + metrics.productos.sinpe + metrics.domicilio.sinpe;
+            const totEfectivo = metrics.lubricentro.efectivo + metrics.productos.efectivo + metrics.domicilio.efectivo + metrics.abonos.efectivo;
+            const totTarjeta = metrics.lubricentro.tarjeta + metrics.productos.tarjeta + metrics.domicilio.tarjeta + metrics.abonos.tarjeta;
+            const totSinpe = metrics.lubricentro.sinpe + metrics.productos.sinpe + metrics.domicilio.sinpe + metrics.abonos.sinpe;
             const totCxc = metrics.lubricentro.cxc + metrics.productos.cxc + metrics.domicilio.cxc;
-            const totTransferencia = metrics.lubricentro.transferencia + metrics.productos.transferencia + metrics.domicilio.transferencia;
+            const totTransferencia = metrics.lubricentro.transferencia + metrics.productos.transferencia + metrics.domicilio.transferencia + metrics.abonos.transferencia;
             const totRegalia = metrics.lubricentro.regalia + metrics.productos.regalia + metrics.domicilio.regalia;
             
-            const cantEfectivo = metrics.lubricentro.c_efectivo + metrics.productos.c_efectivo + metrics.domicilio.c_efectivo;
-            const cantTarjeta = metrics.lubricentro.c_tarjeta + metrics.productos.c_tarjeta + metrics.domicilio.c_tarjeta;
-            const cantSinpe = metrics.lubricentro.c_sinpe + metrics.productos.c_sinpe + metrics.domicilio.c_sinpe;
+            const cantEfectivo = metrics.lubricentro.c_efectivo + metrics.productos.c_efectivo + metrics.domicilio.c_efectivo + metrics.abonos.c_efectivo;
+            const cantTarjeta = metrics.lubricentro.c_tarjeta + metrics.productos.c_tarjeta + metrics.domicilio.c_tarjeta + metrics.abonos.c_tarjeta;
+            const cantSinpe = metrics.lubricentro.c_sinpe + metrics.productos.c_sinpe + metrics.domicilio.c_sinpe + metrics.abonos.c_sinpe;
             const cantCxc = metrics.lubricentro.c_cxc + metrics.productos.c_cxc + metrics.domicilio.c_cxc;
-            const cantTransferencia = metrics.lubricentro.c_transferencia + metrics.productos.c_transferencia + metrics.domicilio.c_transferencia;
+            const cantTransferencia = metrics.lubricentro.c_transferencia + metrics.productos.c_transferencia + metrics.domicilio.c_transferencia + metrics.abonos.c_transferencia;
             const cantRegalia = metrics.lubricentro.c_regalia + metrics.productos.c_regalia + metrics.domicilio.c_regalia;
 
             document.getElementById('tot-efectivo-monto').innerText = formatMoney(totEfectivo);

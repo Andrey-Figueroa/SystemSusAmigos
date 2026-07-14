@@ -295,7 +295,9 @@ async function submitAbono(e) {
                     monto_efectivo: isEfectivo ? monto : 0,
                     monto_tarjeta: isTarjeta ? monto : 0,
                     monto_sinpe: isSinpe ? monto : 0,
-                    monto_transferencia: isTransferencia ? monto : 0,
+                    monto_cxc: 0,
+                    monto_transf: isTransferencia ? monto : 0,
+                    monto_regalia: 0,
                     responsable: activeUser,
                     hora_pago: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
                 };

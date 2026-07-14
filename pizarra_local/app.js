@@ -372,7 +372,7 @@ function setupPagoModal() {
             return;
         }
         
-        const metodoFinal = metodosSeleccionados.length > 1 ? "Mixto" : metodosSeleccionados[0];
+        const metodoFinal = metodosSeleccionados.join(', ');
         
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
