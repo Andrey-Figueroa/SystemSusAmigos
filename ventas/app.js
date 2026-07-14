@@ -161,7 +161,12 @@ function setupEventListeners() {
             if (GOOGLE_SHEETS_WEBHOOK_URL.trim() !== "") {
                 try {
                     // Agregamos el ID generado para futuras eliminaciones
-                    const payload = { ...saleData, id: insertedSale.id };
+                    const payload = { 
+                        ...saleData, 
+                        id: insertedSale.id, 
+                        tipo_hoja: "VENTA_PRODUCTOS",
+                        created_at: new Date(insertedSale.created_at).toLocaleString() 
+                    };
                     fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
                         method: 'POST',
                         mode: 'no-cors', // Evita problemas de CORS con Google Scripts

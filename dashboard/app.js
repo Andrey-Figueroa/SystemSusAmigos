@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 2. Procesar Productos
             ventas.forEach(v => {
-                const total = parseFloat(v.total) || parseFloat(v.total_monto) || 0;
+                const total = parseFloat(v.precio_total) || parseFloat(v.total) || parseFloat(v.total_monto) || 0;
                 if (total > 0) {
                     const keys = ['efectivo', 'tarjeta', 'sinpe', 'cxc', 'transferencia', 'regalia'];
                     let hasPayment = false;
@@ -470,13 +470,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const ticketPromedio = metrics.total_tickets > 0 ? (metrics.total_ingresos / metrics.total_tickets) : 0;
             document.getElementById('kpi-ticket').innerText = formatMoney(ticketPromedio);
             document.getElementById('kpi-gastos').innerText = formatMoney(metrics.gastos_efectivo);
-            document.getElementById('kpi-cierre-efectivo').innerText = formatMoney(totEfectivo);
-
             // Dinero en Caja Logic
             function updateCaja() {
                 const cajaIncial = parseFloat(document.getElementById('input-caja-inicial').value) || 0;
                 const dineroEnCaja = cajaIncial + totEfectivo - metrics.gastos_efectivo;
                 document.getElementById('kpi-dinero-caja').innerText = formatMoney(dineroEnCaja);
+                
+                const cierreEfectivo = dineroEnCaja - 40000;
+                document.getElementById('kpi-cierre-efectivo').innerText = formatMoney(cierreEfectivo);
             }
             document.getElementById('input-caja-inicial').addEventListener('input', updateCaja);
             updateCaja(); // Initial run
@@ -489,6 +490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     btnAlert.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
                     
                     const webhookUrl = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
+                    const sheetsWebhookUrl = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
                     
                     fetch(webhookUrl, {
                         method: 'POST',
@@ -503,12 +505,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }).then(() => {
                         btnAlert.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
                         setTimeout(() => btnAlert.innerHTML = '<i class="fa-solid fa-paper-plane"></i>', 3000);
-                        alert('¡Alerta de cambio de caja enviada exitosamente!');
+                        alert('¡Caja actualizada en Dashboard y alerta enviada!');
                     }).catch(err => {
                         console.error("Error al enviar alerta", err);
                         btnAlert.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-                        alert('Error al enviar la alerta.');
+                        alert('Error al actualizar.');
                     });
+                    
+                    fetch(sheetsWebhookUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            action: "update_caja_dashboard",
+                            nuevo_monto: newValue
+                        })
+                    }).catch(()=>{});
                 });
             }
 

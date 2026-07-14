@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const editId = urlParams.get('editar_orden');
 
     setupStep1();
-    setupStep8();
+    setupStep9();
     setupStep2();
     setupStep3();
     setupStep4();
@@ -367,7 +367,7 @@ function setupStep1() {
     });
 }
 
-function setupStep8() {
+function setupStep9() {
     const btnShowNew = document.getElementById('btn-show-new-vehicle');
     const formContainer = document.getElementById('new-vehicle-form-container');
     const newVehicleForm = document.getElementById('form-new-vehicle');
@@ -413,7 +413,7 @@ function setupStep8() {
             currentVehicleTipo = tipo;
             currentVehicleModel = document.getElementById('veh-modelo').value;
             currentVehicleMarca = document.getElementById('veh-marca').value;
-            goToStep(2);
+            goToStep(10);
         } catch (err) {
             console.error(err);
             showToast('Error', err.message || 'Error guardando el vehículo.', 'error');
@@ -514,7 +514,7 @@ window.vincularVehiculoGlobal = async function(vid, placa, tipo, modelo, marca) 
         currentVehicleTipo = tipo;
         currentVehicleModel = modelo;
         currentVehicleMarca = marca;
-        goToStep(2);
+        goToStep(10);
     } catch (err) {
         console.error(err);
         showToast('Error', 'No se pudo vincular el vehículo', 'error');
@@ -543,9 +543,9 @@ async function loadClientVehicles() {
                 currentVehicleId = v.id; 
                 currentVehiclePlaca = v.placa; 
                 currentVehicleTipo = v.tipo || 'OTRO';
-                currentVehicleModel = v.modelo || 'Vehículo';
+                currentVehicleModel = v.modelo || '';
                 currentVehicleMarca = v.marca || '';
-                goToStep(2);
+                goToStep(10);
             });
             grid.appendChild(card);
         });
@@ -577,11 +577,11 @@ function setupStep2() {
         ordenData.servicios_maestros = Array.from(checkboxes).map(c => c.value);
         
         if (ordenData.servicios_maestros.includes('Entrada pero servicios pendientes')) {
-            goToStep(10); // Cobro directo
+            goToStep(9); // Vehículo
         } else if (ordenData.servicios_maestros.includes('Detallado y lavado')) {
             goToStep(3);
         } else if (ordenData.servicios_maestros.includes('Detallados especiales')) {
-            goToStep(4);
+            goToStep(5);
         } else if (ordenData.servicios_maestros.includes('Mecanica')) {
             goToStep(6);
         }
@@ -770,7 +770,7 @@ function setupStep8() {
         err.style.display = 'none';
 
         ordenData.extras_finales = Array.from(checked).map(c => c.value);
-        goToStep(10);
+        goToStep(9);
     }
 }
 

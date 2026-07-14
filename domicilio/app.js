@@ -265,31 +265,204 @@ function setupStep1() {
 // STEP 2: TIPO DE VEHÍCULO
 // ==========================================
 function setupStep2() {
-    const formTipo = document.getElementById('form-domicilio-tipo');
+    const btnShowNew = document.getElementById('btn-show-new-vehicle');
+    const formContainer = document.getElementById('new-vehicle-form-container');
+    const newVehicleForm = document.getElementById('form-new-vehicle');
 
-    formTipo.addEventListener('submit', (e) => {
-        e.preventDefault();
+    if (btnShowNew) {
+        btnShowNew.addEventListener('click', () => {
+            formContainer.style.display = 'block';
+            btnShowNew.style.display = 'none';
+        });
+
+        document.getElementById('btn-cancel-new-vehicle').addEventListener('click', () => {
+            formContainer.style.display = 'none';
+            btnShowNew.style.display = 'flex';
+            newVehicleForm.reset();
+        });
+
+        newVehicleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const placa = document.getElementById('veh-placa').value.trim().toUpperCase();
+            const tipo = document.getElementById('veh-tipo-domicilio').value;
+            const btn = document.getElementById('btn-save-vehicle');
+            btn.disabled = true;
+            try {
+                const { data: vehData, error: vehError } = await window.supabase.from('vehiculos')
+                    .insert([{ placa, marca: document.getElementById('veh-marca').value, modelo: document.getElementById('veh-modelo').value, anio: document.getElementById('veh-año').value || null, tipo }]).select();
+                
+                if (vehError) {
+                    if (vehError.code === '23505') {
+                        throw new Error('Ya existe un vehículo registrado con esta placa. Usa el buscador de arriba para asignarlo.');
+                    }
+                    throw vehError;
+                }
+                
+                let vid = vehData ? vehData[0].id : null;
+                if(!vid) { throw new Error('No se pudo procesar la placa.'); }
+
+                // Vincular al cliente
+                const { error: linkErr } = await window.supabase.from('cliente_vehiculo').insert([{ cliente_id: currentClientId, vehiculo_placa: placa }]);
+                if (linkErr && linkErr.code !== '23505') throw linkErr;
+
+                currentVehicleId = vid; 
+                currentVehiclePlaca = placa; 
+                currentVehicleTipo = tipo;
+                currentVehicleModelo = document.getElementById('veh-modelo').value;
+                currentVehicleMarca = document.getElementById('veh-marca').value;
+                goToStep(3);
+            } catch (err) {
+                console.error(err);
+                showToast('Error', err.message || 'Error guardando el vehículo.', 'error');
+            } finally { btn.disabled = false; }
+        });
+
+        // Buscador Global de Vehículos
+        const searchInput = document.getElementById('global-vehicle-search');
+        const searchResults = document.getElementById('global-vehicle-results');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const q = e.target.value.trim().toUpperCase();
+            if (q.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const { data, error } = await window.supabase.from('vehiculos').select('*').ilike('placa', `%${q}%`).limit(5);
+                    if (error) throw error;
+                    if (data.length > 0) {
+                        searchResults.innerHTML = data.map(v => `
+                            <div style="padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="vincularVehiculoGlobal(${v.id}, '${v.placa}', '${v.tipo || 'OTRO'}', '${v.modelo || ''}', '${v.marca || ''}')">
+                                <strong style="color: var(--primary-accent);">${v.placa}</strong> - ${v.marca || ''} ${v.modelo || ''}
+                                <br><span style="font-size: 12px; color: var(--text-muted);"><i class="fa-solid fa-link"></i> Vincular a este cliente</span>
+                            </div>
+                        `).join('');
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.innerHTML = `<div style="padding: 12px; color: var(--text-muted);">No se encontraron placas con "${q}". Puedes crearlo abajo.</div>`;
+                        searchResults.style.display = 'block';
+                    }
+                } catch (err) { console.error(err); }
+            }, 300);
+        });
+
+        // Custom Dropdown para Marcas
+        const marcasLista = [
+            "TOYOTA", "LEXUS", "HONDA", "ACURA", "NISSAN", "INFINITI", "MAZDA", "SUBARU", "MITSUBISHI", "SUZUKI", "ISUZU",
+            "HYUNDAI", "KIA", "GENESIS", "SSANGYONG", "FORD", "CHEVROLET", "GMC", "CADILLAC", "BUICK", "JEEP", "DODGE", "RAM", "CHRYSLER", "TESLA",
+            "MERCEDES-BENZ", "BMW", "MINI", "AUDI", "VOLKSWAGEN", "PORSCHE", "OPEL", "FERRARI", "LAMBORGHINI", "MASERATI", "FIAT", "ALFA ROMEO", "ABARTH",
+            "RENAULT", "PEUGEOT", "CITROEN", "DS AUTOMOBILES", "LAND ROVER", "RANGE ROVER", "JAGUAR", "ASTON MARTIN", "BENTLEY", "ROLLS-ROYCE", "MCLAREN",
+            "VOLVO", "POLESTAR", "SEAT", "CUPRA", "SKODA", "DACIA",
+            "BYD", "CHERY", "GEELY", "JETOUR", "OMODA", "JAECOO", "JAC", "MG", "GAC", "AION", "HAVAL", "TANK", "ORA", "WEY", "CHANGAN", "DONGFENG", "BAIC", "FOTON", "MAXUS", "KAIYI", "FAW", "BESTUNE", "JMC", "SERES", "NIO", "XPENG", "ZEEKR", "LEAPMOTOR", "LI AUTO",
+            "TATA", "MAHINDRA", "VINFAST",
+            "YAMAHA", "KAWASAKI", "KTM", "FREEDOM", "FORMULA", "KATANA", "SERPENTO", "OTRA"
+        ];
         
-        const tipo = document.getElementById('veh-tipo-domicilio').value;
-        if (!tipo) {
-            showToast('Error', 'Selecciona el tipo de vehículo.', 'error');
-            return;
+        const marcaInput = document.getElementById('veh-marca');
+        const marcaList = document.getElementById('marca-autocomplete-list');
+
+        function renderMarcas(filtro = '') {
+            marcaList.innerHTML = '';
+            const filtradas = marcasLista.filter(m => m.includes(filtro));
+            filtradas.forEach(m => {
+                const div = document.createElement('div');
+                div.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: var(--text-color);";
+                div.textContent = m;
+                div.onmouseover = () => div.style.background = 'rgba(255,255,255,0.05)';
+                div.onmouseout = () => div.style.background = 'transparent';
+                div.onclick = () => {
+                    marcaInput.value = m;
+                    marcaList.style.display = 'none';
+                };
+                marcaList.appendChild(div);
+            });
         }
 
-        currentVehiclePlaca = 'N/A';
-        currentVehicleMarca = '';
-        currentVehicleModelo = '';
-        currentVehicleAno = '';
-        currentVehicleTipo = tipo;
+        marcaInput.addEventListener('focus', () => {
+            renderMarcas(marcaInput.value.trim().toUpperCase());
+            marcaList.style.display = 'block';
+        });
+
+        marcaInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toUpperCase();
+            renderMarcas(val);
+            marcaList.style.display = 'block';
+        });
+
+        // Cerrar al hacer click afuera
+        document.addEventListener('click', (e) => {
+            if (e.target !== marcaInput && e.target !== marcaList && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                marcaList.style.display = 'none';
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+}
+
+window.vincularVehiculoGlobal = async function(vid, placa, tipo, modelo, marca) {
+    try {
+        const { error: linkErr } = await window.supabase.from('cliente_vehiculo').insert([{ cliente_id: currentClientId, vehiculo_placa: placa }]);
+        if (linkErr && linkErr.code !== '23505') throw linkErr;
         
+        currentVehicleId = vid; 
+        currentVehiclePlaca = placa; 
+        currentVehicleTipo = tipo || 'OTRO';
+        currentVehicleModelo = modelo;
+        currentVehicleMarca = marca;
         goToStep(3);
-    });
+    } catch (err) {
+        console.error(err);
+        showToast('Error', 'No se pudo vincular el vehículo', 'error');
+    }
 }
 
 async function loadClientVehicles() {
-    // En domicilio ya no cargamos vehículos de la BD
-    // Solo actualizamos el nombre del cliente en el UI del paso 2
-    document.getElementById('current-client-display').textContent = currentClientName;
+    const grid = document.getElementById('vehicles-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="color:var(--text-muted);">Cargando vehículos...</div>';
+    
+    // Actualizamos el nombre del cliente en el UI del paso 2
+    const clientDisplay = document.getElementById('current-client-display');
+    if (clientDisplay) clientDisplay.textContent = currentClientName;
+
+    try {
+        const { data, error } = await window.supabase
+            .from('cliente_vehiculo')
+            .select(`
+                vehiculo_placa,
+                vehiculos ( id, placa, marca, modelo, tipo )
+            `)
+            .eq('cliente_id', currentClientId);
+
+        if (error) throw error;
+        grid.innerHTML = '';
+        if (data && data.length > 0) {
+            data.forEach(item => {
+                const v = item.vehiculos;
+                if (!v) return;
+                const card = document.createElement('div');
+                card.className = 'vehicle-select-card';
+                card.innerHTML = `<h3>${v.placa}</h3><p>${v.tipo || 'OTRO'} - ${v.modelo || 'N/A'}</p>`;
+                card.addEventListener('click', () => {
+                    currentVehicleId = v.id; 
+                    currentVehiclePlaca = v.placa; 
+                    currentVehicleTipo = v.tipo || 'OTRO';
+                    currentVehicleModelo = v.modelo || '';
+                    currentVehicleMarca = v.marca || '';
+                    goToStep(3);
+                });
+                grid.appendChild(card);
+            });
+        } else {
+            grid.innerHTML = '<div style="color:var(--text-muted); grid-column: 1/-1;">Este cliente no tiene vehículos registrados aún.</div>';
+        }
+    } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div style="color:var(--danger-color);">Error cargando vehículos.</div>';
+    }
 }
 
 // ==========================================
@@ -480,136 +653,7 @@ function buildResumen() {
     ul.innerHTML = html;
 }
 
-function setupPagoModal() {
-    const modal = document.getElementById('modal-pago-domicilio');
-    
-    // Manejar Toggles
-    document.querySelectorAll('.pay-toggle').forEach(checkbox => {
-        checkbox.addEventListener('change', (e) => {
-            const targetId = e.target.getAttribute('data-target');
-            const container = document.getElementById(targetId);
-            const label = e.target.parentElement;
-            const inputField = container.querySelector('input');
-            
-            if (e.target.checked) {
-                container.style.display = 'block';
-                label.classList.add('active');
-                
-                // Si es el único seleccionado y está vacío, prellenarlo con el total
-                const checkedBoxes = document.querySelectorAll('.pay-toggle:checked');
-                if (checkedBoxes.length === 1 && !inputField.value) {
-                    const total = parseFloat(document.getElementById('pago-total-real').value || 0);
-                    inputField.value = total;
-                }
-            } else {
-                container.style.display = 'none';
-                label.classList.remove('active');
-                inputField.value = ''; // Limpiar si se desmarca
-            }
-        });
-    });
 
-    document.getElementById('form-pago-domicilio').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const btn = document.getElementById('btn-submit-pago');
-        const validationMsg = document.getElementById('modal-payment-validation-msg');
-        validationMsg.style.display = 'none';
-        
-        const total = parseFloat(document.getElementById('pago-total-real').value || 0);
-        
-        let efectivo = parseFloat(document.getElementById('modal-pay-efectivo').value) || 0;
-        let tarjeta = parseFloat(document.getElementById('modal-pay-tarjeta').value) || 0;
-        let sinpe = parseFloat(document.getElementById('modal-pay-sinpe').value) || 0;
-        let cxc = parseFloat(document.getElementById('modal-pay-cxc').value) || 0;
-        let transferencia = parseFloat(document.getElementById('modal-pay-transferencia').value) || 0;
-        let regalia = parseFloat(document.getElementById('modal-pay-regalia').value) || 0;
-        
-        const suma = efectivo + tarjeta + sinpe + cxc + transferencia + regalia;
-        
-        if (suma !== total) {
-            validationMsg.textContent = `Los montos no cuadran. Suma: ₡${suma}, Total Orden: ₡${total}`;
-            validationMsg.style.display = 'block';
-            return;
-        }
-        
-        let metodosSeleccionados = [];
-        if (efectivo > 0) metodosSeleccionados.push("Efectivo");
-        if (tarjeta > 0) metodosSeleccionados.push("Tarjeta");
-        if (sinpe > 0) metodosSeleccionados.push("Sinpe");
-        if (cxc > 0) metodosSeleccionados.push("CxC");
-        if (transferencia > 0) metodosSeleccionados.push("Transferencia");
-        if (regalia > 0) metodosSeleccionados.push("Regalía");
-        
-        if (metodosSeleccionados.length === 0) {
-            validationMsg.textContent = 'Seleccione al menos un método de pago y asigne un monto.';
-            validationMsg.style.display = 'block';
-            return;
-        }
-        
-        const metodoFinal = metodosSeleccionados.length > 1 ? "Mixto" : metodosSeleccionados[0];
-        
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-        
-        const ordenId = document.getElementById('pago-orden-id').textContent;
-        const activeUser = localStorage.getItem('activeUser') || 'Desconocido';
-        
-        try {
-            const { error } = await window.supabase
-                .from('ordenes')
-                .update({
-                    metodo_pago: metodoFinal,
-                    monto_efectivo: efectivo,
-                    monto_tarjeta: tarjeta,
-                    monto_sinpe: sinpe,
-                    monto_cxc: cxc,
-                    monto_transferencia: transferencia,
-                    monto_regalia: regalia,
-                    responsable_cobro: activeUser,
-                    hora_pago: new Date().toISOString()
-                })
-                .eq('id', ordenId);
-                
-            if (error) throw error;
-            
-            try {
-                if (typeof GOOGLE_SHEETS_WEBHOOK_URL !== 'undefined') {
-                    const sheetPayload = {
-                        action: "update_pago",
-                        orden_id: ordenId,
-                        metodo_pago: metodoFinal,
-                        monto_efectivo: efectivo,
-                        monto_tarjeta: tarjeta,
-                        monto_sinpe: sinpe,
-                        monto_cxc: cxc,
-                        monto_transferencia: transferencia,
-                        monto_regalia: regalia,
-                        responsable_cobro: activeUser,
-                        hora_pago: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-                    };
-                    fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: JSON.stringify(sheetPayload),
-                        headers: { "Content-Type": "application/json" }
-                    });
-                }
-            } catch(e) { console.error("Error Sheets", e); }
-            
-            showToast('Pagado', `Pago registrado con éxito`, 'success');
-            cerrarModalPago();
-            loadTodayDomicilios();
-            
-        } catch (err) {
-            console.error(err);
-            showToast('Error', 'No se pudo guardar el pago', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Guardar Pago';
-        }
-    });
-}
 
 let isEditingOrdenId = null;
 
@@ -983,6 +1027,46 @@ function setupPagoModal() {
                 }
             } catch(e) { console.error("Error Sheets", e); }
             
+            if (cxc > 0) {
+                try {
+                    let clienteId = null;
+                    let clienteNombre = "Cliente Domicilio";
+                    let clienteTelefono = "";
+                    let vehiculoPlaca = "Sin placa";
+
+                    const { data: orderData } = await window.supabase
+                        .from('ordenes_domicilio')
+                        .select('cliente_id, clientes(nombre, telefono)')
+                        .eq('id', ordenId)
+                        .single();
+                        
+                    if (orderData) {
+                        clienteId = orderData.cliente_id;
+                        if (orderData.clientes) {
+                            clienteNombre = orderData.clientes.nombre;
+                            clienteTelefono = orderData.clientes.telefono;
+                        }
+                    }
+
+                    await window.supabase.from('cxc_manuales').insert([{
+                        cliente_id: clienteId,
+                        cliente_nombre: clienteNombre,
+                        cliente_telefono: clienteTelefono,
+                        vehiculo_placa: vehiculoPlaca,
+                        concepto: 'Orden Domicilio #' + ordenId,
+                        monto_total: cxc,
+                        saldo_pendiente: cxc,
+                        origen: 'domicilio',
+                        orden_origen_id: ordenId,
+                        estado: 'pendiente',
+                        fecha_deuda: new Date().toISOString().split('T')[0]
+                    }]);
+                    console.log('[CxC] Cuenta generada');
+                } catch(e) {
+                    console.error('[CxC] Error guardando cuenta', e);
+                }
+            }
+            
             showToast('Pagado', `Pago registrado con éxito`, 'success');
             cerrarModalPago();
             loadTodayDomicilios();
@@ -1140,56 +1224,5 @@ function showToast(title, message, type = 'success') {
     }, 3000);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Custom Dropdown para Marcas
-    const marcasLista = [
-        "TOYOTA", "NISSAN", "HONDA", "HYUNDAI", "KIA", "SUZUKI", 
-        "CHEVROLET", "FORD", "MITSUBISHI", "MERCEDES BENZ", "BMW", 
-        "AUDI", "VOLKSWAGEN", "PEUGEOT", "RENAULT", "MAZDA", "ISUZU",
-        "GEELY", "BYD", "CHERY", "MG", "JAC", "CHANGAN", "GREAT WALL",
-        "LEXUS", "PORSCHE", "LAND ROVER", "JEEP", "SUBARU", "VOLVO",
-        "SSANGYONG", "FIAT", "MINI", "ALFA ROMEO", "YAMAHA", "SUZUKI (MOTO)", "HONDA (MOTO)", "KTM", "BMW (MOTO)", "KAWASAKI", "DUCATI", "HUSQVARNA", "CFMOTO", "BAJAJ", "TVS", "SERPENTO", "FREEDOM", "KEEWAY", "SYM"
-    ];
-
-    const marcaInput = document.getElementById('veh-marca');
-    const marcaList = document.getElementById('marca-autocomplete-list');
-
-    function renderMarcas(filtro = '') {
-        marcaList.innerHTML = '';
-        const filtradas = marcasLista.filter(m => m.includes(filtro));
-        
-        filtradas.forEach(m => {
-            const div = document.createElement('div');
-            div.style.padding = '10px';
-            div.style.cursor = 'pointer';
-            div.style.borderBottom = '1px solid var(--border-color)';
-            div.style.color = 'white';
-            div.textContent = m;
-            div.addEventListener('click', () => {
-                marcaInput.value = m;
-                marcaList.style.display = 'none';
-            });
-            marcaList.appendChild(div);
-        });
-    }
-
-    if (marcaInput) {
-        marcaInput.addEventListener('focus', () => {
-            renderMarcas(marcaInput.value.trim().toUpperCase());
-            marcaList.style.display = 'block';
-        });
-
-        marcaInput.addEventListener('input', (e) => {
-            const val = e.target.value.trim().toUpperCase();
-            renderMarcas(val);
-            marcaList.style.display = 'block';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (e.target !== marcaInput && e.target !== marcaList) {
-                marcaList.style.display = 'none';
-            }
-        });
-    }
-});
+// End of file
 
