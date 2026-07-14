@@ -283,10 +283,11 @@ function proceedFromMecanicaCategorias() {
 
 function proceedFromMecanicaDetalles() {
     // Extras finales solo se muestran si eligió detallado
-    if (ordenData.servicios_maestros.includes('Detallado y lavado') || ordenData.servicios_maestros.includes('Detallados especiales')) {
-        goToStep(9);
+    if (ordenData.servicios_maestros.includes('Detallado y lavado') || 
+ordenData.servicios_maestros.includes('Detallados especiales')) {
+        goToStep(8); // Ir a Extras Finales
     } else {
-        goToStep(10); // Cobro directo
+        goToStep(9); // Ir a Vehículo (saltando Extras Finales)
     }
 }
 
