@@ -1,10 +1,12 @@
-﻿// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 //  CUENTAS POR COBRAR — app.js  (Supabase conectado)
 //  Flujo 1 : Cuenta Manual   → wizard de 3 pasos
 //  Flujo 2 : Automático      → insertado desde local_comercial / domicilio
 // ══════════════════════════════════════════════════════════════════
 
 // ── Estado global ──────────────────────────────────────────────────
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+
 let activeUser     = null;
 let activeUserRole = null;
 let cxcData        = [];   // registros cargados desde Supabase
@@ -274,9 +276,56 @@ async function submitAbono(e) {
 
         if (error) throw error;
 
+        // Mandar el abono a Google Sheets (Transacciones)
+        try {
+            if (typeof GOOGLE_SHEETS_WEBHOOK_URL !== 'undefined') {
+                const metodoLow = metodo.toLowerCase();
+                const isEfectivo = metodoLow.includes('efectivo');
+                const isTarjeta = metodoLow.includes('tarjeta');
+                const isSinpe = metodoLow.includes('sinpe');
+                const isTransferencia = metodoLow.includes('transferencia');
+
+                const sheetPayload = {
+                    action: "abono_cxc",
+                    orden_id: "CxC",
+                    placa: registro.vehiculo_placa || "CxC",
+                    nombre_cliente: registro.cliente_nombre || "N/A",
+                    monto_total: monto,
+                    metodo_pago: metodo,
+                    monto_efectivo: isEfectivo ? monto : 0,
+                    monto_tarjeta: isTarjeta ? monto : 0,
+                    monto_sinpe: isSinpe ? monto : 0,
+                    monto_transferencia: isTransferencia ? monto : 0,
+                    responsable: activeUser,
+                    hora_pago: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+                };
+
+                fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(sheetPayload)
+                });
+            }
+        } catch(e) {
+            console.error("Error enviando abono a Sheets:", e);
+        }
+
+        // 🔴 SI SE SALDÓ TODA LA CUENTA, ELIMINARLA 🔴
+        if (monto === parseFloat(registro.saldo_pendiente)) {
+            try {
+                await window.supabase
+                    .from('cxc_manuales')
+                    .delete()
+                    .eq('id', cxcId);
+            } catch(delErr) {
+                console.error("Error eliminando cuenta saldada:", delErr);
+            }
+        }
+
         closeAbonoModal();
 
-        // Recargar datos frescos desde Supabase (el trigger ya actualizó el saldo)
+        // Recargar datos frescos desde Supabase (el trigger ya actualizó el saldo o se eliminó la cuenta)
         await loadCxC();
 
         const esTotal = tipo === 'total';

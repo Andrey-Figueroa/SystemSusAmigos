@@ -390,7 +390,6 @@ function setupPagoModal() {
                     monto_cxc: cxc,
                     monto_transferencia: transferencia,
                     monto_regalia: regalia,
-                    estado: 'Pagada',
                     responsable_cobro: activeUser,
                     hora_pago: new Date().toISOString()
                 })
