@@ -160,65 +160,30 @@
                             <button class="btn-secondary btn-back-step" onclick="goToStep(1)"><i
                                     class="fa-solid fa-arrow-left"></i> Cambiar Cliente</button>
                             <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Selección de Vehículo</h2>
-                            <p class="step-desc">Cliente: <strong id="current-client-display"
-                                    style="color:var(--primary-accent);"></strong></p>
+                            <p class="step-desc">Seleccione el tipo de vehículo para este servicio a domicilio.</p>
 
-                            <div class="search-box" style="margin-bottom: 20px; position: relative; margin-top: 24px;">
-                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 12px; color: var(--text-muted);"></i>
-                                <input type="text" id="global-vehicle-search" class="form-control" placeholder="Buscar placa existente globalmente..." style="padding-left: 45px; text-transform: uppercase;">
-                            </div>
-                            <div id="global-vehicle-results" style="display: none; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px;"></div>
-
-                            <div id="vehicles-grid" class="vehicles-grid" style="margin: 24px 0;"></div>
-
-                            <div class="new-vehicle-section">
-                                <button id="btn-show-new-vehicle" class="btn-secondary" style="width: 100%; border-style: dashed; justify-content: center;">
-                                    <i class="fa-solid fa-plus"></i> Ingresar un vehículo nuevo
-                                </button>
-
-                                <div id="new-vehicle-form-container" class="new-vehicle-form" style="display: none; margin-top: 24px; padding: 24px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color);">
-                                    <h3>Registrar Vehículo Nuevo</h3>
-                                    <form id="form-new-vehicle" style="margin-top: 16px;">
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                            <div class="form-group">
-                                                <label>Placa (Obligatorio)</label>
-                                                <input type="text" id="veh-placa" class="form-control" required style="text-transform: uppercase;">
-                                            </div>
-                                            <div class="form-group" style="position: relative;">
-                                                <label>Marca</label>
-                                                <input type="text" id="veh-marca" class="form-control" autocomplete="off" style="text-transform: uppercase;" placeholder="Ej: TOYOTA">
-                                                <i class="fa-solid fa-chevron-down" style="position: absolute; right: 15px; top: 40px; color: var(--text-muted); pointer-events: none; font-size: 12px;"></i>
-                                                <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #1a1b26; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Modelo</label>
-                                                <input type="text" id="veh-modelo" class="form-control">
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Año</label>
-                                                <input type="number" id="veh-año" class="form-control" min="1900">
-                                            </div>
-                                            <div class="form-group" style="grid-column: span 2;">
-                                                <label>Tipo (Obligatorio)</label>
-                                                <select id="veh-tipo-domicilio" class="form-control" required>
-                                                    <option value="">Seleccione...</option>
-                                                    <option value="SEDAN">SEDAN</option>
-                                                    <option value="4x4 o Pick Up">4x4 o Pick Up</option>
-                                                    <option value="MOTO">MOTO</option>
-                                                    <option value="MicroBus">MicroBus</option>
-                                                    <option value="Camion">Camion</option>
-                                                    <option value="Cuadra">Cuadra</option>
-                                                    <option value="SUV">SUV</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div style="display: flex; gap: 12px; margin-top: 24px;">
-                                            <button type="button" id="btn-cancel-new-vehicle" class="btn-secondary">Cancelar</button>
-                                            <button type="submit" id="btn-save-vehicle" class="btn-primary" style="flex: 1;">Guardar y Continuar <i class="fa-solid fa-arrow-right"></i></button>
-                                        </div>
-                                    </form>
-                                </div>
+                            <div class="radio-group-cards grid-2" style="margin-top: 24px;">
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="SEDAN" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-car-side" style="font-size: 24px; margin-bottom: 8px;"></i><span>SEDAN</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="4x4 o Pick Up" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-truck-pickup" style="font-size: 24px; margin-bottom: 8px;"></i><span>4x4 o Pick Up</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="MOTO" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-motorcycle" style="font-size: 24px; margin-bottom: 8px;"></i><span>MOTO</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="MicroBus" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-van-shuttle" style="font-size: 24px; margin-bottom: 8px;"></i><span>MicroBus</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="Camion" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-truck" style="font-size: 24px; margin-bottom: 8px;"></i><span>Camion</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="Cuadra" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-truck-monster" style="font-size: 24px; margin-bottom: 8px;"></i><span>Cuadra</span></div>
+                                </label>
+                                <label class="radio-card"><input type="radio" name="tipo_vehiculo_domicilio" value="SUV" onchange="seleccionarVehiculoDomicilio(this.value)">
+                                    <div class="radio-card-content"><i class="fa-solid fa-car" style="font-size: 24px; margin-bottom: 8px;"></i><span>SUV</span></div>
+                                </label>
                             </div>
                         </div>
                     </div>

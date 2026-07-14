@@ -265,204 +265,22 @@ function setupStep1() {
 // STEP 2: TIPO DE VEHÍCULO
 // ==========================================
 function setupStep2() {
-    const btnShowNew = document.getElementById('btn-show-new-vehicle');
-    const formContainer = document.getElementById('new-vehicle-form-container');
-    const newVehicleForm = document.getElementById('form-new-vehicle');
-
-    if (btnShowNew) {
-        btnShowNew.addEventListener('click', () => {
-            formContainer.style.display = 'block';
-            btnShowNew.style.display = 'none';
-        });
-
-        document.getElementById('btn-cancel-new-vehicle').addEventListener('click', () => {
-            formContainer.style.display = 'none';
-            btnShowNew.style.display = 'flex';
-            newVehicleForm.reset();
-        });
-
-        newVehicleForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const placa = document.getElementById('veh-placa').value.trim().toUpperCase();
-            const tipo = document.getElementById('veh-tipo-domicilio').value;
-            const btn = document.getElementById('btn-save-vehicle');
-            btn.disabled = true;
-            try {
-                const { data: vehData, error: vehError } = await window.supabase.from('vehiculos')
-                    .insert([{ placa, marca: document.getElementById('veh-marca').value, modelo: document.getElementById('veh-modelo').value, anio: document.getElementById('veh-año').value || null, tipo }]).select();
-                
-                if (vehError) {
-                    if (vehError.code === '23505') {
-                        throw new Error('Ya existe un vehículo registrado con esta placa. Usa el buscador de arriba para asignarlo.');
-                    }
-                    throw vehError;
-                }
-                
-                let vid = vehData ? vehData[0].id : null;
-                if(!vid) { throw new Error('No se pudo procesar la placa.'); }
-
-                // Vincular al cliente
-                const { error: linkErr } = await window.supabase.from('cliente_vehiculo').insert([{ cliente_id: currentClientId, vehiculo_placa: placa }]);
-                if (linkErr && linkErr.code !== '23505') throw linkErr;
-
-                currentVehicleId = vid; 
-                currentVehiclePlaca = placa; 
-                currentVehicleTipo = tipo;
-                currentVehicleModelo = document.getElementById('veh-modelo').value;
-                currentVehicleMarca = document.getElementById('veh-marca').value;
-                goToStep(3);
-            } catch (err) {
-                console.error(err);
-                showToast('Error', err.message || 'Error guardando el vehículo.', 'error');
-            } finally { btn.disabled = false; }
-        });
-
-        // Buscador Global de Vehículos
-        const searchInput = document.getElementById('global-vehicle-search');
-        const searchResults = document.getElementById('global-vehicle-results');
-        let searchTimeout;
-
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            const q = e.target.value.trim().toUpperCase();
-            if (q.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-            searchTimeout = setTimeout(async () => {
-                try {
-                    const { data, error } = await window.supabase.from('vehiculos').select('*').ilike('placa', `%${q}%`).limit(5);
-                    if (error) throw error;
-                    if (data.length > 0) {
-                        searchResults.innerHTML = data.map(v => `
-                            <div style="padding: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="vincularVehiculoGlobal(${v.id}, '${v.placa}', '${v.tipo || 'OTRO'}', '${v.modelo || ''}', '${v.marca || ''}')">
-                                <strong style="color: var(--primary-accent);">${v.placa}</strong> - ${v.marca || ''} ${v.modelo || ''}
-                                <br><span style="font-size: 12px; color: var(--text-muted);"><i class="fa-solid fa-link"></i> Vincular a este cliente</span>
-                            </div>
-                        `).join('');
-                        searchResults.style.display = 'block';
-                    } else {
-                        searchResults.innerHTML = `<div style="padding: 12px; color: var(--text-muted);">No se encontraron placas con "${q}". Puedes crearlo abajo.</div>`;
-                        searchResults.style.display = 'block';
-                    }
-                } catch (err) { console.error(err); }
-            }, 300);
-        });
-
-        // Custom Dropdown para Marcas
-        const marcasLista = [
-            "TOYOTA", "LEXUS", "HONDA", "ACURA", "NISSAN", "INFINITI", "MAZDA", "SUBARU", "MITSUBISHI", "SUZUKI", "ISUZU",
-            "HYUNDAI", "KIA", "GENESIS", "SSANGYONG", "FORD", "CHEVROLET", "GMC", "CADILLAC", "BUICK", "JEEP", "DODGE", "RAM", "CHRYSLER", "TESLA",
-            "MERCEDES-BENZ", "BMW", "MINI", "AUDI", "VOLKSWAGEN", "PORSCHE", "OPEL", "FERRARI", "LAMBORGHINI", "MASERATI", "FIAT", "ALFA ROMEO", "ABARTH",
-            "RENAULT", "PEUGEOT", "CITROEN", "DS AUTOMOBILES", "LAND ROVER", "RANGE ROVER", "JAGUAR", "ASTON MARTIN", "BENTLEY", "ROLLS-ROYCE", "MCLAREN",
-            "VOLVO", "POLESTAR", "SEAT", "CUPRA", "SKODA", "DACIA",
-            "BYD", "CHERY", "GEELY", "JETOUR", "OMODA", "JAECOO", "JAC", "MG", "GAC", "AION", "HAVAL", "TANK", "ORA", "WEY", "CHANGAN", "DONGFENG", "BAIC", "FOTON", "MAXUS", "KAIYI", "FAW", "BESTUNE", "JMC", "SERES", "NIO", "XPENG", "ZEEKR", "LEAPMOTOR", "LI AUTO",
-            "TATA", "MAHINDRA", "VINFAST",
-            "YAMAHA", "KAWASAKI", "KTM", "FREEDOM", "FORMULA", "KATANA", "SERPENTO", "OTRA"
-        ];
-        
-        const marcaInput = document.getElementById('veh-marca');
-        const marcaList = document.getElementById('marca-autocomplete-list');
-
-        function renderMarcas(filtro = '') {
-            marcaList.innerHTML = '';
-            const filtradas = marcasLista.filter(m => m.includes(filtro));
-            filtradas.forEach(m => {
-                const div = document.createElement('div');
-                div.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border-color); color: var(--text-color);";
-                div.textContent = m;
-                div.onmouseover = () => div.style.background = 'rgba(255,255,255,0.05)';
-                div.onmouseout = () => div.style.background = 'transparent';
-                div.onclick = () => {
-                    marcaInput.value = m;
-                    marcaList.style.display = 'none';
-                };
-                marcaList.appendChild(div);
-            });
-        }
-
-        marcaInput.addEventListener('focus', () => {
-            renderMarcas(marcaInput.value.trim().toUpperCase());
-            marcaList.style.display = 'block';
-        });
-
-        marcaInput.addEventListener('input', (e) => {
-            const val = e.target.value.trim().toUpperCase();
-            renderMarcas(val);
-            marcaList.style.display = 'block';
-        });
-
-        // Cerrar al hacer click afuera
-        document.addEventListener('click', (e) => {
-            if (e.target !== marcaInput && e.target !== marcaList && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                marcaList.style.display = 'none';
-                searchResults.style.display = 'none';
-            }
-        });
-    }
+    // Ya no se inicializan búsquedas ni modales aquí.
 }
 
-window.vincularVehiculoGlobal = async function(vid, placa, tipo, modelo, marca) {
-    try {
-        const { error: linkErr } = await window.supabase.from('cliente_vehiculo').insert([{ cliente_id: currentClientId, vehiculo_placa: placa }]);
-        if (linkErr && linkErr.code !== '23505') throw linkErr;
-        
-        currentVehicleId = vid; 
-        currentVehiclePlaca = placa; 
-        currentVehicleTipo = tipo || 'OTRO';
-        currentVehicleModelo = modelo;
-        currentVehicleMarca = marca;
-        goToStep(3);
-    } catch (err) {
-        console.error(err);
-        showToast('Error', 'No se pudo vincular el vehículo', 'error');
-    }
+window.seleccionarVehiculoDomicilio = function(tipo) {
+    currentVehicleTipo = tipo;
+    currentVehiclePlaca = "SIN PLACA";
+    currentVehicleMarca = "N/A";
+    currentVehicleModelo = "N/A";
+    document.getElementById('current-vehicle-display').textContent = tipo;
+    goToStep(3);
 }
 
 async function loadClientVehicles() {
-    const grid = document.getElementById('vehicles-grid');
-    if (!grid) return;
-    grid.innerHTML = '<div style="color:var(--text-muted);">Cargando vehículos...</div>';
-    
-    // Actualizamos el nombre del cliente en el UI del paso 2
+    // Ya no cargamos la lista de vehículos, pero actualizamos el UI si hace falta
     const clientDisplay = document.getElementById('current-client-display');
     if (clientDisplay) clientDisplay.textContent = currentClientName;
-
-    try {
-        const { data, error } = await window.supabase
-            .from('cliente_vehiculo')
-            .select(`
-                vehiculo_placa,
-                vehiculos ( id, placa, marca, modelo, tipo )
-            `)
-            .eq('cliente_id', currentClientId);
-
-        if (error) throw error;
-        grid.innerHTML = '';
-        if (data && data.length > 0) {
-            data.forEach(item => {
-                const v = item.vehiculos;
-                if (!v) return;
-                const card = document.createElement('div');
-                card.className = 'vehicle-select-card';
-                card.innerHTML = `<h3>${v.placa}</h3><p>${v.tipo || 'OTRO'} - ${v.modelo || 'N/A'}</p>`;
-                card.addEventListener('click', () => {
-                    currentVehicleId = v.id; 
-                    currentVehiclePlaca = v.placa; 
-                    currentVehicleTipo = v.tipo || 'OTRO';
-                    currentVehicleModelo = v.modelo || '';
-                    currentVehicleMarca = v.marca || '';
-                    goToStep(3);
-                });
-                grid.appendChild(card);
-            });
-        } else {
-            grid.innerHTML = '<div style="color:var(--text-muted); grid-column: 1/-1;">Este cliente no tiene vehículos registrados aún.</div>';
-        }
-    } catch (err) {
-        console.error(err);
-        grid.innerHTML = '<div style="color:var(--danger-color);">Error cargando vehículos.</div>';
-    }
 }
 
 // ==========================================
@@ -878,8 +696,8 @@ async function loadTodayDomicilios() {
                     <div style="display:flex;">
                         <div class="car-icon-wrapper">${icon}</div>
                         <div class="car-info">
-                            <h3 class="car-placa">${ord.placa ? ord.placa.toUpperCase() : 'SIN PLACA'}</h3>
-                            <p class="car-modelo">${ord.marca ? ord.marca + ' ' : ''}${ord.modelo || 'Vehículo'} (${ord.tipo_vehiculo || 'OTRO'})</p>
+                            <h3 class="car-placa" style="font-size: 1rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ord.direccion || 'Sin dirección'}">${ord.direccion || 'Sin dirección'}</h3>
+                            <p class="car-modelo">${ord.tipo_vehiculo || 'Vehículo'} | Agendado: ${ord.hora_agendada || '--:--'}</p>
                         </div>
                     </div>
                     <span class="car-orden-id">#${ord.id}</span>

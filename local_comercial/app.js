@@ -151,7 +151,7 @@ window.getPreviousStep = function(currentStep) {
 }
 
 window.goToStep = function(stepNum) {
-    if (isEditingOrdenId && (stepNum === 1 || stepNum === 2)) {
+    if (isEditingOrdenId && stepNum === 1) {
         alert("No se puede cambiar el cliente o vehículo al modificar una orden.");
         return;
     }
@@ -917,6 +917,37 @@ function setupStep10() {
                     });
                 } catch(e) {
                     console.error("Error silencioso Google Sheets:", e);
+                }
+
+                // Generar Ticket PDF Silencioso
+                const TICKET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyhxNlGauKA8DQDsmDpEAPUzXT_TraP2_oimr6YsuTDv74zrQsIXMYYh83w_p9WnMtn6w/exec";
+                const ticketPayload = {
+                    action: "generar_ticket",
+                    orden_id: ordenGenerada.id,
+                    fecha: new Date().toLocaleDateString('es-CR'),
+                    cliente_nombre: currentClientName,
+                    cliente_telefono: currentClientPhone || "N/A",
+                    placa: currentVehiclePlaca,
+                    categorias: ordenGenerada.servicios_maestros ? ordenGenerada.servicios_maestros.join(", ") : "N/A",
+                    tipo_lavado: ordenGenerada.detallado_tipo || "N/A",
+                    detallado_interior: ordenGenerada.extra_interior || "N/A",
+                    aromatizante: ordenGenerada.extra_aroma || "N/A",
+                    alfombras: ordenGenerada.extra_alfombras || "N/A",
+                    servicios_especiales: (ordenGenerada.detallados_especiales && ordenGenerada.detallados_especiales.length > 0) ? ordenGenerada.detallados_especiales.join(", ") : "N/A",
+                    mecanica: (ordenGenerada.mecanica_categorias && ordenGenerada.mecanica_categorias.length > 0) ? ordenGenerada.mecanica_categorias.join(", ") : "N/A",
+                    extras: (ordenGenerada.extras_finales && ordenGenerada.extras_finales.length > 0) ? ordenGenerada.extras_finales.join(", ") : "N/A",
+                    observaciones: ordenGenerada.observaciones || "Ninguna"
+                };
+
+                try {
+                    fetch(TICKET_WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(ticketPayload)
+                    });
+                } catch(e) {
+                    console.error("Error silencioso Ticket:", e);
                 }
             }
 
