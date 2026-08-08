@@ -1,0 +1,419 @@
+/* ==========================================================================
+   Design System & Global Variables
+   ========================================================================== */
+:root {
+    --bg-gradient: radial-gradient(circle at 50% 50%, #1a1f2c 0%, #0d0f14 100%);
+    --panel-bg: rgba(25, 30, 41, 0.65);
+    --panel-border: rgba(255, 255, 255, 0.07);
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --primary-accent: #00f2fe; /* Cyber Cyan */
+    --secondary-accent: #4facfe; /* Royal Blue */
+    --accent-gradient: linear-gradient(135deg, var(--primary-accent) 0%, var(--secondary-accent) 100%);
+    --error-color: #ef4444;
+    --success-color: #10b981;
+    --toast-bg: rgba(15, 23, 42, 0.9);
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --shadow-glow: 0 8px 32px 0 rgba(0, 242, 254, 0.15);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+.spin-slow {
+    display: inline-block;
+    animation: spinSlow 12s linear infinite;
+}
+
+/* ==========================================================================
+   Layout Containers
+   ========================================================================== */
+.login-wrapper {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: float 6s ease-in-out infinite;
+}
+
+.login-container {
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
+    padding: 45px 40px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 
+                0 1px 0 rgba(255, 255, 255, 0.1) inset;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Brand Header */
+.login-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 64px;
+    height: 64px;
+    background: var(--accent-gradient);
+    border-radius: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    color: #0d0f14;
+    box-shadow: var(--shadow-glow);
+    margin-bottom: 8px;
+}
+
+.login-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.login-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 300;
+}
+
+/* ==========================================================================
+   Form Fields & Inputs
+   ========================================================================== */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    padding-left: 4px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper input {
+    width: 100%;
+    background: rgba(10, 12, 18, 0.5);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 14px 16px 14px 44px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: var(--font-sans);
+    transition: var(--transition-smooth);
+}
+
+.input-wrapper input::placeholder {
+    color: #4b5563;
+}
+
+.input-wrapper input:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    background: rgba(10, 12, 18, 0.8);
+    box-shadow: 0 0 0 4px rgba(0, 242, 254, 0.1);
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    color: #4b5563;
+    font-size: 16px;
+    transition: var(--transition-smooth);
+}
+
+.input-wrapper input:focus + .input-icon,
+.input-wrapper input:focus ~ .input-icon {
+    color: var(--primary-accent);
+}
+
+.toggle-password {
+    position: absolute;
+    right: 16px;
+    color: #4b5563;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    transition: var(--transition-smooth);
+}
+
+.toggle-password:hover {
+    color: var(--text-primary);
+}
+
+/* Form Actions (Remember me & Forgot) */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+    appearance: none;
+    background-color: rgba(10, 12, 18, 0.5);
+    border: 1px solid var(--panel-border);
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    transition: var(--transition-smooth);
+}
+
+.remember-me input[type="checkbox"]::before {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 10px;
+    color: #0d0f14;
+    transform: scale(0);
+    transition: var(--transition-smooth);
+}
+
+.remember-me input[type="checkbox"]:checked {
+    background: var(--accent-gradient);
+    border-color: transparent;
+}
+
+.remember-me input[type="checkbox"]:checked::before {
+    transform: scale(1);
+}
+
+.remember-me label {
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.forgot-link {
+    color: var(--secondary-accent);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+
+.forgot-link:hover {
+    color: var(--primary-accent);
+    text-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
+}
+
+/* Submit Button */
+.btn-login {
+    background: var(--accent-gradient);
+    border: none;
+    border-radius: 12px;
+    color: #0d0f14;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+    margin-top: 10px;
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 242, 254, 0.3);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.button-icon {
+    transition: var(--transition-smooth);
+}
+
+.btn-login:hover .button-icon {
+    transform: translateX(4px);
+}
+
+/* Footer Credits */
+.login-footer {
+    text-align: center;
+}
+
+.login-footer p {
+    color: rgba(148, 163, 184, 0.4);
+    font-size: 11px;
+}
+
+/* ==========================================================================
+   Toast Notifications
+   ========================================================================== */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 9999;
+    max-width: 380px;
+    width: calc(100% - 48px);
+}
+
+.toast {
+    background: var(--toast-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 16px 20px;
+    color: var(--text-primary);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast.hide {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) reverse forwards;
+}
+
+.toast-icon {
+    font-size: 20px;
+}
+
+.toast-success .toast-icon {
+    color: var(--success-color);
+}
+
+.toast-info .toast-icon {
+    color: var(--primary-accent);
+}
+
+.toast-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.toast-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.toast-message {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 35px 25px;
+    }
+}
