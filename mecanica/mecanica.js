@@ -364,12 +364,24 @@ async function generarPDFBlob(id, fotos = []) {
     if (!insp) return null;
     const { data: detalles } = await supabaseClient.from('detalle_inspeccion').select('*').eq('inspeccion_id', id);
     const formData = {
-        vehiculo: { fecha: insp.fecha, placa: insp.placa, cliente: insp.cliente, mecanico: insp.mecanico, marca: insp.marca, modelo: insp.modelo, anio: insp.anio },
+        vehiculo: { fecha: insp.fecha, placa: insp.placa, cliente: insp.cliente, mecanico: insp.mecanico, marca: insp.marca, modelo: insp.modelo, anio: insp.anio, kilometraje: insp.kilometraje },
         interiorExterior: {}, parteInferior: {}, neumaticos: {}, motor: {}, frenos: {},
         observaciones: insp.observaciones || ''
     };
-    const seccionMap = { 'Interior/Exterior': 'interiorExterior', 'Parte Inferior': 'parteInferior', 'Neumáticos': 'neumaticos', 'Motor': 'motor', 'Frenos': 'frenos' };
-    if (detalles) detalles.forEach(d => { const k = seccionMap[d.seccion]; if (k) formData[k][d.item] = d.estado; });
+    const seccionMap = {
+        'Interior/Exterior': 'interiorExterior', 'Interior / Exterior': 'interiorExterior', 'checklistInteriorExterior': 'interiorExterior',
+        'Parte Inferior': 'parteInferior', 'checklistParteInferior': 'parteInferior',
+        'Neumáticos': 'neumaticos', 'Neumaticos': 'neumaticos', 'checklistNeumaticos': 'neumaticos',
+        'Motor': 'motor', 'checklistMotor': 'motor',
+        'Frenos': 'frenos', 'checklistFrenos': 'frenos'
+    };
+    if (detalles) {
+        detalles.forEach(d => {
+            const sec = d.seccion || d.categoria || '';
+            const k = seccionMap[sec];
+            if (k) formData[k][d.item] = d.estado;
+        });
+    }
     return await buildPDFBlob(formData, fotos);
 }
 
@@ -405,18 +417,25 @@ async function descargarPDF(id) {
         const fotos = fotosCache[id] || [];
 
         const formData = {
-            vehiculo: { fecha: insp.fecha, placa: insp.placa, cliente: insp.cliente, mecanico: insp.mecanico, marca: insp.marca, modelo: insp.modelo, anio: insp.anio },
+            vehiculo: { fecha: insp.fecha, placa: insp.placa, cliente: insp.cliente, mecanico: insp.mecanico, marca: insp.marca, modelo: insp.modelo, anio: insp.anio, kilometraje: insp.kilometraje },
             interiorExterior: {}, parteInferior: {}, neumaticos: {}, motor: {}, frenos: {},
             observaciones: insp.observaciones || ''
         };
 
         const seccionMap = {
-            'Interior/Exterior': 'interiorExterior', 'Parte Inferior': 'parteInferior',
-            'Neumáticos': 'neumaticos', 'Motor': 'motor', 'Frenos': 'frenos'
+            'Interior/Exterior': 'interiorExterior', 'Interior / Exterior': 'interiorExterior', 'checklistInteriorExterior': 'interiorExterior',
+            'Parte Inferior': 'parteInferior', 'checklistParteInferior': 'parteInferior',
+            'Neumáticos': 'neumaticos', 'Neumaticos': 'neumaticos', 'checklistNeumaticos': 'neumaticos',
+            'Motor': 'motor', 'checklistMotor': 'motor',
+            'Frenos': 'frenos', 'checklistFrenos': 'frenos'
         };
 
         if (detalles) {
-            detalles.forEach(d => { const k = seccionMap[d.seccion]; if (k) formData[k][d.item] = d.estado; });
+            detalles.forEach(d => {
+                const sec = d.seccion || d.categoria || '';
+                const k = seccionMap[sec];
+                if (k) formData[k][d.item] = d.estado;
+            });
         }
         await buildPDF(formData, fotos);
     } catch (err) {
@@ -443,7 +462,14 @@ async function buildPDF(formData, fotos = []) {
 
     const logoImg = await new Promise((resolve) => {
         const img = new Image(); img.crossOrigin = 'Anonymous';
-        img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = 'logo.jpg';
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+            const fallback = new Image(); fallback.crossOrigin = 'Anonymous';
+            fallback.onload = () => resolve(fallback);
+            fallback.onerror = () => resolve(null);
+            fallback.src = 'LOGO SUS AMIGOS.jpg';
+        };
+        img.src = '../LOGO SUS AMIGOS.jpg';
     });
 
     addPageBg();
@@ -462,7 +488,11 @@ async function buildPDF(formData, fotos = []) {
     doc.setDrawColor(...gold); doc.setLineWidth(0.4); doc.line(margin, y, W - margin, y); y += 7;
 
     const v = formData.vehiculo;
-    const campos = [['Placa', v.placa], ['Cliente', v.cliente], ['Mecánico', v.mecanico], ['Marca', v.marca], ['Modelo', v.modelo], ['Año', v.anio]];
+    const campos = [
+        ['Placa', v.placa], ['Cliente', v.cliente], ['Mecánico', v.mecanico],
+        ['Marca', v.marca], ['Modelo', v.modelo], ['Año', v.anio],
+        ['Kilometraje', v.kilometraje ? `${v.kilometraje} km` : '—']
+    ];
     doc.setFontSize(9);
     const colW = (W - margin * 2) / 3;
     campos.forEach((c, i) => {
@@ -474,8 +504,16 @@ async function buildPDF(formData, fotos = []) {
     if (campos.length % 3 !== 0) y += 7;
     y += 4;
 
-    const estadoLabel = { 'buen_estado': 'Buen estado', 'atencion_futura': 'Atención futura', 'atencion_inmediata': 'Atención inmediata' };
-    const estadoColor = { 'buen_estado': green, 'atencion_futura': orange, 'atencion_inmediata': red };
+    const estadoLabel = {
+        'buen_estado': 'Bueno', 'Bueno': 'Bueno', 'bueno': 'Bueno',
+        'atencion_futura': 'Regular', 'Regular': 'Regular', 'regular': 'Regular',
+        'atencion_inmediata': 'Malo', 'Malo': 'Malo', 'malo': 'Malo'
+    };
+    const estadoColor = {
+        'buen_estado': green, 'Bueno': green, 'bueno': green,
+        'atencion_futura': orange, 'Regular': orange, 'regular': orange,
+        'atencion_inmediata': red, 'Malo': red, 'malo': red
+    };
     const secciones = [
         { titulo: 'INTERIOR / EXTERIOR', datos: formData.interiorExterior },
         { titulo: 'PARTE INFERIOR', datos: formData.parteInferior },
@@ -496,11 +534,11 @@ async function buildPDF(formData, fotos = []) {
             doc.setFillColor(30, 30, 30); doc.roundedRect(margin, y - 4, W - margin * 2, 6.5, 1, 1, 'F');
             doc.setFont('helvetica', 'normal'); doc.setTextColor(...lightGray); doc.text(item, margin + 3, y);
             if (estado && estadoLabel[estado]) {
-                const color = estadoColor[estado];
+                const color = estadoColor[estado] || lightGray;
                 doc.setFont('helvetica', 'bold'); doc.setTextColor(...color); doc.setFillColor(...color);
                 doc.circle(W - margin - 50, y - 1.2, 1.5, 'F'); doc.text(estadoLabel[estado], W - margin - 46, y);
             } else {
-                doc.setFont('helvetica', 'italic'); doc.setTextColor(100, 100, 100); doc.text('Sin evaluar', W - margin - 46, y);
+                doc.setFont('helvetica', 'italic'); doc.setTextColor(100, 100, 100); doc.text(estado || 'Sin evaluar', W - margin - 46, y);
             }
             y += 7;
         });
@@ -542,7 +580,17 @@ async function buildPDFBlob(formData, fotos = []) {
     const green = [39, 174, 96], orange = [243, 156, 18], red = [231, 76, 60];
     function addPageBg() { doc.setFillColor(...darkBg); doc.rect(0, 0, W, H, 'F'); }
     function checkPage(n) { if (y + n > H - 20) { doc.addPage(); addPageBg(); y = 20; } }
-    const logoImg = await new Promise(resolve => { const img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = 'logo.jpg'; });
+    const logoImg = await new Promise(resolve => {
+        const img = new Image(); img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+            const fallback = new Image(); fallback.crossOrigin = 'Anonymous';
+            fallback.onload = () => resolve(fallback);
+            fallback.onerror = () => resolve(null);
+            fallback.src = 'LOGO SUS AMIGOS.jpg';
+        };
+        img.src = '../LOGO SUS AMIGOS.jpg';
+    });
     addPageBg(); doc.setFillColor(...gold); doc.rect(0, 38, W, 1.5, 'F');
     let tx = margin; if (logoImg) { doc.addImage(logoImg, 'JPEG', margin, 10, 24, 24); tx = margin + 30; }
     doc.setTextColor(...gold); doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.text('INSPECCIÓN MECÁNICA', tx, 18);
@@ -550,20 +598,40 @@ async function buildPDFBlob(formData, fotos = []) {
     doc.setTextColor(...gold); doc.setFontSize(10); doc.text('Fecha: ' + (formData.vehiculo.fecha || ''), W - margin, 18, { align: 'right' });
     y = 48; doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...gold); doc.text('DATOS DEL VEHÍCULO', margin, y); y += 2;
     doc.setDrawColor(...gold); doc.setLineWidth(0.4); doc.line(margin, y, W - margin, y); y += 7;
-    const v = formData.vehiculo, campos = [['Placa', v.placa], ['Cliente', v.cliente], ['Mecánico', v.mecanico], ['Marca', v.marca], ['Modelo', v.modelo], ['Año', v.anio]];
+    const v = formData.vehiculo;
+    const campos = [
+        ['Placa', v.placa], ['Cliente', v.cliente], ['Mecánico', v.mecanico],
+        ['Marca', v.marca], ['Modelo', v.modelo], ['Año', v.anio],
+        ['Kilometraje', v.kilometraje ? `${v.kilometraje} km` : '—']
+    ];
     doc.setFontSize(9); const colW = (W - margin * 2) / 3;
     campos.forEach((c, i) => { const col = i % 3, x = margin + col * colW; doc.setFont('helvetica', 'normal'); doc.setTextColor(...lightGray); doc.text(c[0] + ':', x, y); doc.setFont('helvetica', 'bold'); doc.setTextColor(...white); doc.text(String(c[1] || '—'), x + 22, y); if (col === 2) y += 7; });
     if (campos.length % 3 !== 0) y += 7; y += 4;
-    const eLabel = { 'buen_estado': 'Buen estado', 'atencion_futura': 'Atención futura', 'atencion_inmediata': 'Atención inmediata' };
-    const eColor = { 'buen_estado': green, 'atencion_futura': orange, 'atencion_inmediata': red };
-    [{ titulo: 'INTERIOR / EXTERIOR', datos: formData.interiorExterior }, { titulo: 'PARTE INFERIOR', datos: formData.parteInferior }, { titulo: 'NEUMÁTICOS', datos: formData.neumaticos }, { titulo: 'MOTOR', datos: formData.motor }, { titulo: 'FRENOS', datos: formData.frenos }].forEach(sec => {
+    const eLabel = {
+        'buen_estado': 'Bueno', 'Bueno': 'Bueno', 'bueno': 'Bueno',
+        'atencion_futura': 'Regular', 'Regular': 'Regular', 'regular': 'Regular',
+        'atencion_inmediata': 'Malo', 'Malo': 'Malo', 'malo': 'Malo'
+    };
+    const eColor = {
+        'buen_estado': green, 'Bueno': green, 'bueno': green,
+        'atencion_futura': orange, 'Regular': orange, 'regular': orange,
+        'atencion_inmediata': red, 'Malo': red, 'malo': red
+    };
+    const seccionesList = [
+        { titulo: 'INTERIOR / EXTERIOR', datos: formData.interiorExterior },
+        { titulo: 'PARTE INFERIOR', datos: formData.parteInferior },
+        { titulo: 'NEUMÁTICOS', datos: formData.neumaticos },
+        { titulo: 'MOTOR', datos: formData.motor },
+        { titulo: 'FRENOS', datos: formData.frenos }
+    ];
+    seccionesList.forEach(sec => {
         const items = Object.entries(sec.datos || {}); if (!items.length) return;
         checkPage(12 + items.length * 7); doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...gold); doc.text(sec.titulo, margin, y); y += 2;
         doc.setDrawColor(...gold); doc.setLineWidth(0.3); doc.line(margin, y, W - margin, y); y += 6; doc.setFontSize(9);
         items.forEach(([item, estado]) => {
             checkPage(8); doc.setFillColor(30, 30, 30); doc.roundedRect(margin, y - 4, W - margin * 2, 6.5, 1, 1, 'F'); doc.setFont('helvetica', 'normal'); doc.setTextColor(...lightGray); doc.text(item, margin + 3, y);
-            if (estado && eLabel[estado]) { const c = eColor[estado]; doc.setFont('helvetica', 'bold'); doc.setTextColor(...c); doc.setFillColor(...c); doc.circle(W - margin - 50, y - 1.2, 1.5, 'F'); doc.text(eLabel[estado], W - margin - 46, y); }
-            else { doc.setFont('helvetica', 'italic'); doc.setTextColor(100, 100, 100); doc.text('Sin evaluar', W - margin - 46, y); } y += 7;
+            if (estado && eLabel[estado]) { const c = eColor[estado] || lightGray; doc.setFont('helvetica', 'bold'); doc.setTextColor(...c); doc.setFillColor(...c); doc.circle(W - margin - 50, y - 1.2, 1.5, 'F'); doc.text(eLabel[estado], W - margin - 46, y); }
+            else { doc.setFont('helvetica', 'italic'); doc.setTextColor(100, 100, 100); doc.text(estado || 'Sin evaluar', W - margin - 46, y); } y += 7;
         }); y += 5;
     });
     if (formData.observaciones && formData.observaciones.trim()) { checkPage(25); doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...gold); doc.text('OBSERVACIONES', margin, y); y += 2; doc.setDrawColor(...gold); doc.line(margin, y, W - margin, y); y += 6; doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...lightGray); doc.splitTextToSize(formData.observaciones, W - margin * 2 - 4).forEach(l => { checkPage(6); doc.text(l, margin + 2, y); y += 5; }); y += 5; }
@@ -852,5 +920,5 @@ async function loadFotoCount(id) {
             url: supabaseClient.storage.from(BUCKET).getPublicUrl(`${id}/${f.name}`).data.publicUrl
         }));
         updateFotoBadge(id, fotos.length);
-    } catch (e) { /* silent */ } a
+    } catch (e) { /* silent */ }
 }

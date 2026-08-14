@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -108,6 +108,39 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
             opacity: 0.9;
+        }
+
+        .header-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-archivos {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(201, 168, 76, 0.12);
+            color: var(--accent);
+            text-decoration: none;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            border: 1px solid rgba(201, 168, 76, 0.4);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-archivos:hover {
+            background: rgba(201, 168, 76, 0.22);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(201, 168, 76, 0.2);
+            color: #fff;
         }
 
         .container {
@@ -601,9 +634,14 @@
     <div class="header">
         <a href="../dashboard/index.html" class="btn-back">← Volver</a>
         <h1>HISTORIAL DE MECÁNICA</h1>
-        <a href="formulario.html" class="btn-crear">
-            <span>+</span> Crear nuevo formulario
-        </a>
+        <div class="header-buttons">
+            <a href="formulario.html" class="btn-crear">
+                <span>+</span> Crear nuevo formulario
+            </a>
+            <a href="https://drive.google.com/drive/folders/15KoYKhOaroCus6CnzHYj2BbRt6bO9zA8?usp=sharing" target="_blank" rel="noopener noreferrer" class="btn-archivos">
+                📁 Archivos meses anteriores/previos
+            </a>
+        </div>
     </div>
 
     <div class="container">
@@ -676,7 +714,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="mecanica.js?v=6"></script>
+    <script src="mecanica.js?v=7"></script>
 </body>
 
 </html>
