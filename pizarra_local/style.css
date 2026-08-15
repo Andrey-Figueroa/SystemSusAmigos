@@ -418,6 +418,9 @@ button {
 .btn-delete { color: #fca5a5 !important; border-color: rgba(239, 68, 68, 0.3) !important; background: rgba(239, 68, 68, 0.05) !important;}
 .btn-delete:hover { background: var(--danger-color) !important; color: white !important; }
 
+.btn-sync { color: #38bdf8 !important; border-color: rgba(56, 189, 248, 0.3) !important; background: rgba(56, 189, 248, 0.05) !important;}
+.btn-sync:hover { background: #0284c7 !important; color: white !important; }
+
 /* Modales */
 .modal-overlay {
     position: fixed;

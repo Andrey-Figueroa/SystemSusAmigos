@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Configurar Modal Pago
     setupPagoModal();
+    
+    // Configurar Modal Confirmación Password para Sincronización
+    setupSyncAuthModal();
 });
 
 let ordenesGlobales = [];
@@ -119,6 +122,8 @@ function renderPizarra() {
             deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="eliminarOrden(${orden.id})"><i class="fa-solid fa-trash-can"></i></button>`;
         }
 
+        let syncBtnHtml = `<button class="btn-sync" id="btn-sync-${orden.id}" title="Reenviar a Google Sheets" onclick="sincronizarOrdenSheets(${orden.id})"><i class="fa-solid fa-cloud-arrow-up"></i></button>`;
+
         card.innerHTML = `
             <div class="car-card-header">
                 <div style="display:flex;">
@@ -146,6 +151,7 @@ function renderPizarra() {
                 ${payBtnHtml}
                 ${moveBtnHtml}
                 ${editBtnHtml}
+                ${syncBtnHtml}
                 ${deleteBtnHtml}
             </div>
         `;
@@ -504,6 +510,256 @@ function showToast(title, message, type = 'success') {
             if(container.contains(toast)) container.removeChild(toast);
         }, 300);
     }, 3000);
+}
+
+// ==========================================
+// SINCRONIZACIÓN MANUAL CON GOOGLE SHEETS
+// ==========================================
+window.sincronizarOrdenSheets = async function(ordenId, skipConfirm = false) {
+    if (!skipConfirm) {
+        if (!confirm(`¿De verdad deseas reescribir en Google Sheets la orden #${ordenId}?`)) {
+            return;
+        }
+    }
+
+    const btn = document.getElementById(`btn-sync-${ordenId}`);
+    const originalContent = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
+
+    try {
+        const { data: orden, error } = await window.supabase
+            .from('ordenes')
+            .select('*')
+            .eq('id', ordenId)
+            .single();
+
+        if (error || !orden) throw error || new Error("Orden no encontrada");
+
+        let c = {};
+        if (orden.cliente_id) {
+            const { data: cliente } = await window.supabase.from('clientes').select('id, nombre, telefono').eq('id', orden.cliente_id).maybeSingle();
+            if (cliente) c = cliente;
+        }
+
+        const isMoto = (orden.tipo_vehiculo === 'MOTO');
+
+        const sheetPayload = {
+            action: "create",
+            tipo_hoja: "NUEVA_ORDEN",
+            orden_id: orden.id,
+            created_at: orden.created_at ? new Date(orden.created_at).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : "",
+            placa: orden.placa || "",
+            nombre_cliente: c.nombre || "Cliente Final",
+            celular_cliente: c.telefono || "", 
+            modelo: (orden.marca ? orden.marca + ' ' : '') + (orden.modelo || "Vehículo"),
+            tipo_vehiculo: orden.tipo_vehiculo || (isMoto ? "MOTO" : "SEDAN"),
+            
+            estado: orden.estado || "En proceso",
+            espera: orden.espera || "En sala de espera",
+            total_monto: orden.total_monto || 0,
+            
+            servicios_maestros: Array.isArray(orden.servicios_maestros) ? orden.servicios_maestros.join(", ") : (orden.servicios_maestros || ""),
+            
+            detallado_tipo: orden.detallado_tipo || "No aplica",
+            extra_interior: orden.extra_interior || "No aplica",
+            extra_aroma: orden.extra_aroma || "No aplica",
+            extra_alfombras: orden.extra_alfombras || "No aplica",
+            servicios_extra: orden.extras_finales && orden.extras_finales.length > 0 ? (Array.isArray(orden.extras_finales) ? orden.extras_finales.join(", ") : orden.extras_finales) : "No aplica",
+            detallados_especiales: orden.detallados_especiales && orden.detallados_especiales.length > 0 ? (Array.isArray(orden.detallados_especiales) ? orden.detallados_especiales.join(", ") : orden.detallados_especiales) : "No aplica",
+            detallado_monto: orden.detallado_monto || 0,
+            
+            mecanica_categorias: orden.mecanica_categorias && orden.mecanica_categorias.length > 0 ? (Array.isArray(orden.mecanica_categorias) ? orden.mecanica_categorias.join(", ") : orden.mecanica_categorias) : "No aplica",
+            mecanica_detalles: (orden.mecanica_detalles && typeof orden.mecanica_detalles === 'object' && Object.keys(orden.mecanica_detalles).length > 0) ? JSON.stringify(orden.mecanica_detalles) : "No aplica",
+            mecanica_monto: orden.mecanica_monto || 0,
+            
+            observaciones: orden.observaciones || "Sin observaciones adicionales",
+
+            metodo_pago: orden.metodo_pago || "Pendiente",
+            monto_efectivo: orden.monto_efectivo || 0,
+            monto_tarjeta: orden.monto_tarjeta || 0,
+            monto_sinpe: orden.monto_sinpe || 0,
+            monto_cxc: orden.monto_cxc || 0,
+            monto_transferencia: orden.monto_transferencia || 0,
+            monto_regalia: orden.monto_regalia || 0,
+            responsable_cobro: orden.responsable_cobro || "",
+            hora_terminado: orden.hora_terminado ? new Date(orden.hora_terminado).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : null,
+            hora_retirado: orden.hora_retirado ? new Date(orden.hora_retirado).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : null
+        };
+
+        if (typeof GOOGLE_SHEETS_WEBHOOK_URL !== 'undefined' && GOOGLE_SHEETS_WEBHOOK_URL.trim() !== '') {
+            await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(sheetPayload)
+            });
+
+            // Si el estado ya cambió de 'En proceso', enviamos update_estado
+            if (orden.estado && orden.estado !== 'En proceso') {
+                await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: "update_estado",
+                        orden_id: orden.id,
+                        estado: orden.estado,
+                        hora_terminado: sheetPayload.hora_terminado,
+                        hora_retirado: sheetPayload.hora_retirado
+                    })
+                });
+            }
+
+            // Si ya tiene pago registrado, enviamos update_pago
+            if (orden.metodo_pago && orden.metodo_pago !== 'Pendiente') {
+                await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: "update_pago",
+                        orden_id: orden.id,
+                        metodo_pago: orden.metodo_pago,
+                        monto_efectivo: orden.monto_efectivo || 0,
+                        monto_tarjeta: orden.monto_tarjeta || 0,
+                        monto_sinpe: orden.monto_sinpe || 0,
+                        monto_cxc: orden.monto_cxc || 0,
+                        monto_transferencia: orden.monto_transferencia || 0,
+                        monto_regalia: orden.monto_regalia || 0,
+                        responsable_cobro: orden.responsable_cobro || ''
+                    })
+                });
+            }
+        }
+
+        showToast('Enviado a Sheets', `Orden #${ordenId} enviada con éxito a Google Sheets`, 'success');
+    } catch (err) {
+        console.error("Error sincronizando con Sheets:", err);
+        showToast('Error', `No se pudo sincronizar la orden #${ordenId}`, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+};
+
+window.sincronizarTodasSheets = function() {
+    if (!ordenesGlobales || ordenesGlobales.length === 0) {
+        showToast('Aviso', 'No hay órdenes activas en la pizarra para sincronizar.', 'error');
+        return;
+    }
+
+    const activeUser = localStorage.getItem('activeUser') || 'Usuario';
+    const userNameEl = document.getElementById('sync-auth-user-name');
+    if (userNameEl) userNameEl.textContent = activeUser;
+
+    const passInput = document.getElementById('sync-auth-password');
+    if (passInput) passInput.value = '';
+
+    const errMsg = document.getElementById('sync-auth-error-msg');
+    if (errMsg) errMsg.style.display = 'none';
+
+    const modal = document.getElementById('modal-sync-auth');
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => passInput && passInput.focus(), 100);
+    }
+};
+
+function setupSyncAuthModal() {
+    const modal = document.getElementById('modal-sync-auth');
+    const btnClose = document.getElementById('btn-close-sync-auth');
+    const btnCancel = document.getElementById('btn-cancel-sync-auth');
+    const form = document.getElementById('form-sync-auth');
+    const errMsg = document.getElementById('sync-auth-error-msg');
+    const btnSubmit = document.getElementById('btn-submit-sync-auth');
+
+    function closeModal() {
+        if (modal) modal.style.display = 'none';
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('sync-auth-password').value.trim();
+            if (!pass) return;
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
+            errMsg.style.display = 'none';
+
+            try {
+                // Obtener email del usuario logueado para verificar con Supabase Auth
+                let email = null;
+                const { data: { session } } = await window.supabase.auth.getSession();
+                if (session && session.user && session.user.email) {
+                    email = session.user.email;
+                } else {
+                    const activeUser = localStorage.getItem('activeUser');
+                    if (activeUser) {
+                        const { data: p } = await window.supabase.from('personal').select('email').eq('nombre', activeUser).maybeSingle();
+                        if (p && p.email) email = p.email;
+                    }
+                }
+
+                if (!email) throw new Error("No se encontró el correo del usuario logueado.");
+
+                const { error: authError } = await window.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: pass
+                });
+
+                if (authError) {
+                    throw new Error("Contraseña incorrecta.");
+                }
+
+                closeModal();
+                showToast('Autorizado', 'Contraseña verificada. Iniciando sincronización masiva...', 'success');
+                await ejecutarSincronizacionMasiva();
+
+            } catch (err) {
+                errMsg.textContent = err.message || "Error validando contraseña.";
+                errMsg.style.display = 'block';
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Sincronizar';
+            }
+        });
+    }
+}
+
+async function ejecutarSincronizacionMasiva() {
+    const btnAll = document.getElementById('btn-sync-all');
+    const originalText = btnAll ? btnAll.innerHTML : '';
+    if (btnAll) {
+        btnAll.disabled = true;
+        btnAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    }
+
+    let count = 0;
+    try {
+        for (const o of ordenesGlobales) {
+            await window.sincronizarOrdenSheets(o.id, true);
+            count++;
+            await new Promise(r => setTimeout(r, 200));
+        }
+        showToast('Sincronización Completa', `Se sincronizaron ${count} órdenes en Google Sheets.`, 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Error', 'Error en la sincronización masiva.', 'error');
+    } finally {
+        if (btnAll) {
+            btnAll.disabled = false;
+            btnAll.innerHTML = originalText;
+        }
+    }
 }
 
 

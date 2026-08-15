@@ -657,6 +657,9 @@ function setupStep6() {
         if (checkboxes.length === 0) { err.style.display = 'block'; return; }
         
         let cats = [];
+        ordenData.promo_mec_detalle = null;
+        ordenData.otro_mec_detalle = null;
+        
         for (let cb of checkboxes) {
             cats.push(cb.value);
             if (cb.value === 'Promociones mecanicas') {
@@ -673,6 +676,19 @@ function setupStep6() {
         
         err.style.display = 'none';
         ordenData.mecanica_categorias = cats;
+
+        // Asignar inmediatamente los detalles para categorías directas
+        ordenData.mecanica_detalles = {};
+        if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
+            ordenData.mecanica_detalles['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
+        }
+        if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
+            ordenData.mecanica_detalles['Otro'] = [ordenData.otro_mec_detalle];
+        }
+        if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
+            ordenData.mecanica_detalles['Mantenimiento general'] = ['Mantenimiento general'];
+        }
+
         proceedFromMecanicaCategorias();
     }
 }
@@ -683,7 +699,19 @@ function setupStep6() {
 function renderMecanicaDetalles() {
     const container = document.getElementById('mecanica-dynamic-container');
     container.innerHTML = '';
-    ordenData.mecanica_detalles = {}; // reset
+    
+    // Mantener los directos si existen
+    const directos = {};
+    if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
+        directos['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
+    }
+    if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
+        directos['Otro'] = [ordenData.otro_mec_detalle];
+    }
+    if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
+        directos['Mantenimiento general'] = ['Mantenimiento general'];
+    }
+    ordenData.mecanica_detalles = directos;
 
     ordenData.mecanica_categorias.forEach(cat => {
         if (MECANICA_OPTIONS[cat]) {
@@ -735,6 +763,17 @@ function setupStep7() {
             });
             ordenData.mecanica_detalles[cat] = arr;
         });
+
+        // Asegurar que las categorías directas (Otro, Promo, Mantenimiento) no se pierdan
+        if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
+            ordenData.mecanica_detalles['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
+        }
+        if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
+            ordenData.mecanica_detalles['Otro'] = [ordenData.otro_mec_detalle];
+        }
+        if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
+            ordenData.mecanica_detalles['Mantenimiento general'] = ['Mantenimiento general'];
+        }
 
         const err = document.getElementById('error-step7');
         if (!isValid) { err.style.display = 'block'; return; }
@@ -800,6 +839,50 @@ function setupStep10() {
         btn.disabled = true;
 
         try {
+            // Limpieza y coherencia de datos según los servicios maestros activos
+            const tieneDetallado = ordenData.servicios_maestros.includes('Detallado y lavado');
+            const tieneEspeciales = ordenData.servicios_maestros.includes('Detallados especiales');
+            const tieneMecanica = ordenData.servicios_maestros.includes('Mecanica');
+            const isMoto = (currentVehicleTipo === 'MOTO');
+
+            let detalladoTipoFinal = "No aplica";
+            let extraInteriorFinal = "No aplica";
+            let extraAromaFinal = "No aplica";
+            let extraAlfombrasFinal = "No aplica";
+
+            if (tieneDetallado) {
+                detalladoTipoFinal = ordenData.detallado_tipo === 'Promocion' 
+                    ? ('Promocion: ' + (ordenData.promo_detalle || ''))
+                    : (ordenData.detallado_tipo || "Detallado");
+                
+                if (!isMoto) {
+                    extraInteriorFinal = ordenData.extra_interior || "No aplica";
+                    extraAromaFinal = ordenData.extra_aroma || "No aplica";
+                    extraAlfombrasFinal = ordenData.extra_alfombras || "No aplica";
+                } else {
+                    extraInteriorFinal = "No aplica";
+                    extraAromaFinal = "No aplica";
+                    extraAlfombrasFinal = "No aplica";
+                }
+            }
+
+            let mecanicaCategoriasFinal = tieneMecanica ? (ordenData.mecanica_categorias || []) : [];
+            let mecanicaDetallesFinal = tieneMecanica ? { ...(ordenData.mecanica_detalles || {}) } : {};
+            if (tieneMecanica) {
+                if (mecanicaCategoriasFinal.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
+                    mecanicaDetallesFinal['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
+                }
+                if (mecanicaCategoriasFinal.includes('Otro') && ordenData.otro_mec_detalle) {
+                    mecanicaDetallesFinal['Otro'] = [ordenData.otro_mec_detalle];
+                }
+                if (mecanicaCategoriasFinal.includes('Mantenimiento general') && !mecanicaDetallesFinal['Mantenimiento general']) {
+                    mecanicaDetallesFinal['Mantenimiento general'] = ['Mantenimiento general'];
+                }
+            }
+
+            let especialesFinal = tieneEspeciales ? (ordenData.detallados_especiales || []) : [];
+            let extrasFinalesArr = (ordenData.extras_finales && ordenData.extras_finales.length > 0) ? ordenData.extras_finales : ["Ninguno"];
+
             const orderPayload = {
                 cliente_id: currentClientId,
                 vehiculo_id: currentVehicleId,
@@ -812,20 +895,20 @@ function setupStep10() {
                 espera: currentEspera,
                 observaciones: obs,
                 
-                detallado_monto: montoDetallado,
-                mecanica_monto: montoMecanica,
+                detallado_monto: (tieneDetallado || tieneEspeciales) ? montoDetallado : 0,
+                mecanica_monto: tieneMecanica ? montoMecanica : 0,
                 total_monto: total,
                 
                 servicios_maestros: ordenData.servicios_maestros,
-                detallados_especiales: ordenData.detallados_especiales,
-                mecanica_categorias: ordenData.mecanica_categorias,
-                mecanica_detalles: ordenData.mecanica_detalles,
-                extras_finales: ordenData.extras_finales,
+                detallados_especiales: especialesFinal,
+                mecanica_categorias: mecanicaCategoriasFinal,
+                mecanica_detalles: mecanicaDetallesFinal,
+                extras_finales: extrasFinalesArr,
                 
-                detallado_tipo: ordenData.detallado_tipo === 'Promocion' ? 'Promocion: ' + ordenData.promo_detalle : ordenData.detallado_tipo,
-                extra_interior: ordenData.extra_interior,
-                extra_aroma: ordenData.extra_aroma,
-                extra_alfombras: ordenData.extra_alfombras
+                detallado_tipo: detalladoTipoFinal,
+                extra_interior: extraInteriorFinal,
+                extra_aroma: extraAromaFinal,
+                extra_alfombras: extraAlfombrasFinal
             };
 
             if (isEditingOrdenId) {
@@ -885,7 +968,7 @@ function setupStep10() {
                     placa: currentVehiclePlaca,
                     nombre_cliente: currentClientName,
                     celular_cliente: currentClientPhone || "", 
-                    modelo: currentVehicleModel || "Vehículo",
+                    modelo: (currentVehicleMarca ? currentVehicleMarca + ' ' : '') + (currentVehicleModel || "Vehículo"),
                     tipo_vehiculo: currentVehicleTipo,
                     
                     estado: ordenGenerada.estado,
@@ -894,17 +977,17 @@ function setupStep10() {
                     
                     servicios_maestros: ordenGenerada.servicios_maestros ? ordenGenerada.servicios_maestros.join(", ") : "",
                     
-                    detallado_tipo: ordenGenerada.detallado_tipo,
-                    extra_interior: ordenGenerada.extra_interior,
-                    extra_aroma: ordenGenerada.extra_aroma,
-                    extra_alfombras: ordenGenerada.extra_alfombras,
+                    detallado_tipo: ordenGenerada.detallado_tipo || "No aplica",
+                    extra_interior: ordenGenerada.extra_interior || "No aplica",
+                    extra_aroma: ordenGenerada.extra_aroma || "No aplica",
+                    extra_alfombras: ordenGenerada.extra_alfombras || "No aplica",
                     servicios_extra: ordenGenerada.extras_finales && ordenGenerada.extras_finales.length > 0 ? ordenGenerada.extras_finales.join(", ") : "No aplica",
                     detallados_especiales: ordenGenerada.detallados_especiales && ordenGenerada.detallados_especiales.length > 0 ? ordenGenerada.detallados_especiales.join(", ") : "No aplica",
-                    detallado_monto: ordenGenerada.detallado_monto,
+                    detallado_monto: ordenGenerada.detallado_monto || 0,
                     
                     mecanica_categorias: ordenGenerada.mecanica_categorias && ordenGenerada.mecanica_categorias.length > 0 ? ordenGenerada.mecanica_categorias.join(", ") : "No aplica",
-                    mecanica_detalles: ordenGenerada.mecanica_detalles ? JSON.stringify(ordenGenerada.mecanica_detalles) : "No aplica",
-                    mecanica_monto: ordenGenerada.mecanica_monto,
+                    mecanica_detalles: (ordenGenerada.mecanica_detalles && typeof ordenGenerada.mecanica_detalles === 'object' && Object.keys(ordenGenerada.mecanica_detalles).length > 0) ? JSON.stringify(ordenGenerada.mecanica_detalles) : "No aplica",
+                    mecanica_monto: ordenGenerada.mecanica_monto || 0,
                     
                     observaciones: ordenGenerada.observaciones
                 };
