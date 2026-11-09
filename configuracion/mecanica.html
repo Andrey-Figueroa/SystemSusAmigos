@@ -2,6 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <!-- Vercel (cleanUrls + trailingSlash) sirve esta página como /carpeta/pagina/.
+         Esta base hace que sus rutas relativas (../css, style.css, app.js) apunten a la
+         carpeta real, igual que en local (/carpeta/pagina.html). Debe ir antes de todo. -->
+    <script>
+        (function () {
+            var carpeta = location.pathname.replace(/[^\/]+\/?$/, '');
+            document.write('<base href="' + carpeta + '">');
+        })();
+    </script>
     <link rel="icon" type="image/png" href="../favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mecánica | Configuración | Sus Amigos</title>
