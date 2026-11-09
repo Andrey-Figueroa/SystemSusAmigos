@@ -6,7 +6,8 @@ let todaySales = [];
 // ==========================================
 // ⚠️ PEGA AQUÍ LA URL DE TU GOOGLE APPS SCRIPT
 // ==========================================
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 // ==========================================
 
 // DOM Elements
@@ -35,7 +36,7 @@ const btnCloseDetails = document.getElementById('btn-close-details');
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Session Check
     if (!window.supabase) {
-        alert('Supabase client not initialized');
+        SaNotificar.aviso('No se pudo conectar con la base de datos. Recarga la página.', 'error');
         return;
     }
 
@@ -58,8 +59,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         activeUser = activeUserStr;
         activeUserRole = activeUserRoleStr;
 
-        document.getElementById('display-user').textContent = activeUser;
-        document.getElementById('responsable-text').innerHTML = `Responsable: <strong>${activeUser}</strong>`;
 
 
 
@@ -306,7 +305,7 @@ function renderSales() {
         if (sale.monto_regalia > 0) tagsHTML += `<span class="pay-tag" style="color:var(--success-color)"><i class="fa-solid fa-gift"></i> Regalía</span>`;
 
         // Delete button restricted to Dueño
-        const deleteBtnHTML = (activeUserRole === 'Dueño' || activeUserRole === 'Soporte TI / Programador') ? 
+        const deleteBtnHTML = window.AppSession.puedeEliminar() ? 
             `<button class="btn-icon delete" style="width:26px; height:26px;" title="Eliminar Venta" onclick="deleteSale('${sale.id}')"><i class="fa-solid fa-trash-can" style="font-size:10px;"></i></button>` : '';
 
         li.innerHTML = `
@@ -365,7 +364,7 @@ window.viewSaleDetails = function(id) {
 }
 
 window.deleteSale = async function(id) {
-    if (activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
+    if (!window.AppSession.puedeEliminar()) {
         showToast('Acceso Denegado', 'Solo el Dueño puede eliminar ventas.', 'error');
         return;
     }
@@ -375,7 +374,7 @@ window.deleteSale = async function(id) {
         ? `Venta ID: ${id}\nProducto: ${sale.nombre_producto}\nMonto Total: ₡${parseFloat(sale.precio_total).toLocaleString('en-US')}\nResponsable: ${sale.responsable}\nFecha: ${new Date(sale.created_at).toLocaleString('es-CR')}`
         : `Venta ID: ${id}`;
 
-    if (!confirm('¿Estás seguro de eliminar esta venta permanentemente?')) return;
+    if (!(await SaNotificar.confirmar({ titulo: 'Eliminar venta', textoConfirmar: 'Eliminar', peligro: true, mensaje: '¿Estás seguro de eliminar esta venta permanentemente?'}))) return;
 
     try {
         const { error } = await window.supabase

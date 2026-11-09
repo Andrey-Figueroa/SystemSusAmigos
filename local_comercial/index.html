@@ -8,13 +8,18 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=38">
     <!-- Auth Guard -->
-    <script src="../js/auth_guard.js"></script>
+    <!-- Tema negro y dorado para los módulos (va de último) -->
+    <link rel="stylesheet" href="../css/tema-modulos.css?v=3">
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
     <div class="pos-layout">
@@ -23,14 +28,6 @@
             <div class="navbar-brand">
                 <i class="fa-solid fa-store logo-icon"></i>
                 <span class="brand-text">Local Comercial</span>
-            </div>
-            
-            <div class="user-profile">
-                <span class="user-greeting">Asesor: <strong id="display-user">...</strong></span>
-                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Volver al Dashboard</span>
-                </button>
             </div>
         </header>
 
@@ -52,7 +49,7 @@
                         
                         <form id="search-client-form" class="search-box">
                             <i class="fa-solid fa-phone"></i>
-                            <input type="text" id="phone-search" placeholder="Ej. 88888888" autocomplete="off" required>
+                            <input type="tel" id="phone-search" placeholder="Ej. 88888888" autocomplete="off" inputmode="numeric" autofocus required>
                             <button type="submit" id="btn-search-client" class="btn-primary">Buscar</button>
                         </form>
 
@@ -103,27 +100,32 @@
                     </div>
                 </div>
 
-                <!-- STEP 2: TIPO VEHICULO Y SERVICIOS MAESTROS -->
+                <!-- STEP 2: TIPO DE VEHÍCULO (tarjetas) Y SERVICIOS MAESTROS -->
                 <div class="wizard-step" id="step-2">
-                    <div class="step-card">
+                    <!-- Valor elegido (lo leen las demás funciones del flujo) -->
+                    <input type="hidden" id="veh-tipo-temp">
+
+                    <!-- 2a. Tipo de vehículo -->
+                    <div class="step-card" id="step2-tipo">
                         <button class="btn-secondary btn-back-step" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Cambiar Cliente</button>
-                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-list-check"></i> Selección de Servicios</h2>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-car"></i> Tipo de Vehículo</h2>
                         <p class="step-desc">Seleccione el tipo de vehículo para ver los servicios disponibles.</p>
 
-                        <div class="form-group" style="margin-top: 24px;">
-                            <label style="font-weight: 600; color: white;">Tipo de Vehículo</label>
-                            <select id="veh-tipo-temp" class="form-control" required onchange="if(window.updateServicesByTipo) window.updateServicesByTipo()">
-                                <option value="">Seleccione...</option>
-                                <option value="SEDAN">SEDAN</option>
-                                <option value="SUV">SUV</option>
-                                <option value="PICKUP">PICKUP</option>
-                                <option value="HATCHBACK">HATCHBACK</option>
-                                <option value="MOTO">MOTO</option>
-                                <option value="OTRO">OTRO</option>
-                            </select>
+                        <div class="radio-group-cards grid-2" id="tipos-vehiculo-local" style="margin-top: 24px;">
+                            <!-- Las tarjetas vienen de Configuración > Tipos de vehículo (tabla tipos_vehiculo) -->
                         </div>
 
-                        <div class="checkbox-group-cards" id="services-master-list" style="margin-top: 24px; display: none;">
+                        <div id="error-step2-tipo" style="color: var(--danger-color); margin-top: 16px; display: none;"></div>
+                        <button class="btn-primary" onclick="continuarConTipoVehiculo()" style="width: 100%; margin-top: 24px;">Siguiente <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+
+                    <!-- 2b. Servicios -->
+                    <div class="step-card" id="step2-servicios" style="display: none;">
+                        <button class="btn-secondary btn-back-step" onclick="mostrarSubpasoTipo()"><i class="fa-solid fa-arrow-left"></i> Cambiar tipo de vehículo</button>
+                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-list-check"></i> Selección de Servicios</h2>
+                        <p class="step-desc">Vehículo: <strong id="step2-tipo-elegido" style="color: white;"></strong></p>
+
+                        <div class="checkbox-group-cards" id="services-master-list" style="margin-top: 24px;">
                             <label class="checkbox-card">
                                 <input type="checkbox" value="Detallado y lavado" class="service-checkbox">
                                 <div class="checkbox-card-content">
@@ -166,16 +168,9 @@
                         <h2 style="margin-top: 16px;"><i class="fa-solid fa-spray-can-sparkles"></i> Tipo de Detallado</h2>
                         <p class="step-desc">Selecciona el paquete de detallado a realizar.</p>
 
-                        <div class="radio-group-cards grid-2" style="margin-top: 24px;">
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado clasico"><div class="radio-card-content"><span>Clásico</span></div></label>
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado premium"><div class="radio-card-content"><span>Premium</span></div></label>
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado Gold"><div class="radio-card-content"><span>Gold</span></div></label>
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Abrillantado premium"><div class="radio-card-content"><span>Abrillantado Premium</span></div></label>
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Hidrosellado Ceramico"><div class="radio-card-content"><span>Hidrosellado Cerámico</span></div></label>
-                            <label class="radio-card"><input type="radio" name="detallado_tipo" value="Detallado ceramico"><div class="radio-card-content"><span>Detallado Cerámico</span></div></label>
-                            <label class="radio-card" style="grid-column: span 2;"><input type="radio" name="detallado_tipo" value="Promocion" id="radio-promocion"><div class="radio-card-content"><span>Promoción Especial</span></div></label>
-                        </div>
-                        
+                        <!-- Paquetes desde Configuración > Paquetes de detallado (según módulo y tipo de vehículo) -->
+                        <div class="radio-group-cards grid-2" id="paquetes-detallado-lista" style="margin-top: 24px;"></div>
+
                         <div id="promo-input-container" style="display: none; margin-top: 16px;">
                             <label style="color:var(--text-secondary); font-size:14px; margin-bottom:8px; display:block;">Detalle de la promoción:</label>
                             <input type="text" id="promo-detalle" class="form-control" placeholder="Escribe la promoción aquí...">
@@ -190,31 +185,25 @@
                 <div class="wizard-step" id="step-4">
                     <div class="step-card">
                         <button class="btn-secondary btn-back-step" onclick="goToStep(3)"><i class="fa-solid fa-arrow-left"></i> Volver a Tipo</button>
-                        <h2 style="margin-top: 16px;"><i class="fa-solid fa-pump-soap"></i> Opciones de Interior</h2>
+                        <h2 class="extra-step-title"><i class="fa-solid fa-pump-soap"></i> Opciones de Interior</h2>
                         
                         <div class="extra-section">
-                            <h3>1. Detallador Interior</h3>
-                            <div class="radio-group-cards grid-2">
-                                <label class="radio-card"><input type="radio" name="extra_interior" value="Nize"><div class="radio-card-content"><span>Nize</span></div></label>
-                                <label class="radio-card"><input type="radio" name="extra_interior" value="Trapo humedo"><div class="radio-card-content"><span>Trapo Húmedo</span></div></label>
-                                <label class="radio-card" id="card-mate"><input type="radio" name="extra_interior" value="Mate"><div class="radio-card-content"><span>Mate</span></div></label>
-                                <label class="radio-card" id="card-brillante"><input type="radio" name="extra_interior" value="Brillante"><div class="radio-card-content"><span>Brillante</span></div></label>
-                            </div>
-                            <small id="interior-warning" style="color:var(--warning-color); display:none; margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> Mate y Brillante no están disponibles para Detallado Clásico.</small>
+                            <h3 class="extra-title"><span class="extra-num">1</span> Detallador interior</h3>
+                            <p class="extra-hint">Producto que se aplica en el interior.</p>
+                            <!-- Detalladores internos asignados al paquete (Configuración) -->
+                            <div class="radio-group-cards grid-2" id="detalladores-lista"></div>
                         </div>
 
-                        <div class="extra-section" style="margin-top: 24px;">
-                            <h3>2. Aromatizante Interior</h3>
-                            <div class="radio-group-cards grid-2">
-                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Limon"><div class="radio-card-content"><span>Limón</span></div></label>
-                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Frutos rojos"><div class="radio-card-content"><span>Frutos Rojos</span></div></label>
-                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Carro nuevo"><div class="radio-card-content"><span>Carro Nuevo</span></div></label>
-                                <label class="radio-card"><input type="radio" name="extra_aroma" value="Sin aromatizante"><div class="radio-card-content"><span>Sin Aromatizante</span></div></label>
-                            </div>
+                        <div class="extra-section">
+                            <h3 class="extra-title"><span class="extra-num">2</span> Aromatizante interior</h3>
+                            <p class="extra-hint">Aroma que se deja en el vehículo.</p>
+                            <!-- Aromatizantes asignados al paquete (Configuración) + "Sin aromatizante" -->
+                            <div class="radio-group-cards grid-2" id="aromatizantes-lista"></div>
                         </div>
 
-                        <div class="extra-section" style="margin-top: 24px;">
-                            <h3>3. Nize en Alfombras</h3>
+                        <div class="extra-section">
+                            <h3 class="extra-title"><span class="extra-num">3</span> Nize en alfombras</h3>
+                            <p class="extra-hint">¿Se aplica Nize a las alfombras?</p>
                             <div class="radio-group-cards grid-2">
                                 <label class="radio-card"><input type="radio" name="extra_alfombras" value="Si"><div class="radio-card-content"><span>SÍ</span></div></label>
                                 <label class="radio-card"><input type="radio" name="extra_alfombras" value="No"><div class="radio-card-content"><span>NO</span></div></label>
@@ -234,16 +223,7 @@
                         <p class="step-desc">Seleccione uno o varios servicios especiales.</p>
                         
                         <div class="checkbox-group-cards grid-2" style="margin-top: 24px;" id="especiales-list">
-                            <label class="checkbox-card"><input type="checkbox" value="Pulido de silvines" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de silvines</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Pulido de vidrios" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de vidrios</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Pulido de parabrisas" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de parabrisas</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Pulido de carroceria" class="especial-cb"><div class="checkbox-card-content"><span>Pulido de carrocería</span></div></label>
-                            
-                            <!-- Moto hidden options -->
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de motor" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de motor</span></div></label>
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Tapiceria profunda" class="especial-cb"><div class="checkbox-card-content"><span>Tapicería profunda</span></div></label>
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lavado de chasis" class="especial-cb"><div class="checkbox-card-content"><span>Lavado de chasis</span></div></label>
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Lluvia grafita" class="especial-cb"><div class="checkbox-card-content"><span>Lluvia grafita</span></div></label>
+                            <!-- Desde Configuración > Detallados especiales (según módulo y tipo de vehículo) -->
                         </div>
 
                         <div id="error-step5" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos un servicio especial.</div>
@@ -259,26 +239,7 @@
                         <p class="step-desc">Seleccione las partes del vehículo que requieren ayuda mecánica.</p>
                         
                         <div class="checkbox-group-cards grid-2" style="margin-top: 24px;" id="mecanica-cat-list">
-                            <label class="checkbox-card"><input type="checkbox" value="Llantas" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Llantas</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Sistema de frenos" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Sistema de frenos</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Lubricacion y Fluidos" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Lubricación y Fluidos</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Motor" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Motor</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Sistema Electrico" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Sistema Eléctrico</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Aire acondicionado" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Aire acondicionado</span></div></label>
-                            
-                            <label class="checkbox-card" style="grid-column: span 2;"><input type="checkbox" value="Mantenimiento general" class="mecanica-cat-cb"><div class="checkbox-card-content"><span>Mantenimiento General</span></div></label>
-                            
-                            <label class="checkbox-card" style="grid-column: span 2;">
-                                <input type="checkbox" value="Promociones mecanicas" class="mecanica-cat-cb" onchange="document.getElementById('promo-mec-container').style.display = this.checked ? 'block' : 'none'">
-                                <div class="checkbox-card-content"><span>Promociones Mecánicas</span></div>
-                            </label>
-                            <div id="promo-mec-container" style="display:none; grid-column:span 2;"><input type="text" id="promo-mec-text" class="form-control" placeholder="Describa la promoción..."></div>
-
-                            <label class="checkbox-card" style="grid-column: span 2;">
-                                <input type="checkbox" value="Otro" class="mecanica-cat-cb" onchange="document.getElementById('otro-mec-container').style.display = this.checked ? 'block' : 'none'">
-                                <div class="checkbox-card-content"><span>Otro</span></div>
-                            </label>
-                            <div id="otro-mec-container" style="display:none; grid-column:span 2;"><input type="text" id="otro-mec-text" class="form-control" placeholder="Describa el otro servicio..."></div>
+                            <!-- Desde Configuración > Mecánica (categorías activas) -->
                         </div>
 
                         <div id="error-step6" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos una categoría o ingresa el texto correspondiente.</div>
@@ -312,18 +273,11 @@
                         <div class="checkbox-group-cards grid-2" style="margin-top: 24px;">
                             <label class="checkbox-card" style="grid-column: span 2;">
                                 <input type="checkbox" value="Ninguno" class="extra-final-cb" id="extra-ninguno" onchange="toggleNingunoExtra(this)">
-                                <div class="checkbox-card-content" style="background: rgba(239,68,68,0.1); border-color: var(--danger-color);"><span>Ninguno</span></div>
+                                <div class="checkbox-card-content" style="background: rgba(229, 83, 75,0.1); border-color: var(--danger-color);"><span>Ninguno</span></div>
                             </label>
-                            
-                            <label class="checkbox-card"><input type="checkbox" value="Cera premium" class="extra-final-cb"><div class="checkbox-card-content"><span>Cera premium</span></div></label>
-                            
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de interior" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de interior</span></div></label>
-                            <label class="checkbox-card auto-only"><input type="checkbox" value="Protector de asientos" class="extra-final-cb"><div class="checkbox-card-content"><span>Protector de asientos</span></div></label>
-                            
-                            <label class="checkbox-card"><input type="checkbox" value="Anti empañante" class="extra-final-cb"><div class="checkbox-card-content"><span>Anti empañante</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Repelente de vidrios" class="extra-final-cb"><div class="checkbox-card-content"><span>Repelente de vidrios</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Sellador ceramico" class="extra-final-cb"><div class="checkbox-card-content"><span>Sellador cerámico</span></div></label>
-                            <label class="checkbox-card"><input type="checkbox" value="Partes negras exteriores" class="extra-final-cb"><div class="checkbox-card-content"><span>Partes negras exteriores</span></div></label>
+
+                            <!-- Extras desde Configuración > Extras (solo activos, del módulo y según el vehículo) -->
+                            <div id="extras-lista" style="display: contents;"></div>
                         </div>
 
                         <div id="error-step8" style="color: var(--danger-color); margin-top: 16px; display: none;">Selecciona al menos una opción.</div>
@@ -363,7 +317,7 @@
                                             <label>Marca</label>
                                             <input type="text" id="veh-marca" class="form-control" autocomplete="off" style="text-transform: uppercase;" placeholder="Ej: TOYOTA">
                                             <i class="fa-solid fa-chevron-down" style="position: absolute; right: 15px; top: 40px; color: var(--text-muted); pointer-events: none; font-size: 12px;"></i>
-                                            <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #1a1b26; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
+                                            <div id="marca-autocomplete-list" style="display: none; position: absolute; z-index: 999; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: var(--sa-surface); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 5px;">
                                                 <!-- Las opciones se inyectan por JS -->
                                             </div>
                                         </div>
@@ -414,6 +368,7 @@
                                     <span style="font-size: 18px; color: var(--text-secondary);">₡</span>
                                     <input type="number" id="monto-detallado" class="form-control" style="flex: 1;" placeholder="0" min="0">
                                 </div>
+                                <small id="precio-paquete-sugerido" style="display:none; color: var(--text-secondary); margin-top: 6px;"></small>
                             </div>
 
                             <div id="cobro-mecanico-container" class="form-group" style="display: none; margin-bottom: 16px;">
@@ -441,7 +396,10 @@
     <div id="toast-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/supabase.js"></script>
-    <script src="app.js?v=37"></script>
+    <script src="../js/tipos_vehiculo.js?v=2"></script>
+    <script src="../js/catalogo_detallado.js?v=6"></script>
+    <script src="../js/catalogo_mecanica.js?v=1"></script>
+    <script src="app.js?v=50"></script>
 </body>
 </html>
 

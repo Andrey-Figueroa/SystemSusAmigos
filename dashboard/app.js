@@ -1,570 +1,559 @@
 /**
- * NeuraLoom Auto - Dashboard Application Logic with Supabase
+ * Sus Amigos - Dashboard
+ *
+ * La sesión, los permisos, el navbar, el menú lateral y la fecha/hora
+ * ya los manejan js/auth_guard.js y js/layout.js.
+ * Aquí solo va la lógica propia de los componentes del dashboard.
  */
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const displayUser = document.getElementById('display-user');
-    const displayRole = document.getElementById('display-role');
-    const btnLogout = document.getElementById('btn-logout');
+// Zona horaria del negocio: el "día" siempre es el de Costa Rica, sin importar la del equipo
+const ZONA_CR = 'America/Costa_Rica';
 
-    // 1. Verify if Supabase SDK is loaded
-    if (!window.supabase || typeof window.supabase.auth === 'undefined') {
-        console.error('Supabase client is not initialized.');
-        window.location.href = '../login/index.html';
-        return;
-    }
+// Formato de colones de Costa Rica: ₡40 000
+const formatoColones = new Intl.NumberFormat('es-CR', {
+    style: 'currency',
+    currency: 'CRC',
+    maximumFractionDigits: 0
+});
+const formatoNumero = new Intl.NumberFormat('es-CR');
+
+/** Inicio del día de hoy en Costa Rica, en formato ISO para filtrar en Supabase. */
+function inicioDelDiaCR() {
+    // 'en-CA' da la fecha como AAAA-MM-DD
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_CR }).format(new Date());
+    return `${hoy}T00:00:00-06:00`;
+}
+
+/** Convierte un valor de la base de datos a número (null, '' o texto inválido = 0). */
+function aNumero(valor) {
+    const n = parseFloat(valor);
+    return Number.isFinite(n) ? n : 0;
+}
+
+/* ==========================================================================
+   Indicador: Ticket promedio
+   Suma el total de todos los tickets del día y lo divide entre la cantidad de tickets.
+   Un ticket = una orden del local, una venta de productos o un servicio a domicilio
+   con monto mayor a 0.
+   ========================================================================== */
+async function cargarTicketPromedio() {
+    const card = document.getElementById('kpi-ticket-promedio');
+    const valorEl = document.getElementById('kpi-ticket-valor');
+    const detalleEl = document.getElementById('kpi-ticket-detalle');
+    if (!card) return;
+
+    card.classList.add('is-loading');
+    card.classList.remove('is-error');
 
     try {
-        // 2. Check active session directly from Supabase
-        const { data: { session }, error } = await window.supabase.auth.getSession();
+        const desde = inicioDelDiaCR();
 
-        if (error || !session) {
-            console.warn('Session check failed or no active session found. Redirecting to login.');
-            localStorage.clear();
-            window.location.href = '../login/index.html';
+        // Las tres consultas en paralelo y solo con la columna del monto
+        const [ordenes, productos, domicilio] = await Promise.all([
+            window.supabase.from('ordenes').select('total_monto').gte('created_at', desde),
+            window.supabase.from('ventas_productos_diarias').select('precio_total').gte('created_at', desde),
+            window.supabase.from('ordenes_domicilio').select('total_monto').gte('created_at', desde)
+        ]);
+
+        const error = ordenes.error || productos.error || domicilio.error;
+        if (error) throw error;
+
+        const montos = [
+            ...ordenes.data.map(o => aNumero(o.total_monto)),
+            ...productos.data.map(v => aNumero(v.precio_total)),
+            ...domicilio.data.map(d => aNumero(d.total_monto))
+        ].filter(m => m > 0);
+
+        const totalVendido = montos.reduce((suma, m) => suma + m, 0);
+        const cantidadTickets = montos.length;
+        const promedio = cantidadTickets > 0 ? totalVendido / cantidadTickets : 0;
+
+        valorEl.textContent = formatoColones.format(promedio);
+        detalleEl.textContent = cantidadTickets === 0
+            ? 'Aún no hay tickets hoy'
+            : `${formatoNumero.format(cantidadTickets)} ${cantidadTickets === 1 ? 'ticket' : 'tickets'} · ${formatoColones.format(totalVendido)} en total`;
+    } catch (err) {
+        console.error('[Dashboard] Error al calcular el ticket promedio:', err);
+        card.classList.add('is-error');
+        valorEl.textContent = '—';
+        detalleEl.textContent = 'No se pudo cargar. Recarga la página.';
+    } finally {
+        card.classList.remove('is-loading');
+    }
+}
+
+/* ==========================================================================
+   Indicador: Caja inicial
+   Funciona igual que antes: empieza en ₡40 000, se puede editar y el botón de enviar
+   manda la alerta por correo ('alerta_caja') y actualiza la hoja de Sheets
+   ('update_caja_dashboard'). Al enviar, el monto se guarda en este equipo y es el que
+   aparece al volver a abrir el dashboard (por defecto ₡40 000).
+   ========================================================================== */
+function iniciarCajaInicial() {
+    const input = document.getElementById('input-caja-inicial');
+    const btn = document.getElementById('btn-update-caja');
+    const estado = document.getElementById('kpi-caja-estado');
+    if (!input || !btn) return;
+
+    const ICONO_ENVIAR = '<i class="fa-solid fa-paper-plane" aria-hidden="true"></i>';
+    const config = window.APP_CONFIG || {};
+    const CLAVE_CAJA = 'dashCajaInicial';
+
+    // Mostrar el último monto enviado en este equipo (si no hay, queda el ₡40 000 del HTML)
+    try {
+        const guardado = localStorage.getItem(CLAVE_CAJA);
+        if (guardado !== null && guardado !== '' && aNumero(guardado) >= 0) input.value = guardado;
+    } catch (e) { /* almacenamiento no disponible: se queda el valor por defecto */ }
+
+    // Avisar a otros componentes (p. ej. "Dinero en caja") cuando cambia el monto
+    input.addEventListener('input', () => {
+        document.dispatchEvent(new CustomEvent('dash:caja-inicial', { detail: aNumero(input.value) }));
+    });
+
+    btn.addEventListener('click', async () => {
+        const nuevoMonto = input.value;
+        if (nuevoMonto === '' || aNumero(nuevoMonto) < 0) {
+            estado.textContent = 'Ingresa un monto válido.';
+            estado.classList.add('is-error-text');
+            input.focus();
             return;
         }
 
-        // 3. Retrieve user name and role (from localStorage or direct query as fallback)
-        let activeUser = localStorage.getItem('activeUser');
-        let activeUserRole = localStorage.getItem('activeUserRole');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>';
+        estado.classList.remove('is-error-text');
+        estado.textContent = 'Enviando…';
 
-        if (!activeUser || !activeUserRole) {
-            const userEmail = session.user.email;
-            
-            // Query personal table for live data
-            const { data: profile, error: profileError } = await window.supabase
-                .from('personal')
-                .select('nombre, rol')
-                .eq('email', userEmail)
-                .maybeSingle();
-
-            if (profileError || !profile) {
-                console.error('Error fetching personal info or no record found:', profileError);
-                // Fallback display if not registered in personal
-                activeUser = session.user.email.split('@')[0];
-                activeUserRole = 'Usuario';
-            } else {
-                activeUser = profile.nombre;
-                activeUserRole = profile.rol;
-                
-                // Cache locally
-                localStorage.setItem('activeUser', activeUser);
-                localStorage.setItem('activeUserRole', activeUserRole);
-            }
-        }
-
-        // 4. Update UI displays
-        if (displayUser) displayUser.textContent = activeUser;
-        if (displayRole) {
-            displayRole.textContent = activeUserRole;
-            displayRole.style.display = 'inline-block';
-        }
-
-        const navPersonal = document.getElementById('nav-personal');
-        const navSheets = document.getElementById('nav-sheets');
-        const navBackup = document.getElementById('nav-backup');
-        
-        // Hacer público el botón de Google Sheets
-        if (navSheets) navSheets.style.display = 'inline-flex';
-        
-        if (activeUserRole === 'Administrador' || activeUserRole === 'Dueño' || activeUserRole === 'Dueno' || activeUserRole === 'Soporte TI / Programador' || activeUserRole === 'Soporte TI') {
-            if (navPersonal) navPersonal.style.display = 'inline-flex';
-        }
-
-        // Carpetas de respaldo: solo Dueño y TI
-        if (activeUserRole === 'Dueño' || activeUserRole === 'Dueno' || activeUserRole === 'Soporte TI / Programador' || activeUserRole === 'Soporte TI') {
-            if (navBackup) navBackup.style.display = 'inline-flex';
-        }
-
-        // 4.5. Disable restricted cards based on role
-        if (activeUserRole === 'Mecanico' || activeUserRole === 'Mecánico') {
-            // Mecánico: solo puede acceder a Mecánica y Vehículos
-            const allCards = document.querySelectorAll('.module-card');
-            allCards.forEach(card => {
-                if (card.id !== 'card-taller' && card.id !== 'card-vehiculos') {
-                    card.classList.add('disabled-card');
-                    card.style.opacity = '0.35';
-                    card.style.pointerEvents = 'none';
-                    card.style.cursor = 'not-allowed';
-                    card.setAttribute('href', '#');
-                }
-            });
-            // Ocultar resumen financiero
-            const summarySection = document.querySelector('.daily-summary-section');
-            if (summarySection) summarySection.style.display = 'none';
-        } else if (activeUserRole !== 'Administrador' && activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
-            const cardClientes = document.getElementById('card-clientes');
-            if (cardClientes) {
-                cardClientes.classList.add('disabled-card');
-                cardClientes.style.opacity = '0.35';
-                cardClientes.style.pointerEvents = 'none';
-                cardClientes.setAttribute('href', '#');
-            }
-
-            const cardVehiculos = document.getElementById('card-vehiculos');
-            if (cardVehiculos) {
-                cardVehiculos.classList.add('disabled-card');
-                cardVehiculos.style.opacity = '0.35';
-                cardVehiculos.style.pointerEvents = 'none';
-                cardVehiculos.setAttribute('href', '#');
-            }
-        }
-
-        // 5. Initialize Live Date/Time for Dashboard Summary
-        initDashboardTime();
-
-        // 5. Setup POS Modal Interactions
-        const cardPos = document.getElementById('card-pos');
-        const posModal = document.getElementById('pos-modal');
-        const btnClosePos = document.getElementById('btn-close-pos');
-        const posOptionCards = document.querySelectorAll('.pos-option-card');
-
-        if (cardPos && posModal) {
-            // Remove any default href behavior just in case
-            cardPos.setAttribute('href', '#');
-            
-            cardPos.addEventListener('click', (e) => {
-                e.preventDefault();
-                posModal.classList.add('active');
-            });
-        }
-
-        if (btnClosePos && posModal) {
-            btnClosePos.addEventListener('click', () => {
-                posModal.classList.remove('active');
-            });
-        }
-
-        // Handle clicks outside the modal content
-        window.addEventListener('click', (e) => {
-            if (e.target === posModal) {
-                posModal.classList.remove('active');
-            }
+        const enviar = (url, payload) => fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
         });
 
-        // Handle individual POS options
-        posOptionCards.forEach(card => {
-            card.addEventListener('click', () => {
-                const action = card.getAttribute('data-action');
-                
-                if (action === 'productos') {
-                    window.location.href = '../ventas/index.html';
-                    return;
-                }
-                
-                if (action === 'local') {
-                    window.location.href = '../local_comercial/index.html';
-                    return;
-                }
-                if (action === 'domicilio') {
-                    window.location.href = '../domicilio/index.html';
-                    return;
-                }
-                
-                let message = 'Módulo en construcción.';
-                
-                alert(message);
-                posModal.classList.remove('active');
-            });
-        });
-
-    } catch (err) {
-        console.error('Unexpected error checking session:', err);
-        window.location.href = '../login/index.html';
-    }
-
-    // 6. Logout action
-    if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            try {
-                // Sign out of Supabase session
-                await window.supabase.auth.signOut();
-            } catch (err) {
-                console.error('Error signing out from Supabase:', err);
-            } finally {
-                // Clear local storage and redirect
-                localStorage.clear();
-                window.location.href = '../login/index.html';
-            }
-        });
-    }
-
-    // 7. Dynamic Time Logic
-    function initDashboardTime() {
-        const datetimeElement = document.getElementById('current-datetime');
-        if (!datetimeElement) return;
-
-        function updateTime() {
-            const now = new Date();
-            const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            let dateString = now.toLocaleDateString('es-ES', optionsDate);
-            dateString = dateString.charAt(0).toUpperCase() + dateString.slice(1);
-            
-            const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
-            
-            datetimeElement.innerHTML = `Dashboard de hoy, <strong>${dateString}</strong> a las <strong>${timeString}</strong>`;
-        }
-
-        updateTime();
-        setInterval(updateTime, 60000);
-    }
-
-    // 8. Load Dashboard Metrics from Supabase
-    async function loadDashboardMetrics() {
         try {
-            const nowCR = new Date();
-            const year = nowCR.getFullYear();
-            const month = String(nowCR.getMonth() + 1).padStart(2, '0');
-            const day = String(nowCR.getDate()).padStart(2, '0');
-            const startOfDay = `${year}-${month}-${day}T00:00:00-06:00`;
-
-            // Fetch all tables with date filter
-            const { data: ordenes, error: errOrdenes } = await window.supabase.from('ordenes').select('*').gte('created_at', startOfDay);
-            const { data: ventas, error: errVentas } = await window.supabase.from('ventas_productos_diarias').select('*').gte('created_at', startOfDay);
-            const { data: domicilio, error: errDomicilio } = await window.supabase.from('ordenes_domicilio').select('*').gte('created_at', startOfDay);
-            const { data: gastos, error: errGastos } = await window.supabase.from('gastos').select('*').gte('created_at', startOfDay);
-            const { data: abonos, error: errAbonos } = await window.supabase.from('cxc_abonos').select('*').gte('fecha', startOfDay);
-            
-            if (errOrdenes || errVentas || errDomicilio || errGastos || errAbonos) {
-                console.error("Error fetching metrics", { errOrdenes, errVentas, errDomicilio, errGastos, errAbonos });
-                return;
-            }
-
-            // --- INICIALIZAR CONTADORES ---
-            let metrics = {
-                lubricentro: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
-                productos: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
-                domicilio: { efectivo: 0, tarjeta: 0, sinpe: 0, cxc: 0, transferencia: 0, regalia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_cxc: 0, c_transferencia: 0, c_regalia: 0 },
-                abonos: { efectivo: 0, tarjeta: 0, sinpe: 0, transferencia: 0, c_efectivo: 0, c_tarjeta: 0, c_sinpe: 0, c_transferencia: 0 },
-                global: { detallado: 0, mecanica: 0, productos: 0, domicilio: 0, c_detallado: 0, c_mecanica: 0, c_productos: 0, c_domicilio: 0 },
-                vehiculos: { proceso: 0, terminado: 0, retirado: 0 },
-                gastos_efectivo: 0,
-                total_tickets: 0,
-                total_ingresos: 0
-            };
-
-            // Helper for mapping methods
-            const mapMethod = (method) => {
-                if(!method) return null;
-                const m = method.toLowerCase();
-                if(m.includes('efectivo')) return 'efectivo';
-                if(m.includes('tarjeta')) return 'tarjeta';
-                if(m.includes('sinpe')) return 'sinpe';
-                if(m.includes('cuenta') || m.includes('cobrar') || m.includes('cxc')) return 'cxc';
-                if(m.includes('transferencia')) return 'transferencia';
-                if(m.includes('regal')) return 'regalia';
-                return null;
-            };
-
-                        // 1. Procesar Órdenes (Lubricentro / Detallado / Mecánica / Vehículos)
-            ordenes.forEach(o => {
-                if (o.estado === 'En proceso') metrics.vehiculos.proceso++;
-                if (o.estado === 'Terminado') metrics.vehiculos.terminado++;
-                if (o.estado === 'Retirado') metrics.vehiculos.retirado++;
-
-                const total = parseFloat(o.total_monto) || 0;
-                const mDetallado = parseFloat(o.detallado_monto) || 0;
-                const mMecanica = parseFloat(o.mecanica_monto) || 0;
-                
-                if (total > 0) {
-                    const keys = ['efectivo', 'tarjeta', 'sinpe', 'cxc', 'transferencia', 'regalia'];
-                    let hasPayment = false;
-                    keys.forEach(k => {
-                        const m = parseFloat(o['monto_' + k]) || 0;
-                        if (m > 0) {
-                            metrics.lubricentro[k] += m;
-                            metrics.lubricentro['c_' + k]++;
-                            hasPayment = true;
-                        }
-                    });
-
-                    // Si no tiene pagos divididos guardados explícitamente pero tiene un total y un método, intentar fallback:
-                    if (!hasPayment) {
-                        const method = mapMethod(o.metodo_pago);
-                        if (method) {
-                            metrics.lubricentro[method] += total;
-                            metrics.lubricentro['c_' + method]++;
-                        }
-                    }
-                    
-                    if (mDetallado > 0) {
-                        metrics.global.detallado += mDetallado;
-                        metrics.global.c_detallado++;
-                    }
-                    if (mMecanica > 0) {
-                        metrics.global.mecanica += mMecanica;
-                        metrics.global.c_mecanica++;
-                    }
-                    
-                    metrics.total_tickets++;
-                    metrics.total_ingresos += total;
-                }
+            // 1. Alerta por correo (igual que antes)
+            await enviar(config.alertWebhookUrl, {
+                action: 'alerta_caja',
+                usuario: localStorage.getItem('activeUser') || 'Usuario Desconocido',
+                nuevo_monto: nuevoMonto,
+                fecha: new Date().toLocaleString('es-CR')
             });
 
-            // 2. Procesar Productos
-            ventas.forEach(v => {
-                const total = parseFloat(v.precio_total) || parseFloat(v.total) || parseFloat(v.total_monto) || 0;
-                if (total > 0) {
-                    const keys = ['efectivo', 'tarjeta', 'sinpe', 'cxc', 'transferencia', 'regalia'];
-                    let hasPayment = false;
-                    keys.forEach(k => {
-                        const m = parseFloat(v['monto_' + k]) || 0;
-                        if (m > 0) {
-                            metrics.productos[k] += m;
-                            metrics.productos['c_' + k]++;
-                            hasPayment = true;
-                        }
-                    });
+            // 2. Actualizar la caja en Google Sheets (igual que antes; si falla no bloquea)
+            enviar(config.sheetsWebhookUrl, {
+                action: 'update_caja_dashboard',
+                nuevo_monto: nuevoMonto
+            }).catch(() => {});
 
-                    if (!hasPayment) {
-                        const method = mapMethod(v.metodo_pago);
-                        if (method) {
-                            metrics.productos[method] += total;
-                            metrics.productos['c_' + method]++;
-                        }
-                    }
-                    
-                    metrics.global.productos += total;
-                    metrics.global.c_productos++;
-                    metrics.total_tickets++;
-                    metrics.total_ingresos += total;
-                }
-            });
+            // Recordar el monto para la próxima vez que se abra el dashboard
+            try { localStorage.setItem(CLAVE_CAJA, nuevoMonto); } catch (e) { /* sin almacenamiento */ }
 
-            // 3. Procesar Domicilio
-            domicilio.forEach(d => {
-                const total = parseFloat(d.total_monto) || parseFloat(d.monto) || 0;
-                if (total > 0) {
-                    const keys = ['efectivo', 'tarjeta', 'sinpe', 'cxc', 'transferencia', 'regalia'];
-                    let hasPayment = false;
-                    keys.forEach(k => {
-                        const m = parseFloat(d['monto_' + k]) || 0;
-                        if (m > 0) {
-                            metrics.domicilio[k] += m;
-                            metrics.domicilio['c_' + k]++;
-                            hasPayment = true;
-                        }
-                    });
-
-                    if (!hasPayment) {
-                        const method = mapMethod(d.metodo_pago);
-                        if (method) {
-                            metrics.domicilio[method] += total;
-                            metrics.domicilio['c_' + method]++;
-                        }
-                    }
-
-                    metrics.global.domicilio += total;
-                    metrics.global.c_domicilio++;
-                    metrics.total_tickets++;
-                    metrics.total_ingresos += total;
-                }
-            });
-
-            // Procesar Abonos de hoy
-            abonos.forEach(a => {
-                const monto = parseFloat(a.monto_abono) || 0;
-                if (monto > 0) {
-                    const m = (a.metodo_pago || '').toLowerCase();
-                    if (m.includes('efectivo')) { metrics.abonos.efectivo += monto; metrics.abonos.c_efectivo++; }
-                    else if (m.includes('tarjeta')) { metrics.abonos.tarjeta += monto; metrics.abonos.c_tarjeta++; }
-                    else if (m.includes('sinpe')) { metrics.abonos.sinpe += monto; metrics.abonos.c_sinpe++; }
-                    else if (m.includes('transferencia')) { metrics.abonos.transferencia += monto; metrics.abonos.c_transferencia++; }
-                }
-            });
-
-            // Procesar gastos de hoy
-            gastos.forEach(g => {
-                const total = parseFloat(g.monto) || 0;
-                // Todos los gastos salen de caja (efectivo)
-                metrics.gastos_efectivo += total;
-            });
-
-            // --- ACTUALIZAR DOM ---
-            const formatMoney = (val) => String.fromCharCode(0x20A1) + Math.round(val).toLocaleString('en-US');
-
-            // Set Lubricentro
-            document.getElementById('lub-efectivo-monto').innerText = formatMoney(metrics.lubricentro.efectivo);
-            document.getElementById('lub-efectivo-cant').innerText = metrics.lubricentro.c_efectivo;
-            document.getElementById('lub-tarjeta-monto').innerText = formatMoney(metrics.lubricentro.tarjeta);
-            document.getElementById('lub-tarjeta-cant').innerText = metrics.lubricentro.c_tarjeta;
-            document.getElementById('lub-sinpe-monto').innerText = formatMoney(metrics.lubricentro.sinpe);
-            document.getElementById('lub-sinpe-cant').innerText = metrics.lubricentro.c_sinpe;
-            document.getElementById('lub-cxc-monto').innerText = formatMoney(metrics.lubricentro.cxc);
-            document.getElementById('lub-cxc-cant').innerText = metrics.lubricentro.c_cxc;
-            document.getElementById('lub-transferencia-monto').innerText = formatMoney(metrics.lubricentro.transferencia);
-            document.getElementById('lub-transferencia-cant').innerText = metrics.lubricentro.c_transferencia;
-            document.getElementById('lub-regalia-monto').innerText = formatMoney(metrics.lubricentro.regalia);
-            document.getElementById('lub-regalia-cant').innerText = metrics.lubricentro.c_regalia;
-
-            // Set Productos
-            document.getElementById('prod-efectivo-monto').innerText = formatMoney(metrics.productos.efectivo);
-            document.getElementById('prod-efectivo-cant').innerText = metrics.productos.c_efectivo;
-            document.getElementById('prod-tarjeta-monto').innerText = formatMoney(metrics.productos.tarjeta);
-            document.getElementById('prod-tarjeta-cant').innerText = metrics.productos.c_tarjeta;
-            document.getElementById('prod-sinpe-monto').innerText = formatMoney(metrics.productos.sinpe);
-            document.getElementById('prod-sinpe-cant').innerText = metrics.productos.c_sinpe;
-            document.getElementById('prod-cxc-monto').innerText = formatMoney(metrics.productos.cxc);
-            document.getElementById('prod-cxc-cant').innerText = metrics.productos.c_cxc;
-            document.getElementById('prod-transferencia-monto').innerText = formatMoney(metrics.productos.transferencia);
-            document.getElementById('prod-transferencia-cant').innerText = metrics.productos.c_transferencia;
-            document.getElementById('prod-regalia-monto').innerText = formatMoney(metrics.productos.regalia);
-            document.getElementById('prod-regalia-cant').innerText = metrics.productos.c_regalia;
-
-            // Set Domicilio
-            document.getElementById('dom-efectivo-monto').innerText = formatMoney(metrics.domicilio.efectivo);
-            document.getElementById('dom-efectivo-cant').innerText = metrics.domicilio.c_efectivo;
-            document.getElementById('dom-tarjeta-monto').innerText = formatMoney(metrics.domicilio.tarjeta);
-            document.getElementById('dom-tarjeta-cant').innerText = metrics.domicilio.c_tarjeta;
-            document.getElementById('dom-sinpe-monto').innerText = formatMoney(metrics.domicilio.sinpe);
-            document.getElementById('dom-sinpe-cant').innerText = metrics.domicilio.c_sinpe;
-            document.getElementById('dom-cxc-monto').innerText = formatMoney(metrics.domicilio.cxc);
-            document.getElementById('dom-cxc-cant').innerText = metrics.domicilio.c_cxc;
-            document.getElementById('dom-transferencia-monto').innerText = formatMoney(metrics.domicilio.transferencia);
-            document.getElementById('dom-transferencia-cant').innerText = metrics.domicilio.c_transferencia;
-            document.getElementById('dom-regalia-monto').innerText = formatMoney(metrics.domicilio.regalia);
-            document.getElementById('dom-regalia-cant').innerText = metrics.domicilio.c_regalia;
-            
-            // Abonos
-            document.getElementById('abono-efectivo-monto').innerText = formatMoney(metrics.abonos.efectivo);
-            document.getElementById('abono-efectivo-cant').innerText = metrics.abonos.c_efectivo;
-            document.getElementById('abono-tarjeta-monto').innerText = formatMoney(metrics.abonos.tarjeta);
-            document.getElementById('abono-tarjeta-cant').innerText = metrics.abonos.c_tarjeta;
-            document.getElementById('abono-sinpe-monto').innerText = formatMoney(metrics.abonos.sinpe);
-            document.getElementById('abono-sinpe-cant').innerText = metrics.abonos.c_sinpe;
-            document.getElementById('abono-transferencia-monto').innerText = formatMoney(metrics.abonos.transferencia);
-            document.getElementById('abono-transferencia-cant').innerText = metrics.abonos.c_transferencia;
-
-            // Global Totals
-            document.getElementById('glob-detallado-monto').innerText = formatMoney(metrics.global.detallado);
-            document.getElementById('glob-detallado-cant').innerText = metrics.global.c_detallado;
-            document.getElementById('glob-mecanica-monto').innerText = formatMoney(metrics.global.mecanica);
-            document.getElementById('glob-mecanica-cant').innerText = metrics.global.c_mecanica;
-            document.getElementById('glob-productos-monto').innerText = formatMoney(metrics.global.productos);
-            document.getElementById('glob-productos-cant').innerText = metrics.global.c_productos;
-            document.getElementById('glob-domicilio-monto').innerText = formatMoney(metrics.global.domicilio);
-            document.getElementById('glob-domicilio-cant').innerText = metrics.global.c_domicilio;
-            
-            const globTotal = metrics.global.detallado + metrics.global.mecanica + metrics.global.productos + metrics.global.domicilio;
-            const globCant = metrics.global.c_detallado + metrics.global.c_mecanica + metrics.global.c_productos + metrics.global.c_domicilio;
-            document.getElementById('glob-total-monto').innerText = formatMoney(globTotal);
-            document.getElementById('glob-total-cant').innerText = globCant;
-
-            // Ventas Totales Sus Amigos
-            const totEfectivo = metrics.lubricentro.efectivo + metrics.productos.efectivo + metrics.domicilio.efectivo + metrics.abonos.efectivo;
-            const totTarjeta = metrics.lubricentro.tarjeta + metrics.productos.tarjeta + metrics.domicilio.tarjeta + metrics.abonos.tarjeta;
-            const totSinpe = metrics.lubricentro.sinpe + metrics.productos.sinpe + metrics.domicilio.sinpe + metrics.abonos.sinpe;
-            const totCxc = metrics.lubricentro.cxc + metrics.productos.cxc + metrics.domicilio.cxc;
-            const totTransferencia = metrics.lubricentro.transferencia + metrics.productos.transferencia + metrics.domicilio.transferencia + metrics.abonos.transferencia;
-            const totRegalia = metrics.lubricentro.regalia + metrics.productos.regalia + metrics.domicilio.regalia;
-            
-            const cantEfectivo = metrics.lubricentro.c_efectivo + metrics.productos.c_efectivo + metrics.domicilio.c_efectivo + metrics.abonos.c_efectivo;
-            const cantTarjeta = metrics.lubricentro.c_tarjeta + metrics.productos.c_tarjeta + metrics.domicilio.c_tarjeta + metrics.abonos.c_tarjeta;
-            const cantSinpe = metrics.lubricentro.c_sinpe + metrics.productos.c_sinpe + metrics.domicilio.c_sinpe + metrics.abonos.c_sinpe;
-            const cantCxc = metrics.lubricentro.c_cxc + metrics.productos.c_cxc + metrics.domicilio.c_cxc;
-            const cantTransferencia = metrics.lubricentro.c_transferencia + metrics.productos.c_transferencia + metrics.domicilio.c_transferencia + metrics.abonos.c_transferencia;
-            const cantRegalia = metrics.lubricentro.c_regalia + metrics.productos.c_regalia + metrics.domicilio.c_regalia;
-
-            document.getElementById('tot-efectivo-monto').innerText = formatMoney(totEfectivo);
-            document.getElementById('tot-efectivo-cant').innerText = cantEfectivo;
-            document.getElementById('tot-tarjeta-monto').innerText = formatMoney(totTarjeta);
-            document.getElementById('tot-tarjeta-cant').innerText = cantTarjeta;
-            document.getElementById('tot-sinpe-monto').innerText = formatMoney(totSinpe);
-            document.getElementById('tot-sinpe-cant').innerText = cantSinpe;
-            document.getElementById('tot-cxc-monto').innerText = formatMoney(totCxc);
-            document.getElementById('tot-cxc-cant').innerText = cantCxc;
-            document.getElementById('tot-transferencia-monto').innerText = formatMoney(totTransferencia);
-            document.getElementById('tot-transferencia-cant').innerText = cantTransferencia;
-            document.getElementById('tot-regalia-monto').innerText = formatMoney(totRegalia);
-            document.getElementById('tot-regalia-cant').innerText = cantRegalia;
-            
-            // Regalia shouldn't count towards actual incoming cash in superTotal
-            const superTotal = totEfectivo + totTarjeta + totSinpe + totCxc + totTransferencia;
-            const superCant = cantEfectivo + cantTarjeta + cantSinpe + cantCxc + cantTransferencia + cantRegalia;
-            document.getElementById('tot-global-monto').innerText = formatMoney(superTotal);
-            document.getElementById('tot-global-cant').innerText = superCant;
-
-            // Veh�culos Pizarra
-            document.getElementById('veh-proceso').innerText = metrics.vehiculos.proceso;
-            document.getElementById('veh-terminado').innerText = metrics.vehiculos.terminado;
-            document.getElementById('veh-retirado').innerText = metrics.vehiculos.retirado;
-
-            // KPIs
-            const ticketPromedio = metrics.total_tickets > 0 ? (metrics.total_ingresos / metrics.total_tickets) : 0;
-            document.getElementById('kpi-ticket').innerText = formatMoney(ticketPromedio);
-            document.getElementById('kpi-gastos').innerText = formatMoney(metrics.gastos_efectivo);
-            // Dinero en Caja Logic
-            function updateCaja() {
-                const cajaIncial = parseFloat(document.getElementById('input-caja-inicial').value) || 0;
-                const dineroEnCaja = cajaIncial + totEfectivo - metrics.gastos_efectivo;
-                document.getElementById('kpi-dinero-caja').innerText = formatMoney(dineroEnCaja);
-                
-                const cierreEfectivo = dineroEnCaja - 40000;
-                document.getElementById('kpi-cierre-efectivo').innerText = formatMoney(cierreEfectivo);
-            }
-            document.getElementById('input-caja-inicial').addEventListener('input', updateCaja);
-            updateCaja(); // Initial run
-            
-            // Send Alert Button
-            const btnAlert = document.getElementById('btn-update-caja');
-            if(btnAlert) {
-                btnAlert.addEventListener('click', () => {
-                    const newValue = document.getElementById('input-caja-inicial').value;
-                    btnAlert.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                    
-                    const webhookUrl = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
-                    const sheetsWebhookUrl = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
-                    
-                    fetch(webhookUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({
-                            action: "alerta_caja",
-                            usuario: localStorage.getItem('activeUser') || "Usuario Desconocido",
-                            nuevo_monto: newValue,
-                            fecha: new Date().toLocaleString('es-CR')
-                        })
-                    }).then(() => {
-                        btnAlert.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
-                        setTimeout(() => btnAlert.innerHTML = '<i class="fa-solid fa-paper-plane"></i>', 3000);
-                        alert('¡Caja actualizada en Dashboard y alerta enviada!');
-                    }).catch(err => {
-                        console.error("Error al enviar alerta", err);
-                        btnAlert.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-                        alert('Error al actualizar.');
-                    });
-                    
-                    fetch(sheetsWebhookUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({
-                            action: "update_caja_dashboard",
-                            nuevo_monto: newValue
-                        })
-                    }).catch(()=>{});
-                });
-            }
-
-        } catch (error) {
-            console.error("Crash loading metrics", error);
+            btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+            btn.classList.add('is-ok');
+            estado.textContent = `Caja actualizada a ${formatoColones.format(aNumero(nuevoMonto))} y alerta enviada.`;
+        } catch (err) {
+            console.error('[Dashboard] Error al enviar la alerta de caja:', err);
+            btn.innerHTML = ICONO_ENVIAR;
+            estado.textContent = 'No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.';
+            estado.classList.add('is-error-text');
+            btn.disabled = false;
+            return;
         }
+
+        setTimeout(() => {
+            btn.innerHTML = ICONO_ENVIAR;
+            btn.classList.remove('is-ok');
+            btn.disabled = false;
+        }, 3000);
+    });
+}
+
+/* ==========================================================================
+   Indicador: Dinero en caja
+   Dinero en caja = Caja inicial + Ingresos totales en efectivo − Gastos en efectivo
+
+   Ingresos en efectivo del día (cobrados hoy):
+   - Órdenes del local: cobradas hoy (hora_pago), parte en efectivo.
+   - Venta de productos: se cobran al registrarse (created_at), parte en efectivo.
+   - Domicilio: registrados hoy (created_at), parte en efectivo.
+   - Abonos a cuentas por cobrar: de hoy (fecha), pagados en efectivo.
+   Gastos: todos los gastos del día salen de caja (efectivo).
+   ========================================================================== */
+const dineroEnCaja = { efectivo: 0, gastos: 0, cargado: false };
+
+/** Parte en efectivo de un cobro: usa monto_efectivo; si no hay montos separados, usa el método de pago. */
+function efectivoDe(registro, total) {
+    const efectivo = aNumero(registro.monto_efectivo);
+    if (efectivo > 0) return efectivo;
+
+    const tieneMontosSeparados = ['monto_tarjeta', 'monto_sinpe', 'monto_cxc', 'monto_transferencia', 'monto_regalia']
+        .some(campo => aNumero(registro[campo]) > 0);
+    const metodo = (registro.metodo_pago || '').toLowerCase();
+    if (!tieneMontosSeparados && metodo.includes('efectivo')) return aNumero(total);
+    return 0;
+}
+
+function pintarDineroEnCaja() {
+    const valorEl = document.getElementById('kpi-dinero-valor');
+    const detalleEl = document.getElementById('kpi-dinero-detalle');
+    const input = document.getElementById('input-caja-inicial');
+    if (!valorEl || !dineroEnCaja.cargado) return;
+
+    const cajaInicial = input ? aNumero(input.value) : 0;
+    const total = cajaInicial + dineroEnCaja.efectivo - dineroEnCaja.gastos;
+
+    valorEl.textContent = formatoColones.format(total);
+    valorEl.classList.toggle('is-negative', total < 0);
+    detalleEl.textContent =
+        `${formatoColones.format(cajaInicial)} inicial + ${formatoColones.format(dineroEnCaja.efectivo)} efectivo − ` +
+        `${formatoColones.format(dineroEnCaja.gastos)} gastos`;
+
+    pintarCierre(total, cajaInicial);
+}
+
+/* ==========================================================================
+   Indicador: Dinero entregado al cierre
+   Dinero entregado al cierre = Dinero en caja − Caja inicial
+   (la caja inicial se queda en la caja; el resto se entrega al cerrar)
+   ========================================================================== */
+function pintarCierre(dineroCaja, cajaInicial) {
+    const card = document.getElementById('kpi-cierre');
+    const valorEl = document.getElementById('kpi-cierre-valor');
+    const detalleEl = document.getElementById('kpi-cierre-detalle');
+    if (!card) return;
+
+    card.classList.remove('is-loading');
+
+    if (dineroCaja === null) {
+        card.classList.add('is-error');
+        valorEl.textContent = '—';
+        detalleEl.textContent = 'No se pudo cargar. Recarga la página.';
+        return;
     }
 
-    // Run metrics
-    if (document.getElementById('resumen-operaciones')) {
-        loadDashboardMetrics();
+    const entregado = dineroCaja - cajaInicial;
+    card.classList.remove('is-error');
+    valorEl.textContent = formatoColones.format(entregado);
+    valorEl.classList.toggle('is-negative', entregado < 0);
+    detalleEl.textContent =
+        `${formatoColones.format(dineroCaja)} en caja − ${formatoColones.format(cajaInicial)} de caja inicial`;
+}
+
+async function cargarDineroEnCaja() {
+    const card = document.getElementById('kpi-dinero-caja');
+    const valorEl = document.getElementById('kpi-dinero-valor');
+    const detalleEl = document.getElementById('kpi-dinero-detalle');
+    if (!card) return;
+
+    card.classList.add('is-loading');
+    card.classList.remove('is-error');
+
+    try {
+        const desde = inicioDelDiaCR();
+        const montos = 'monto_efectivo, monto_tarjeta, monto_sinpe, monto_cxc, monto_transferencia, monto_regalia';
+        const camposPago = `metodo_pago, ${montos}`;
+
+        const [ordenes, productos, domicilio, abonos, gastos, pendientes] = await Promise.all([
+            window.supabase.from('ordenes').select(`total_monto, detallado_monto, mecanica_monto, ${camposPago}`).gte('hora_pago', desde),
+            // Venta de productos no tiene columna metodo_pago: solo montos separados
+            window.supabase.from('ventas_productos_diarias').select(`precio_total, ${montos}`).gte('created_at', desde),
+            window.supabase.from('ordenes_domicilio').select(`total_monto, ${camposPago}`).gte('created_at', desde),
+            window.supabase.from('cxc_abonos').select('monto_abono, metodo_pago').gte('fecha', desde),
+            window.supabase.from('gastos').select('monto').gte('created_at', desde),
+            // Órdenes del local de hoy SIN cobrar: el negocio las cuenta como Cuenta por cobrar
+            window.supabase.from('ordenes').select(`total_monto, detallado_monto, mecanica_monto, ${camposPago}`)
+                .gte('created_at', desde).is('hora_pago', null)
+        ]);
+
+        const error = ordenes.error || productos.error || domicilio.error || abonos.error || gastos.error || pendientes.error;
+        if (error) throw error;
+
+        let efectivo = 0;
+        ordenes.data.forEach(o => { efectivo += efectivoDe(o, o.total_monto); });
+        productos.data.forEach(v => { efectivo += efectivoDe(v, v.precio_total); });
+        domicilio.data.forEach(d => { efectivo += efectivoDe(d, d.total_monto); });
+        abonos.data.forEach(a => {
+            if ((a.metodo_pago || '').toLowerCase().includes('efectivo')) efectivo += aNumero(a.monto_abono);
+        });
+
+        dineroEnCaja.efectivo = efectivo;
+        dineroEnCaja.gastos = gastos.data.reduce((suma, g) => suma + aNumero(g.monto), 0);
+        dineroEnCaja.cargado = true;
+        pintarDineroEnCaja();
+        pintarGastos(dineroEnCaja.gastos, gastos.data.length);
+        // Desglose: lo no cobrado entra como "Cuenta por cobrar" (no toca el dinero en caja)
+        const ordenesSinCobrar = pendientes.data.map(o => ({ ...o, metodo_pago: 'Pendiente' }));
+        pintarDesglose({
+            ordenes: [...ordenes.data, ...ordenesSinCobrar],
+            productos: productos.data,
+            domicilio: domicilio.data,
+            abonos: abonos.data
+        });
+    } catch (err) {
+        console.error('[Dashboard] Error al calcular el dinero en caja:', err);
+        card.classList.add('is-error');
+        valorEl.textContent = '—';
+        detalleEl.textContent = 'No se pudo cargar. Recarga la página.';
+        pintarGastos(null);
+        pintarCierre(null);
+        pintarDesglose(null);
+    } finally {
+        card.classList.remove('is-loading');
     }
-});
+}
 
+/* ==========================================================================
+   Indicador: Gastos en efectivo
+   Resumen de la suma de todos los gastos del día (módulo Gastos Diarios).
+   Usa los mismos datos que "Dinero en caja" (una sola consulta).
+   ========================================================================== */
+function pintarGastos(total, cantidad) {
+    const card = document.getElementById('kpi-gastos');
+    const valorEl = document.getElementById('kpi-gastos-valor');
+    const detalleEl = document.getElementById('kpi-gastos-detalle');
+    if (!card) return;
 
+    card.classList.remove('is-loading');
 
+    if (total === null) {
+        card.classList.add('is-error');
+        valorEl.textContent = '—';
+        detalleEl.textContent = 'No se pudo cargar. Recarga la página.';
+        return;
+    }
 
+    card.classList.remove('is-error');
+    valorEl.textContent = formatoColones.format(total);
+    detalleEl.textContent = cantidad === 0
+        ? 'Sin gastos registrados hoy'
+        : `${formatoNumero.format(cantidad)} ${cantidad === 1 ? 'gasto registrado' : 'gastos registrados'} hoy`;
+}
 
+// Si cambia la caja inicial, se recalcula al instante
+document.addEventListener('dash:caja-inicial', pintarDineroEnCaja);
 
+/* ==========================================================================
+   Desglose de ventas por categoría (6 tablas, igual que la hoja de Sheets)
+   Usa los mismos datos del día que "Dinero en caja" (una sola ronda de consultas).
+   Columna de cantidad = cuántos registros tienen monto en ese rubro
+   (una venta pagada mitad efectivo y mitad tarjeta suma 1 en cada uno).
+   ========================================================================== */
+const METODOS = ['efectivo', 'tarjeta', 'sinpe', 'cxc', 'transferencia', 'regalia'];
 
+/** Convierte el texto de metodo_pago en una de las claves de METODOS. */
+function claveMetodo(texto) {
+    const m = (texto || '').toLowerCase();
+    if (m.includes('efectivo')) return 'efectivo';
+    if (m.includes('tarjeta')) return 'tarjeta';
+    if (m.includes('sinpe')) return 'sinpe';
+    // Pendiente de cobro = Cuenta por cobrar (así lo maneja el negocio)
+    if (m.includes('cuenta') || m.includes('cobrar') || m.includes('cxc') || m.includes('pendiente')) return 'cxc';
+    if (m.includes('transferencia')) return 'transferencia';
+    if (m.includes('regal')) return 'regalia';
+    return null;
+}
 
+function desgloseVacio() {
+    const d = {};
+    METODOS.forEach(k => { d[k] = { monto: 0, cant: 0 }; });
+    return d;
+}
 
+/** Suma por método de pago: usa los montos separados; si no hay, el método de pago con el total. */
+function desglosarPorMetodo(registros, campoTotal) {
+    const d = desgloseVacio();
+    registros.forEach(r => {
+        let tieneMontos = false;
+        METODOS.forEach(k => {
+            const monto = aNumero(r['monto_' + k]);
+            if (monto > 0) {
+                d[k].monto += monto;
+                d[k].cant++;
+                tieneMontos = true;
+            }
+        });
+        if (!tieneMontos) {
+            const k = claveMetodo(r.metodo_pago);
+            const total = aNumero(r[campoTotal]);
+            if (k && total > 0) {
+                d[k].monto += total;
+                d[k].cant++;
+            }
+        }
+    });
+    return d;
+}
 
+function desglosarAbonos(abonos) {
+    const d = desgloseVacio();
+    abonos.forEach(a => {
+        const k = claveMetodo(a.metodo_pago);
+        const monto = aNumero(a.monto_abono);
+        if (k && monto > 0) {
+            d[k].monto += monto;
+            d[k].cant++;
+        }
+    });
+    return d;
+}
+
+/** Filas de una tabla a partir de un desglose: [clave, etiqueta] */
+const filasDe = (desglose, filas) => filas.map(([k, etiqueta]) => ({ etiqueta, ...desglose[k] }));
+
+/** Dibuja una tabla. filas: [{etiqueta, monto, cant, total?}] | undefined (cargando) | null (error) */
+function dibujarTabla(id, titulo, columnaCantidad, filas, filasSkeleton) {
+    const cont = document.getElementById(id);
+    if (!cont) return;
+
+    const tabla = document.createElement('table');
+    tabla.className = 'dash-tabla';
+
+    const caption = document.createElement('caption');
+    caption.textContent = titulo;
+    tabla.appendChild(caption);
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th scope="col">Rubro</th><th scope="col" class="num">Monto</th><th scope="col" class="num"></th></tr>';
+    thead.querySelector('th:last-child').textContent = columnaCantidad;
+    tabla.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    if (filas === null) {
+        const tr = document.createElement('tr');
+        tr.className = 'dash-tabla-error';
+        tr.innerHTML = '<td colspan="3">No se pudo cargar. Recarga la página.</td>';
+        tbody.appendChild(tr);
+    } else if (filas === undefined) {
+        tabla.classList.add('is-loading');
+        filasSkeleton.forEach(etiqueta => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<th scope="row"></th><td class="num"><span class="dash-sk"></span></td><td class="num"><span class="dash-sk"></span></td>';
+            tr.querySelector('th').textContent = etiqueta;
+            tbody.appendChild(tr);
+        });
+    } else {
+        filas.forEach(f => {
+            const tr = document.createElement('tr');
+            if (f.total) tr.className = 'dash-tabla-total';
+            tr.innerHTML = '<th scope="row"></th><td class="num"></td><td class="num"></td>';
+            tr.children[0].textContent = f.etiqueta;
+            tr.children[1].textContent = formatoColones.format(f.monto);
+            tr.children[2].textContent = formatoNumero.format(f.cant);
+            if (f.monto === 0 && !f.total) tr.classList.add('is-zero');
+            tbody.appendChild(tr);
+        });
+    }
+
+    tabla.appendChild(tbody);
+    cont.replaceChildren(tabla);
+}
+
+/**
+ * Pinta las 6 tablas.
+ * datos: { ordenes, productos, domicilio, abonos } | undefined (cargando) | null (error)
+ */
+function pintarDesglose(datos) {
+    // Filas de cada tabla, tal como en la hoja de Sheets
+    const F = {
+        lubricentro: [['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta'], ['sinpe', 'Sinpe'],
+                      ['cxc', 'Cuenta por cobrar'], ['transferencia', 'Transferencia'], ['regalia', 'Regalía']],
+        productos:   [['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta crédito / débito'],
+                      ['sinpe', 'SINPE Móvil'], ['cxc', 'Cuenta por cobrar']],
+        domicilio:   [['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta'], ['sinpe', 'Sinpe'], ['cxc', 'CxC']],
+        abonos:      [['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta'], ['sinpe', 'Sinpe'],
+                      ['transferencia', 'Transferencia'], ['regalia', 'Regalía']],
+        global:      ['Detallado', 'Mecánica', 'Productos', 'Domicilio', 'Total'],
+        totales:     [['efectivo', 'Efectivo'], ['tarjeta', 'Tarjeta'], ['sinpe', 'SINPE Móvil'],
+                      ['cxc', 'Cuenta por cobrar'], ['transferencia', 'Transferencia'], ['regalia', 'Regalía']]
+    };
+    const etiquetas = filas => filas.map(f => Array.isArray(f) ? f[1] : f);
+    const VV = 'Vehículos/Ventas';
+
+    // Cargando o error: misma estructura con skeleton o mensaje
+    if (!datos) {
+        const estado = datos; // undefined = cargando, null = error
+        dibujarTabla('tabla-lubricentro', 'Lubricentro & Detallado', VV, estado, etiquetas(F.lubricentro));
+        dibujarTabla('tabla-global', 'Reporte Global', VV, estado, F.global);
+        dibujarTabla('tabla-totales', 'Ventas globales Sus Amigos', '# Vehículos', estado, [...etiquetas(F.totales), 'Ventas globales']);
+        dibujarTabla('tabla-productos', 'Venta de Productos', VV, estado, etiquetas(F.productos));
+        dibujarTabla('tabla-domicilio', 'Servicios a Domicilio', VV, estado, etiquetas(F.domicilio));
+        dibujarTabla('tabla-abonos', 'Abonos / Saldos de Cuentas por Cobrar', VV, estado, etiquetas(F.abonos));
+        return;
+    }
+
+    const lub = desglosarPorMetodo(datos.ordenes, 'total_monto');
+    const prod = desglosarPorMetodo(datos.productos, 'precio_total');
+    const dom = desglosarPorMetodo(datos.domicilio, 'total_monto');
+    const abo = desglosarAbonos(datos.abonos);
+
+    // Reporte Global (por tipo de servicio)
+    const sumar = (lista, campo) => lista.reduce((acc, r) => {
+        const m = aNumero(r[campo]);
+        if (m > 0) { acc.monto += m; acc.cant++; }
+        return acc;
+    }, { monto: 0, cant: 0 });
+    const g = {
+        detallado: sumar(datos.ordenes, 'detallado_monto'),
+        mecanica: sumar(datos.ordenes, 'mecanica_monto'),
+        productos: sumar(datos.productos, 'precio_total'),
+        domicilio: sumar(datos.domicilio, 'total_monto')
+    };
+    const gTotal = Object.values(g).reduce((a, x) => ({ monto: a.monto + x.monto, cant: a.cant + x.cant }), { monto: 0, cant: 0 });
+
+    // Ventas globales Sus Amigos = Lubricentro + Productos + Domicilio + Abonos, por método
+    const tot = desgloseVacio();
+    [lub, prod, dom, abo].forEach(d => METODOS.forEach(k => {
+        tot[k].monto += d[k].monto;
+        tot[k].cant += d[k].cant;
+    }));
+    // Total de ventas globales: la regalía no es dinero que entra (no suma al monto, sí a la cantidad)
+    const totGlobal = {
+        monto: METODOS.filter(k => k !== 'regalia').reduce((s, k) => s + tot[k].monto, 0),
+        cant: METODOS.reduce((s, k) => s + tot[k].cant, 0)
+    };
+
+    dibujarTabla('tabla-lubricentro', 'Lubricentro & Detallado', VV, filasDe(lub, F.lubricentro));
+    dibujarTabla('tabla-global', 'Reporte Global', VV, [
+        { etiqueta: 'Detallado', ...g.detallado },
+        { etiqueta: 'Mecánica', ...g.mecanica },
+        { etiqueta: 'Productos', ...g.productos },
+        { etiqueta: 'Domicilio', ...g.domicilio },
+        { etiqueta: 'Total', ...gTotal, total: true }
+    ]);
+    dibujarTabla('tabla-totales', 'Ventas globales Sus Amigos', '# Vehículos', [
+        ...filasDe(tot, F.totales),
+        { etiqueta: 'Ventas globales', ...totGlobal, total: true }
+    ]);
+    dibujarTabla('tabla-productos', 'Venta de Productos', VV, filasDe(prod, F.productos));
+    dibujarTabla('tabla-domicilio', 'Servicios a Domicilio', VV, filasDe(dom, F.domicilio));
+    dibujarTabla('tabla-abonos', 'Abonos / Saldos de Cuentas por Cobrar', VV, filasDe(abo, F.abonos));
+}
+
+/* ==========================================================================
+   Inicio: los componentes arrancan cuando auth_guard.js confirma la sesión
+   ========================================================================== */
+function iniciarDashboard(profile) {
+    const rol = window.AppSession ? window.AppSession.normalizarRol(profile && profile.rol) : '';
+
+    // El Mecánico no ve indicadores financieros (ni se descargan los datos)
+    if (rol === 'mecanico') {
+        ['dash-indicadores', 'dash-desglose'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+        return;
+    }
+
+    cargarTicketPromedio();
+    iniciarCajaInicial();   // primero: deja puesto el último monto guardado
+    pintarDesglose(undefined); // skeleton mientras cargan los datos
+    cargarDineroEnCaja();      // también llena el desglose de ventas
+}
+
+if (window.SaUser) {
+    iniciarDashboard(window.SaUser);
+} else {
+    document.addEventListener('sa:auth-ready', (e) => iniciarDashboard(e.detail), { once: true });
+}

@@ -1,0 +1,112 @@
+/* ==========================================================================
+   Vender / Atender - selección del tipo de operación
+   Colores y fuente: css/theme.css
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--sa-font);
+    background-color: var(--sa-bg);
+    background-image: radial-gradient(ellipse at top, rgba(212, 167, 44, 0.08) 0%, transparent 60%);
+    background-attachment: fixed;
+    color: var(--sa-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+.vender-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.vender-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.vender-header p {
+    font-size: 14px;
+    color: var(--sa-text-secondary);
+}
+
+.vender-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+}
+
+.vender-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 36px 24px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--sa-text);
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 16px;
+    transition: transform var(--sa-transition), border-color var(--sa-transition), box-shadow var(--sa-transition);
+}
+
+.vender-option:hover {
+    transform: translateY(-6px);
+    border-color: rgba(212, 167, 44, 0.45);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.35);
+}
+
+.vender-option:focus-visible {
+    outline: 2px solid var(--sa-gold);
+    outline-offset: 3px;
+}
+
+.vender-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: grid;
+    place-content: center;
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.icon-amber { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.icon-blue  { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.icon-green { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+.vender-option h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.vender-option p {
+    font-size: 13px;
+    color: var(--sa-text-secondary);
+    line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vender-option { transition: none; }
+    .vender-option:hover { transform: none; }
+}
+
+@media (max-width: 767px) {
+    .vender-content {
+        padding: 24px 16px;
+        gap: 24px;
+    }
+
+    .vender-header h1 {
+        font-size: 20px;
+    }
+}

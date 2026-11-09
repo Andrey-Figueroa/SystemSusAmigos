@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mecánica | Configuración | Sus Amigos</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tema único + estilos del módulo -->
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=8">
+    <!-- Configuración, layout compartido y verificación de sesión -->
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
+</head>
+<body>
+    <main class="cfg-content">
+        <nav class="cfg-breadcrumb" aria-label="Ruta">
+            <a href="index.html">Configuración</a>
+            <i class="fa-solid fa-chevron-right" aria-hidden="true" style="font-size:10px"></i>
+            <span aria-current="page">Mecánica</span>
+        </nav>
+
+        <header class="cfg-header">
+            <div>
+                <h1>Mecánica</h1>
+                <p>Las categorías y servicios que se eligen al registrar mecánica en Local Comercial. Sin precios: el monto se define al cobrar.</p>
+            </div>
+            <button type="button" class="cfg-btn cfg-btn-primary" id="btn-nueva-categoria">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Nueva categoría
+            </button>
+        </header>
+
+        <div class="cfg-pkg-list" id="lista" aria-live="polite">
+            <div class="cfg-sk"></div>
+            <div class="cfg-sk"></div>
+            <div class="cfg-sk"></div>
+        </div>
+    </main>
+
+    <!-- Formulario de categoría -->
+    <dialog class="cfg-dialog" id="dialog-categoria" aria-labelledby="titulo-categoria">
+        <form id="form-categoria" novalidate>
+            <div class="cfg-dialog-head">
+                <h2 id="titulo-categoria">Nueva categoría</h2>
+                <button type="button" class="cfg-icon-btn" data-cerrar aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="cfg-dialog-body">
+                <div class="cfg-field">
+                    <label for="cat-nombre">Nombre <span class="cfg-req">*</span></label>
+                    <input type="text" class="cfg-input" id="cat-nombre" maxlength="80" required autocomplete="off" placeholder="Ej.: Suspensión">
+                </div>
+                <label class="cfg-check"><input type="checkbox" id="cat-activo" checked> Activa</label>
+                <label class="cfg-check"><input type="checkbox" id="cat-detalle"> Pide detalle escrito (como "Otro" o "Promociones")</label>
+                <p class="cfg-hint">Si pide detalle, al vender se escribe un texto en vez de elegir servicios. Si no tiene servicios ni pide detalle, se marca y listo (como "Mantenimiento general").</p>
+                <p class="cfg-form-error" id="error-categoria" role="alert"></p>
+            </div>
+            <div class="cfg-dialog-foot">
+                <button type="button" class="cfg-btn cfg-btn-ghost" data-cerrar>Cancelar</button>
+                <button type="submit" class="cfg-btn cfg-btn-primary" id="guardar-categoria">
+                    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Formulario de servicio -->
+    <dialog class="cfg-dialog" id="dialog-servicio" aria-labelledby="titulo-servicio">
+        <form id="form-servicio" novalidate>
+            <div class="cfg-dialog-head">
+                <h2 id="titulo-servicio">Nuevo servicio</h2>
+                <button type="button" class="cfg-icon-btn" data-cerrar aria-label="Cerrar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="cfg-dialog-body">
+                <div class="cfg-field">
+                    <label for="srv-nombre">Nombre <span class="cfg-req">*</span></label>
+                    <input type="text" class="cfg-input" id="srv-nombre" maxlength="100" required autocomplete="off" placeholder="Ej.: Cambio de amortiguadores">
+                </div>
+                <div class="cfg-field">
+                    <label for="srv-categoria">Categoría <span class="cfg-req">*</span></label>
+                    <select class="cfg-select cfg-input" id="srv-categoria" required></select>
+                </div>
+                <label class="cfg-check"><input type="checkbox" id="srv-activo" checked> Activo</label>
+                <p class="cfg-form-error" id="error-servicio" role="alert"></p>
+            </div>
+            <div class="cfg-dialog-foot">
+                <button type="button" class="cfg-btn cfg-btn-ghost" data-cerrar>Cancelar</button>
+                <button type="submit" class="cfg-btn cfg-btn-primary" id="guardar-servicio">
+                    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <div class="cfg-toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script src="eliminar.js?v=1"></script>
+    <script src="mecanica.js?v=1"></script>
+</body>
+</html>

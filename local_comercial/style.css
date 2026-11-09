@@ -1,14 +1,14 @@
 :root {
-    --bg-color: #0f172a;
-    --card-bg: rgba(30, 38, 55, 0.7);
-    --primary-accent: #818cf8;
-    --secondary-accent: #6366f1;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --bg-color: var(--sa-bg);
+    --card-bg: rgba(20, 20, 21, 0.7);
+    --primary-accent: var(--sa-gold);
+    --secondary-accent: var(--sa-gold-dark);
+    --text-primary: var(--sa-text);
+    --text-secondary: var(--sa-text-secondary);
     --border-color: rgba(255, 255, 255, 0.1);
-    --input-bg: rgba(15, 23, 42, 0.6);
-    --danger-color: #ef4444;
-    --success-color: #10b981;
+    --input-bg: rgba(14, 14, 15, 0.6);
+    --danger-color: var(--sa-error);
+    --success-color: var(--sa-success);
     --warning-color: #f59e0b;
     --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -18,14 +18,14 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--sa-font);
 }
 
 body {
     background-color: var(--bg-color);
     background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(212, 167, 44, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(63, 178, 127, 0.1) 0px, transparent 50%);
     color: var(--text-primary);
     min-height: 100vh;
 }
@@ -107,7 +107,7 @@ button {
     justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(14, 14, 15, 0.8);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -197,7 +197,7 @@ button {
 
 .radio-card input:checked + .radio-card-content, 
 .checkbox-card input:checked + .checkbox-card-content {
-    background: rgba(129, 140, 248, 0.1);
+    background: rgba(212, 167, 44, 0.1);
     border-color: var(--primary-accent);
 }
 
@@ -259,7 +259,7 @@ button {
 .step.active .step-circle {
     border-color: var(--primary-accent);
     color: var(--primary-accent);
-    box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
+    box-shadow: 0 0 15px rgba(212, 167, 44, 0.3);
 }
 
 .step.completed .step-circle {
@@ -347,7 +347,7 @@ button {
 .search-box:focus-within {
     border-color: var(--primary-accent);
     background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+    box-shadow: 0 0 0 3px rgba(212, 167, 44, 0.1);
 }
 
 .search-box i {
@@ -372,8 +372,8 @@ button {
 
 /* Result Cards */
 .client-found-card {
-    background: rgba(16, 185, 129, 0.05);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(63, 178, 127, 0.05);
+    border: 1px solid rgba(63, 178, 127, 0.2);
     border-radius: 16px;
     padding: 24px;
     animation: fadeIn 0.3s ease;
@@ -423,7 +423,7 @@ button {
 
 .vehicle-select-card:hover {
     border-color: var(--primary-accent);
-    background: rgba(129, 140, 248, 0.05);
+    background: rgba(212, 167, 44, 0.05);
     transform: translateY(-2px);
 }
 
@@ -458,7 +458,7 @@ button {
 }
 
 .toast {
-    background: rgba(30, 38, 55, 0.95);
+    background: rgba(20, 20, 21, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     padding: 16px 20px;
@@ -571,4 +571,121 @@ button {
         width: 100%;
         margin-bottom: 10px;
     }
+}
+
+/* Tarjetas de selección: toda la tarjeta es clicable, sin cursor de texto ni selección */
+.radio-card,
+.checkbox-card {
+    display: block;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    caret-color: transparent;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.radio-card *,
+.checkbox-card * {
+    cursor: pointer;
+}
+
+.radio-card-content,
+.checkbox-card-content {
+    height: 100%;
+}
+
+.radio-card.disabled,
+.checkbox-card.disabled,
+.radio-card.disabled *,
+.checkbox-card.disabled * {
+    cursor: not-allowed;
+}
+
+/* Precio del paquete dentro de la tarjeta (Tipo de Detallado) */
+.radio-card-precio {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-accent, #d4a72c);
+}
+
+/* --------------------------------------------------------------------------
+   Opciones de Interior: cada pregunta en su propio bloque, con más aire
+   -------------------------------------------------------------------------- */
+.extra-step-title {
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+
+.extra-section {
+    margin-top: 20px;
+    padding: 22px 22px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--sa-border, var(--border-color));
+    border-radius: 14px;
+}
+
+.extra-step-title + .extra-section {
+    margin-top: 24px;
+}
+
+.extra-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--sa-text, #f5f5f5);
+}
+
+.extra-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sa-gold, var(--primary-accent));
+    background: var(--sa-gold-faint, rgba(212, 167, 44, 0.08));
+    border: 1px solid var(--sa-gold-soft, rgba(212, 167, 44, 0.35));
+}
+
+.extra-hint {
+    margin: 6px 0 18px 40px;
+    font-size: 13px;
+    color: var(--sa-text-muted, var(--text-secondary));
+}
+
+.extra-section .radio-group-cards {
+    gap: 14px;
+}
+
+.extra-section .radio-card-content {
+    justify-content: center;
+    min-height: 56px;
+    text-align: center;
+}
+
+.extra-section .step-desc {
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .extra-section {
+        padding: 18px 16px 20px;
+    }
+    .extra-hint {
+        margin-left: 0;
+    }
+}
+
+/* Precio aproximado en las tarjetas de extras */
+.checkbox-card-content .radio-card-precio {
+    margin: 0 0 0 auto;
+    white-space: nowrap;
 }

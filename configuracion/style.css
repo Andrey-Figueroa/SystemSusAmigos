@@ -1,0 +1,1108 @@
+/* ==========================================================================
+   Configuración (inicio + configuradores)
+   Colores y fuente: css/theme.css
+   ========================================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--sa-font);
+    background-color: var(--sa-bg);
+    background-image: radial-gradient(ellipse at top, rgba(212, 167, 44, 0.08) 0%, transparent 60%);
+    background-attachment: fixed;
+    color: var(--sa-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+.cfg-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* Migas: Configuración / Servicios */
+.cfg-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--sa-text-muted);
+}
+
+.cfg-breadcrumb a {
+    color: var(--sa-text-secondary);
+    text-decoration: none;
+}
+
+.cfg-breadcrumb a:hover {
+    color: var(--sa-gold);
+}
+
+.cfg-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.cfg-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.cfg-header p {
+    font-size: 14px;
+    color: var(--sa-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   Inicio: lista de configuradores
+   -------------------------------------------------------------------------- */
+.cfg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.cfg-card {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 22px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+    color: var(--sa-text);
+    text-decoration: none;
+    transition: border-color var(--sa-transition), transform var(--sa-transition);
+}
+
+.cfg-card:hover {
+    border-color: rgba(212, 167, 44, 0.45);
+    transform: translateY(-3px);
+}
+
+.cfg-card:focus-visible {
+    outline: 2px solid var(--sa-gold);
+    outline-offset: 3px;
+}
+
+.cfg-card-icon {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: grid;
+    place-content: center;
+    background: var(--sa-gold-faint);
+    color: var(--sa-gold);
+    font-size: 19px;
+}
+
+.cfg-card h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.cfg-card p {
+    font-size: 13px;
+    color: var(--sa-text-secondary);
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Botones
+   -------------------------------------------------------------------------- */
+.cfg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border-radius: var(--sa-radius);
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--sa-transition), border-color var(--sa-transition), color var(--sa-transition);
+}
+
+.cfg-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.cfg-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cfg-btn-primary {
+    background: var(--sa-gold);
+    color: #121212;
+}
+
+.cfg-btn-primary:hover:not(:disabled) {
+    background: var(--sa-gold-hover);
+}
+
+.cfg-btn-ghost {
+    background: transparent;
+    color: var(--sa-text-secondary);
+    border-color: var(--sa-border-strong);
+}
+
+.cfg-btn-ghost:hover:not(:disabled) {
+    color: var(--sa-text);
+    border-color: var(--sa-text-muted);
+}
+
+.cfg-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--sa-border-strong);
+    background: transparent;
+    color: var(--sa-text-secondary);
+    cursor: pointer;
+    transition: color var(--sa-transition), border-color var(--sa-transition);
+}
+
+.cfg-icon-btn:hover {
+    color: var(--sa-gold);
+    border-color: rgba(212, 167, 44, 0.45);
+}
+
+.cfg-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Servicios: barra de filtros
+   -------------------------------------------------------------------------- */
+.cfg-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.cfg-search {
+    position: relative;
+    flex: 1 1 260px;
+}
+
+.cfg-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--sa-text-muted);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.cfg-input,
+.cfg-select,
+.cfg-textarea {
+    width: 100%;
+    background: var(--sa-surface-input);
+    border: 1px solid var(--sa-border-strong);
+    border-radius: var(--sa-radius);
+    color: var(--sa-text);
+    font-size: 14px;
+    padding: 11px 14px;
+    transition: border-color var(--sa-transition), box-shadow var(--sa-transition);
+}
+
+.cfg-search .cfg-input {
+    padding-left: 40px;
+}
+
+.cfg-input:focus,
+.cfg-select:focus,
+.cfg-textarea:focus {
+    outline: none;
+    border-color: var(--sa-gold);
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.cfg-input::placeholder,
+.cfg-textarea::placeholder {
+    color: var(--sa-text-muted);
+}
+
+.cfg-select {
+    flex: 0 1 240px;
+    cursor: pointer;
+}
+
+.cfg-select option {
+    background: var(--sa-surface);
+}
+
+.cfg-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--sa-text-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.cfg-check input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--sa-gold);
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Servicios: lista por categoría
+   -------------------------------------------------------------------------- */
+.cfg-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.cfg-group h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sa-text-secondary);
+    margin-bottom: 10px;
+}
+
+.cfg-group h2 .cfg-count {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--sa-gold-faint);
+    color: var(--sa-gold-light);
+}
+
+.cfg-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14px;
+}
+
+.cfg-table th,
+.cfg-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--sa-border);
+    vertical-align: middle;
+}
+
+.cfg-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--sa-text-muted);
+}
+
+.cfg-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cfg-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.cfg-table .col-precio {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cfg-table .col-estado,
+.cfg-table .col-acciones {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.cfg-nombre {
+    font-weight: 600;
+    color: var(--sa-text);
+}
+
+.cfg-desc {
+    display: block;
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--sa-text-muted);
+}
+
+.cfg-sin-precio {
+    color: var(--sa-text-muted);
+    font-weight: 400;
+}
+
+tr.is-inactivo .cfg-nombre,
+tr.is-inactivo .col-precio {
+    color: var(--sa-text-muted);
+}
+
+/* Interruptor activo / inactivo */
+.cfg-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--sa-text-secondary);
+}
+
+.cfg-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.cfg-switch-track {
+    width: 38px;
+    height: 22px;
+    border-radius: 22px;
+    background: var(--sa-border-strong);
+    position: relative;
+    transition: background-color var(--sa-transition);
+}
+
+.cfg-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    transition: transform var(--sa-transition);
+}
+
+.cfg-switch input:checked + .cfg-switch-track {
+    background: var(--sa-success);
+}
+
+.cfg-switch input:checked + .cfg-switch-track::after {
+    transform: translateX(16px);
+}
+
+.cfg-switch input:focus-visible + .cfg-switch-track {
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.cfg-switch input:disabled + .cfg-switch-track {
+    opacity: 0.6;
+}
+
+/* Estados de la lista */
+.cfg-state {
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--sa-surface);
+    border: 1px dashed var(--sa-border-strong);
+    border-radius: 14px;
+    color: var(--sa-text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.cfg-state i {
+    display: block;
+    font-size: 28px;
+    color: var(--sa-text-muted);
+    margin-bottom: 12px;
+}
+
+.cfg-state strong {
+    color: var(--sa-text);
+}
+
+.cfg-state.is-error {
+    border-color: rgba(229, 83, 75, 0.45);
+}
+
+.cfg-state.is-error i {
+    color: var(--sa-error);
+}
+
+.cfg-state code {
+    background: var(--sa-surface-input);
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--sa-gold-light);
+}
+
+/* Skeleton de la lista */
+.cfg-sk {
+    height: 52px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--sa-surface) 0%, var(--sa-border) 50%, var(--sa-surface) 100%);
+    background-size: 200% 100%;
+    animation: cfg-shimmer 1.4s ease-in-out infinite;
+}
+
+.cfg-sk + .cfg-sk {
+    margin-top: 8px;
+}
+
+@keyframes cfg-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Formulario (crear / editar) en un panel
+   -------------------------------------------------------------------------- */
+.cfg-dialog {
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--sa-border-strong);
+    border-radius: 16px;
+    background: var(--sa-surface);
+    color: var(--sa-text);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.cfg-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+}
+
+.cfg-dialog form {
+    display: flex;
+    flex-direction: column;
+}
+
+.cfg-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--sa-border);
+}
+
+.cfg-dialog-head h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.cfg-dialog-body {
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.cfg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.cfg-field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+}
+
+.cfg-field .cfg-hint {
+    font-size: 12px;
+    color: var(--sa-text-muted);
+}
+
+.cfg-req {
+    color: var(--sa-gold);
+}
+
+.cfg-money {
+    position: relative;
+}
+
+.cfg-money span {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--sa-text-muted);
+    font-weight: 600;
+}
+
+.cfg-money .cfg-input {
+    padding-left: 30px;
+}
+
+.cfg-textarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.cfg-form-error {
+    font-size: 13px;
+    color: var(--sa-error);
+}
+
+.cfg-form-error:empty {
+    display: none;
+}
+
+.cfg-dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--sa-border);
+}
+
+/* --------------------------------------------------------------------------
+   Notificaciones
+   -------------------------------------------------------------------------- */
+.cfg-toasts {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfg-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    min-width: 260px;
+    max-width: 380px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border-strong);
+    border-left: 4px solid var(--sa-success);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    font-size: 14px;
+    animation: cfg-toast-in 0.25s ease;
+}
+
+.cfg-toast.is-error {
+    border-left-color: var(--sa-error);
+}
+
+.cfg-toast i {
+    color: var(--sa-success);
+}
+
+.cfg-toast.is-error i {
+    color: var(--sa-error);
+}
+
+@keyframes cfg-toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cfg-sk,
+    .cfg-toast { animation: none; }
+    .cfg-card { transition: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+    .cfg-content {
+        padding: 24px 16px;
+        gap: 22px;
+    }
+
+    .cfg-header h1 {
+        font-size: 22px;
+    }
+
+    .cfg-select {
+        flex: 1 1 100%;
+    }
+
+    /* Tabla compacta: la descripción baja bajo el nombre y se ocultan encabezados */
+    .cfg-table thead {
+        display: none;
+    }
+
+    .cfg-table th,
+    .cfg-table td {
+        padding: 10px 12px;
+    }
+
+    .cfg-toasts {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .cfg-toast {
+        min-width: 0;
+        max-width: none;
+    }
+}
+
+/* Texto solo para lectores de pantalla */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Tablas cuyos encabezados explican columnas de sí/no: también se ven en celular */
+@media (max-width: 767px) {
+    .cfg-table-head thead {
+        display: table-header-group;
+    }
+
+    .cfg-table-head .col-estado {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+}
+
+/* ==========================================================================
+   Paquetes de detallado
+   ========================================================================== */
+.cfg-pkg-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.cfg-pkg-list > .cfg-state,
+.cfg-pkg-list > .cfg-sk {
+    grid-column: 1 / -1;
+}
+
+.cfg-pkg {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+}
+
+.cfg-pkg-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.cfg-pkg-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.cfg-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cfg-tag {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--sa-surface-input);
+    border: 1px solid var(--sa-border-strong);
+    color: var(--sa-text-muted);
+}
+
+.cfg-tag.is-on {
+    background: var(--sa-gold-faint);
+    border-color: rgba(212, 167, 44, 0.35);
+    color: var(--sa-gold-light);
+}
+
+.cfg-pkg-prices {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--sa-border);
+}
+
+.cfg-price {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    column-gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--sa-border);
+}
+
+.cfg-price-tipo {
+    color: var(--sa-text-secondary);
+    font-size: 14px;
+}
+
+.cfg-price-val {
+    font-weight: 700;
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.cfg-price-iva {
+    grid-column: 2;
+    font-size: 12px;
+    color: var(--sa-text-muted);
+    text-align: right;
+}
+
+.cfg-price-iva:empty {
+    display: none;
+}
+
+.cfg-pkg-det {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.cfg-pkg-det-label {
+    font-size: 13px;
+    color: var(--sa-text-secondary);
+    margin-right: 4px;
+}
+
+.cfg-chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--sa-surface-input);
+    border: 1px solid var(--sa-border-strong);
+    color: var(--sa-text);
+}
+
+.cfg-pkg-empty {
+    font-size: 13px;
+    color: var(--sa-text-muted);
+    padding: 6px 0;
+}
+
+/* Formulario ancho */
+.cfg-dialog-wide {
+    width: min(640px, calc(100vw - 32px));
+}
+
+.cfg-checks-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+}
+
+.cfg-fieldset {
+    border: 1px solid var(--sa-border);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cfg-fieldset legend {
+    padding: 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sa-text-secondary);
+}
+
+.cfg-hint a {
+    color: var(--sa-gold);
+}
+
+.cfg-veh-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cfg-veh-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) 160px minmax(120px, auto);
+    align-items: center;
+    gap: 12px;
+}
+
+.cfg-veh-name span {
+    color: var(--sa-text);
+    font-weight: 500;
+}
+
+.cfg-veh-row .cfg-input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.cfg-veh-total {
+    font-size: 12px;
+    color: var(--sa-gold-light);
+    font-variant-numeric: tabular-nums;
+}
+
+.cfg-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cfg-chip-check {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cfg-chip-check input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.cfg-chip-check span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--sa-border-strong);
+    background: var(--sa-surface-input);
+    color: var(--sa-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all var(--sa-transition);
+}
+
+.cfg-chip-check input:checked + span {
+    border-color: var(--sa-gold);
+    background: var(--sa-gold-faint);
+    color: var(--sa-gold-light);
+}
+
+.cfg-chip-check input:checked + span::before {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 11px;
+}
+
+.cfg-chip-check input:focus-visible + span {
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+@media (max-width: 600px) {
+    .cfg-veh-row {
+        grid-template-columns: 1fr 140px;
+    }
+
+    .cfg-veh-total {
+        grid-column: 1 / -1;
+        text-align: right;
+        margin-top: -4px;
+    }
+
+    .cfg-veh-total:empty {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Catálogos simples: fila inactiva + etiqueta "inactivo" en chips
+   -------------------------------------------------------------------------- */
+.cfg-table tr.is-inactive .cfg-nombre {
+    color: var(--sa-text-muted);
+    text-decoration: line-through;
+}
+
+.cfg-chip-inactivo {
+    margin-left: 4px;
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* --------------------------------------------------------------------------
+   Precio aproximado (Extras)
+   -------------------------------------------------------------------------- */
+.cfg-table .col-precio {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--sa-text);
+}
+
+/* --------------------------------------------------------------------------
+   Eliminar: botón de basurero, botón rojo y diálogo de confirmación
+   -------------------------------------------------------------------------- */
+.col-acciones .cfg-icon-btn + .cfg-icon-btn {
+    margin-left: 6px;
+}
+
+.cfg-icon-btn-danger:hover {
+    color: var(--sa-error);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.cfg-icon-btn-danger:focus-visible {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+.cfg-pkg-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.cfg-btn-danger {
+    background: var(--sa-error);
+    color: #fff;
+}
+
+.cfg-btn-danger:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.cfg-dialog-confirm {
+    width: min(420px, calc(100vw - 32px));
+}
+
+.cfg-elim-texto {
+    margin: 0;
+    color: var(--sa-text-secondary);
+}
+
+.cfg-elim-detalle {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--sa-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Mecánica: categorías con su lista de servicios
+   -------------------------------------------------------------------------- */
+.cfg-pkg.is-inactive .cfg-pkg-title h2 {
+    color: var(--sa-text-muted);
+    text-decoration: line-through;
+}
+
+.cfg-pkg-actions .cfg-switch {
+    align-self: center;
+    margin-right: 4px;
+}
+
+.cfg-mec-body {
+    margin-top: 14px;
+}
+
+.cfg-mec-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--sa-border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cfg-mec-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+}
+
+.cfg-mec-item + .cfg-mec-item {
+    border-top: 1px solid var(--sa-border);
+}
+
+.cfg-mec-item.is-inactive .cfg-nombre {
+    color: var(--sa-text-muted);
+    text-decoration: line-through;
+}
+
+.cfg-mec-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.cfg-mec-item-actions .cfg-switch {
+    margin-right: 4px;
+}
+
+.cfg-mec-add {
+    margin-top: 12px;
+}
+
+/* Tablas de catálogos: se desplazan dentro de su espacio en pantallas angostas */
+#lista,
+#lista-tipos {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#lista .cfg-table,
+#lista-tipos .cfg-table {
+    min-width: 520px;
+}
+
+@media (max-width: 560px) {
+    .cfg-header { flex-direction: column; align-items: stretch; }
+    .cfg-header .cfg-btn { justify-content: center; }
+}

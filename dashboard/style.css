@@ -1,22 +1,23 @@
 ﻿/* ==========================================================================
    Design System & Global Variables
    ========================================================================== */
+/* Los valores vienen del tema único: css/theme.css (mismo que el login) */
 :root {
-    --bg-color: #0b0d12;
-    --card-bg: rgba(20, 26, 38, 0.6);
-    --border-color: rgba(255, 255, 255, 0.06);
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --primary-accent: #00f2fe;
-    --secondary-accent: #4facfe;
-    --accent-gradient: linear-gradient(135deg, var(--primary-accent) 0%, var(--secondary-accent) 100%);
-    
-    --blue-glow: 0 0 15px rgba(0, 242, 254, 0.15);
+    --bg-color: var(--sa-bg);
+    --card-bg: var(--sa-surface);
+    --border-color: var(--sa-border);
+    --text-primary: var(--sa-text);
+    --text-secondary: var(--sa-text-secondary);
+    --primary-accent: var(--sa-gold);
+    --secondary-accent: var(--sa-gold-dark);
+    --accent-gradient: var(--sa-gold-gradient);
+
+    --blue-glow: 0 0 15px rgba(212, 167, 44, 0.15);
     --green-glow: 0 0 15px rgba(16, 185, 129, 0.15);
     --orange-glow: 0 0 15px rgba(245, 158, 11, 0.15);
 
-    --font-sans: 'Outfit', -apple-system, sans-serif;
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --transition-smooth: all 0.2s ease;
 }
 
 /* ==========================================================================
@@ -34,8 +35,8 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
-    background-image: radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
-                      radial-gradient(circle at 90% 80%, rgba(79, 172, 254, 0.05) 0%, transparent 40%);
+    background-image: radial-gradient(ellipse at top, rgba(212, 167, 44, 0.08) 0%, transparent 60%);
+    background-attachment: fixed;
 }
 
 .dashboard-layout {
@@ -48,7 +49,7 @@ body {
    Navbar Styles
    ========================================================================== */
 .navbar {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(10, 10, 11, 0.92);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
     padding: 16px 40px;
@@ -109,8 +110,8 @@ body {
 
 .nav-link:hover {
     color: var(--primary-accent);
-    background: rgba(0, 242, 254, 0.05);
-    border-color: rgba(0, 242, 254, 0.2);
+    background: rgba(212, 167, 44, 0.05);
+    border-color: rgba(212, 167, 44, 0.2);
     box-shadow: var(--blue-glow);
 }
 
@@ -135,8 +136,8 @@ body {
 }
 
 .role-badge {
-    background: rgba(0, 242, 254, 0.1);
-    border: 1px solid rgba(0, 242, 254, 0.25);
+    background: rgba(212, 167, 44, 0.1);
+    border: 1px solid rgba(212, 167, 44, 0.25);
     color: var(--primary-accent);
     font-size: 10px;
     font-weight: 700;
@@ -152,8 +153,8 @@ body {
 .avatar {
     width: 38px;
     height: 38px;
-    background: rgba(0, 242, 254, 0.1);
-    border: 1px solid rgba(0, 242, 254, 0.2);
+    background: rgba(212, 167, 44, 0.1);
+    border: 1px solid rgba(212, 167, 44, 0.2);
     color: var(--primary-accent);
     border-radius: 50%;
     display: grid;
@@ -244,7 +245,7 @@ body {
 }
 
 .icon-blue {
-    background: rgba(0, 242, 254, 0.1);
+    background: rgba(212, 167, 44, 0.1);
     color: var(--primary-accent);
     box-shadow: var(--blue-glow);
 }
@@ -277,7 +278,7 @@ body {
 
 /* Workspace Placeholder Box */
 .workspace-placeholder {
-    background: radial-gradient(circle at top left, rgba(20, 26, 38, 0.6) 0%, rgba(13, 17, 24, 0.8) 100%);
+    background: radial-gradient(circle at top left, rgba(20, 20, 21, 0.85) 0%, rgba(14, 14, 15, 0.9) 100%);
     border: 1px dashed rgba(255, 255, 255, 0.1);
     border-radius: 24px;
     padding: 60px 40px;
@@ -311,7 +312,7 @@ body {
 
 .tag {
     background: var(--accent-gradient);
-    color: #0b0d12;
+    color: #121212;
     font-size: 11px;
     font-weight: 700;
     padding: 6px 12px;
@@ -319,13 +320,13 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-top: 10px;
-    box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15);
+    box-shadow: 0 4px 12px rgba(212, 167, 44, 0.15);
 }
 
 /* ==========================================================================
    Responsive Adjustments
    ========================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .navbar {
         padding: 16px 20px;
     }
@@ -426,11 +427,11 @@ body {
 }
 
 /* Card Specific Colors */
-.card-cyan:hover { box-shadow: 0 10px 30px rgba(0, 242, 254, 0.15); border-color: rgba(0, 242, 254, 0.3); }
-.card-cyan .card-icon { background: rgba(0, 242, 254, 0.1); color: #00f2fe; }
+.card-cyan:hover { box-shadow: 0 10px 30px rgba(212, 167, 44, 0.15); border-color: rgba(212, 167, 44, 0.3); }
+.card-cyan .card-icon { background: rgba(212, 167, 44, 0.1); color: var(--sa-gold); }
 
-.card-blue:hover { box-shadow: 0 10px 30px rgba(79, 172, 254, 0.15); border-color: rgba(79, 172, 254, 0.3); }
-.card-blue .card-icon { background: rgba(79, 172, 254, 0.1); color: #4facfe; }
+.card-blue:hover { box-shadow: 0 10px 30px rgba(240, 205, 106, 0.15); border-color: rgba(240, 205, 106, 0.3); }
+.card-blue .card-icon { background: rgba(240, 205, 106, 0.1); color: var(--sa-gold-light); }
 
 .card-purple:hover { box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); }
 .card-purple .card-icon { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
@@ -641,7 +642,7 @@ body {
     border: 1px dashed rgba(255, 255, 255, 0.15);
     border-radius: 20px;
     padding: 30px;
-    background-image: radial-gradient(circle at center, rgba(0, 242, 254, 0.02) 0%, transparent 60%);
+    background-image: radial-gradient(circle at center, rgba(212, 167, 44, 0.02) 0%, transparent 60%);
 }
 
 .text-center {
@@ -657,7 +658,7 @@ body {
    RESPONSIVE DESIGN (Global Mobile Styles)
    ========================================== */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .navbar {
         flex-direction: column;
         gap: 15px;
@@ -875,3 +876,493 @@ body {
 
 
 
+
+
+/* ==========================================================================
+   Nuevo dashboard - componentes
+   ========================================================================== */
+.dash-title {
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    text-align: center;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+@media (max-width: 767px) {
+    .dash-title {
+        font-size: 26px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Indicadores (KPIs)
+   -------------------------------------------------------------------------- */
+.dash-indicadores {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dash-section-heading {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.dash-kpi {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 22px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+    font-family: var(--font-sans);
+}
+
+.dash-kpi-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-kpi-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-content: center;
+    background: var(--sa-gold-faint);
+    color: var(--sa-gold);
+    font-size: 15px;
+}
+
+.dash-kpi-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dash-kpi-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+}
+
+.dash-kpi-detail {
+    font-size: 13px;
+    color: var(--sa-text-muted);
+    margin: 0;
+}
+
+/* Cargando: skeleton sobre el valor y el detalle (no se muestra un ₡0 falso) */
+.dash-kpi.is-loading .dash-kpi-value,
+.dash-kpi.is-loading .dash-kpi-detail {
+    color: transparent;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--sa-surface-input) 0%, var(--sa-border) 50%, var(--sa-surface-input) 100%);
+    background-size: 200% 100%;
+    animation: dash-shimmer 1.4s ease-in-out infinite;
+}
+
+.dash-kpi.is-loading .dash-kpi-value { width: 60%; }
+.dash-kpi.is-loading .dash-kpi-detail { width: 80%; }
+
+@keyframes dash-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-kpi.is-loading .dash-kpi-value,
+    .dash-kpi.is-loading .dash-kpi-detail { animation: none; }
+}
+
+/* Error al cargar */
+.dash-kpi.is-error {
+    border-color: rgba(229, 83, 75, 0.4);
+}
+
+.dash-kpi.is-error .dash-kpi-detail {
+    color: var(--sa-error);
+}
+
+/* --------------------------------------------------------------------------
+   Caja inicial (campo editable + botón de enviar)
+   -------------------------------------------------------------------------- */
+.dash-kpi-label label {
+    cursor: pointer;
+}
+
+.dash-caja-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-caja-input {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    background: var(--sa-surface-input);
+    border: 1px solid var(--sa-border-strong);
+    border-radius: 10px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dash-caja-input:focus-within {
+    border-color: var(--sa-gold);
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.dash-caja-prefix {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.dash-caja-input input {
+    width: 100%;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 26px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 0;
+}
+
+/* Quitar flechas del campo numérico */
+.dash-caja-input input::-webkit-outer-spin-button,
+.dash-caja-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.dash-caja-input input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.dash-caja-btn {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    border: none;
+    background: var(--sa-gold);
+    color: #121212;
+    font-size: 17px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.dash-caja-btn:hover:not(:disabled) {
+    background: var(--sa-gold-hover);
+}
+
+.dash-caja-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.dash-caja-btn:disabled {
+    cursor: wait;
+    opacity: 0.8;
+}
+
+.dash-caja-btn.is-ok {
+    background: var(--sa-success);
+    color: #ffffff;
+}
+
+.dash-kpi-detail.is-error-text {
+    color: var(--sa-error);
+}
+
+/* --------------------------------------------------------------------------
+   Dinero en caja (tarjeta destacada)
+   -------------------------------------------------------------------------- */
+.dash-kpi-highlight {
+    border-color: rgba(212, 167, 44, 0.45);
+    background: linear-gradient(180deg, rgba(212, 167, 44, 0.08) 0%, var(--sa-surface) 70%);
+}
+
+.dash-kpi-highlight .dash-kpi-value {
+    color: var(--sa-gold-light);
+}
+
+.dash-kpi-value.is-negative {
+    color: var(--sa-error) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Gastos en efectivo
+   -------------------------------------------------------------------------- */
+.dash-kpi-icon-red {
+    background: rgba(229, 83, 75, 0.12);
+    color: var(--sa-error);
+}
+
+.dash-value-red {
+    color: var(--sa-error);
+}
+
+/* --------------------------------------------------------------------------
+   Dinero entregado al cierre: mismo estilo que los demás indicadores,
+   pero ocupa toda la fila
+   -------------------------------------------------------------------------- */
+.dash-kpi-wide {
+    grid-column: 1 / -1;
+}
+
+.dash-kpi-wide-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Desglose de ventas por categoría (tablas estilo hoja de Sheets, tema oscuro)
+   -------------------------------------------------------------------------- */
+.dash-desglose {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dash-heading-gold {
+    color: var(--sa-gold);
+}
+
+.dash-desglose-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.dash-desglose-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@media (max-width: 1100px) {
+    .dash-desglose-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.dash-tabla {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Título de la tabla (barra dorada, como en la hoja) */
+.dash-tabla caption {
+    caption-side: top;
+    padding: 10px 14px;
+    background: var(--sa-gold);
+    color: #121212;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Encabezados de columna */
+.dash-tabla thead th {
+    padding: 9px 14px;
+    background: rgba(212, 167, 44, 0.16);
+    color: var(--sa-gold-light);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: left;
+    border-bottom: 1px solid rgba(212, 167, 44, 0.3);
+}
+
+.dash-tabla tbody th,
+.dash-tabla tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--sa-border);
+}
+
+.dash-tabla tbody tr:last-child th,
+.dash-tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dash-tabla tbody th {
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-primary);
+}
+
+.dash-tabla .num {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dash-tabla thead th.num {
+    text-align: center;
+}
+
+.dash-tabla tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Filas en cero se ven más tenues para que resalte lo que sí tiene movimiento */
+.dash-tabla tbody tr.is-zero th,
+.dash-tabla tbody tr.is-zero td {
+    color: var(--sa-text-muted);
+}
+
+/* Fila de total */
+.dash-tabla tbody tr.dash-tabla-total th,
+.dash-tabla tbody tr.dash-tabla-total td {
+    background: rgba(212, 167, 44, 0.08);
+    color: var(--sa-gold-light);
+    font-weight: 700;
+    border-top: 1px solid rgba(212, 167, 44, 0.3);
+}
+
+/* Error */
+.dash-tabla-error td {
+    color: var(--sa-error);
+    text-align: center;
+    padding: 18px 14px;
+}
+
+/* Cargando */
+.dash-tabla .dash-sk {
+    display: inline-block;
+    width: 70%;
+    height: 12px;
+    border-radius: 6px;
+    vertical-align: middle;
+    background: linear-gradient(90deg, var(--sa-surface-input) 0%, var(--sa-border) 50%, var(--sa-surface-input) 100%);
+    background-size: 200% 100%;
+    animation: dash-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-tabla .dash-sk { animation: none; }
+}
+
+@media (max-width: 480px) {
+    .dash-tabla { font-size: 13px; }
+    .dash-tabla tbody th,
+    .dash-tabla tbody td,
+    .dash-tabla thead th { padding: 8px 10px; }
+}
+
+/* --------------------------------------------------------------------------
+   Ajuste: montos más visibles y títulos de tabla más sobrios
+   -------------------------------------------------------------------------- */
+/* Título de cada tabla: dorado tenue en vez de barra dorada sólida */
+.dash-tabla caption {
+    background: rgba(212, 167, 44, 0.12);
+    color: var(--sa-gold-light);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(212, 167, 44, 0.22);
+    border-bottom: none;
+}
+
+/* Encabezados de columna: discretos */
+.dash-tabla thead th {
+    background: transparent;
+    color: var(--sa-text-muted);
+    font-size: 11px;
+    border-bottom: 1px solid var(--sa-border-strong);
+}
+
+/* Título de la sección: menos llamativo */
+.dash-heading-gold {
+    color: var(--text-secondary);
+}
+
+/* Montos y cantidades: más grandes y brillantes */
+.dash-tabla tbody td.num {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sa-text);
+}
+
+.dash-tabla tbody td.num:nth-child(2) {
+    color: #ffffff;
+    font-size: 16px;
+}
+
+/* Rubros: un poco más suaves para que resalten los montos */
+.dash-tabla tbody th {
+    color: var(--text-secondary);
+}
+
+/* Filas con movimiento: el rubro también se ilumina */
+.dash-tabla tbody tr:not(.is-zero):not(.dash-tabla-total) th {
+    color: var(--sa-text);
+}
+
+/* Filas en cero: tenues */
+.dash-tabla tbody tr.is-zero td.num {
+    color: var(--sa-text-muted);
+    font-weight: 500;
+}
+
+/* Totales: el monto destaca en dorado */
+.dash-tabla tbody tr.dash-tabla-total th {
+    color: var(--sa-gold-light);
+}
+
+.dash-tabla tbody tr.dash-tabla-total td.num {
+    color: var(--sa-gold-light);
+    font-size: 17px;
+}
+
+/* Ajuste: filas en cero más claras y legibles */
+.dash-tabla tbody tr.is-zero th {
+    color: #d6d3cc;
+}
+
+.dash-tabla tbody tr.is-zero td.num {
+    color: #c4c1ba;
+    font-weight: 600;
+}

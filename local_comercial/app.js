@@ -1,4 +1,5 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 
 let activeUser = null;
 let activeUserRole = null;
@@ -19,6 +20,7 @@ let isEditingOrdenId = null; // Guardará el ID de la orden si estamos editando
 let ordenData = {
     servicios_maestros: [],
     detallado_tipo: null,
+    paquete: null,          // paquete de Configuración elegido ({ id, nombre, total, ... })
     promo_detalle: null,
     extra_interior: null,
     extra_aroma: null,
@@ -27,21 +29,14 @@ let ordenData = {
     detallados_especiales: [],
     
     mecanica_categorias: [],
-    promo_mec_detalle: null,
-    otro_mec_detalle: null,
+    mecanica_directos: {},  // categorías sin paso de detalles: { categoría: [texto o nombre] }
+    mecanica_previos: {},   // lo elegido antes, para dejar marcado al volver o editar
     mecanica_detalles: {}, // ej: { "Llantas": ["Alineacion", "Otro: parche"] }
     
     extras_finales: []
 };
 
-const MECANICA_OPTIONS = {
-    "Llantas": ["Rotacion de llantas", "Alineacion", "Balanceo", "Cambio de llantas", "Reparacion de pinchazos", "Cambio de valvulas"],
-    "Sistema de frenos": ["Cambio de pastilla", "Cambio de discos", "Purga de liquido de frenos", "Revision de freno de mano"],
-    "Lubricacion y Fluidos": ["Cambio de aceite de motor", "Cambio de filtro de aceite", "Cambio de aceite de transmision", "Cambio de liquido refrigerante", "Cambio de liquido de direccion"],
-    "Motor": ["Diagnostico computarizado", "Cambio de bujias", "Cambio de filtro de aire", "Limpieza de inyectores", "Revision de correa de distribucion", "Afinacion completa"],
-    "Sistema Electrico": ["Revision/Cambio de bateria", "Revision de alternador", "Cambio de luces/focos", "Revision sistema de arranque"],
-    "Aire acondicionado": ["Recarga de aire acondicionado", "Limpieza de tuberia"]
-};
+// Categorías y servicios de mecánica: Configuración > Mecánica (js/catalogo_mecanica.js)
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!window.supabase) {
@@ -59,7 +54,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     activeUser = activeUserStr;
     activeUserRole = activeUserRoleStr;
-    document.getElementById('display-user').textContent = activeUser;
+
+    // Tipos de vehículo desde Configuración (tabla tipos_vehiculo)
+    await cargarTiposVehiculoLocal();
+    // Paquetes, detalladores y aromatizantes desde Configuración (se cargan en segundo plano)
+    CatalogoDetallado.cargar('local').catch(e => console.error('[Paquetes] Error al cargar:', e));
+    CatalogoDetallado.cargarEspeciales('local').catch(e => console.error('[Especiales] Error al cargar:', e));
+    CatalogoMecanica.cargar().catch(e => console.error('[Mecánica] Error al cargar:', e));
 
     const urlParams = new URLSearchParams(window.location.search);
     const editId = urlParams.get('editar_orden');
@@ -77,8 +78,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (editId) {
         await cargarOrdenParaEdicion(editId);
+    } else {
+        // Al entrar, el cursor queda listo en el teléfono del cliente
+        enfocarTelefono();
     }
 });
+
+/**
+ * Pone el cursor en el campo de teléfono (paso 1).
+ * auth_guard.js oculta la página hasta verificar la sesión, y un campo oculto
+ * no recibe el foco: por eso se reintenta hasta que la página se muestra.
+ */
+function enfocarTelefono() {
+    const input = document.getElementById('phone-search');
+    const paso1 = document.getElementById('step-1');
+    if (!input || !paso1 || !paso1.classList.contains('active')) return;
+
+    let intentos = 0;
+    (function intentar() {
+        if (getComputedStyle(document.body).visibility !== 'hidden') {
+            input.focus();
+            input.select();
+            return;
+        }
+        if (++intentos < 200) setTimeout(intentar, 50); // hasta ~10 s
+    })();
+}
 
 async function cargarOrdenParaEdicion(id) {
     try {
@@ -126,14 +151,124 @@ async function cargarOrdenParaEdicion(id) {
         ordenData.mecanica_detalles = orden.mecanica_detalles || {};
         ordenData.extras_finales = orden.extras_finales || [];
         
+        // Dejar elegido el tipo de vehículo de la orden
+        seleccionarTipoEnSelect(currentVehicleTipo);
+
         // Jump to Step 3 (Servicios Maestros) because they need to re-select what to do
         goToStep(2);
         
     } catch (err) {
         console.error('Error cargando orden:', err);
-        alert('No se pudo cargar la orden para edición. Mostrando el inicio.');
+        SaNotificar.aviso('No se pudo cargar la orden para edición. Mostrando el inicio.', 'error');
     }
 }
+
+// ==========================================
+// TIPOS DE VEHÍCULO (Configuración > Tipos de vehículo)
+// ==========================================
+async function cargarTiposVehiculoLocal() {
+    const cont = document.getElementById('tipos-vehiculo-local');
+    if (!cont) return;
+
+    const mensaje = (texto, esError) => {
+        cont.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'step-desc';
+        p.style.gridColumn = '1 / -1';
+        if (esError) p.style.color = 'var(--danger-color)';
+        p.textContent = texto;
+        cont.appendChild(p);
+    };
+
+    mensaje('Cargando tipos de vehículo…');
+
+    try {
+        const tipos = await TiposVehiculo.cargar('local');
+        if (!tipos.length) {
+            mensaje('No hay tipos de vehículo disponibles para Local. Créalos en Configuración > Tipos de vehículo.', true);
+            return;
+        }
+        cont.innerHTML = '';
+        tipos.forEach(t => cont.appendChild(crearTarjetaTipo(t.nombre)));
+        // Si ya había un tipo elegido (p. ej. al editar una orden), marcarlo
+        seleccionarTipoEnSelect(document.getElementById('veh-tipo-temp').value);
+    } catch (e) {
+        console.error('[Local] Error al cargar tipos de vehículo:', e);
+        mensaje(TiposVehiculo.mensajeError(e), true);
+    }
+}
+
+/** Tarjeta de un tipo de vehículo (mismo estilo que en Domicilio). */
+function crearTarjetaTipo(nombre) {
+    const label = document.createElement('label');
+    label.className = 'radio-card';
+    label.innerHTML = '<input type="radio" name="tipo_vehiculo_local">' +
+        '<div class="radio-card-content"><i class="fa-solid ' + TiposVehiculo.icono(nombre) +
+        '" style="font-size: 24px; margin-bottom: 8px;" aria-hidden="true"></i><span></span></div>';
+    const input = label.querySelector('input');
+    input.value = nombre;
+    input.addEventListener('change', () => {
+        document.getElementById('veh-tipo-temp').value = nombre;
+        const err = document.getElementById('error-step2-tipo');
+        if (err) err.style.display = 'none';
+    });
+    label.querySelector('span').textContent = nombre;
+    return label;
+}
+
+/** Deja elegido un tipo; si es un tipo viejo que ya no está en la tabla, agrega su tarjeta para no perderlo. */
+function seleccionarTipoEnSelect(nombre) {
+    const hidden = document.getElementById('veh-tipo-temp');
+    const cont = document.getElementById('tipos-vehiculo-local');
+    if (!hidden || !nombre) return;
+    hidden.value = nombre;
+    if (!cont || !cont.querySelector('input[name="tipo_vehiculo_local"]')) return; // aún cargando
+
+    let input = Array.from(cont.querySelectorAll('input[name="tipo_vehiculo_local"]'))
+        .find(i => i.value.toLowerCase() === nombre.toLowerCase());
+    if (!input) {
+        const tarjeta = crearTarjetaTipo(nombre);
+        cont.appendChild(tarjeta);
+        input = tarjeta.querySelector('input');
+    }
+    input.checked = true;
+    hidden.value = input.value;
+}
+
+/** Paso 2a: tarjetas de tipo de vehículo. */
+function mostrarSubpasoTipo() {
+    document.getElementById('step2-tipo').style.display = '';
+    document.getElementById('step2-servicios').style.display = 'none';
+    const label = document.getElementById('current-step-name');
+    if (label && !isEditingOrdenId) label.textContent = 'Tipo de vehículo';
+}
+
+/** Paso 2b: servicios para el tipo elegido. */
+function mostrarSubpasoServicios() {
+    const tipo = document.getElementById('veh-tipo-temp').value;
+    document.getElementById('step2-tipo-elegido').textContent = tipo;
+    document.getElementById('step2-tipo').style.display = 'none';
+    document.getElementById('step2-servicios').style.display = '';
+    const label = document.getElementById('current-step-name');
+    if (label && !isEditingOrdenId) label.textContent = 'Servicios';
+    if (window.updateServicesByTipo) window.updateServicesByTipo();
+    // "Detallados especiales" solo si el vehículo tiene alguno configurado (p. ej. Moto no)
+    CatalogoDetallado.mostrarServicioEspeciales('local', tipo);
+}
+
+/** Botón "Siguiente" de las tarjetas de tipo. */
+window.continuarConTipoVehiculo = function() {
+    const tipo = document.getElementById('veh-tipo-temp').value;
+    const err = document.getElementById('error-step2-tipo');
+    if (!tipo) {
+        err.textContent = 'Seleccione el tipo de vehículo.';
+        err.style.display = 'block';
+        return;
+    }
+    err.style.display = 'none';
+    mostrarSubpasoServicios();
+};
+window.mostrarSubpasoTipo = mostrarSubpasoTipo;
 
 // ==========================================
 // NAVIGATION LOGIC
@@ -152,11 +287,12 @@ window.getPreviousStep = function(currentStep) {
 
 window.goToStep = function(stepNum) {
     if (isEditingOrdenId && stepNum === 1) {
-        alert("No se puede cambiar el cliente o vehículo al modificar una orden.");
+        SaNotificar.aviso("No se puede cambiar el cliente o vehículo al modificar una orden.", 'advertencia');
         return;
     }
 
-    const isMoto = (currentVehicleTipo === 'MOTO');
+    // Sin interior (p. ej. Moto): se saltan interior y servicios solo para carros
+    const isMoto = !TiposVehiculo.tieneInterior(currentVehicleTipo);
 
     // Update the single progress indicator
     const stepNames = {
@@ -174,6 +310,10 @@ window.goToStep = function(stepNum) {
     document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
     document.getElementById(`step-${stepNum}`).classList.add('active');
 
+    if (stepNum === 1) {
+        enfocarTelefono();
+    }
+
     if (stepNum === 9) {
         document.getElementById('current-client-display').textContent = currentClientName;
         document.getElementById('current-espera-display').textContent = currentEspera;
@@ -181,57 +321,45 @@ window.goToStep = function(stepNum) {
     }
     
     if (stepNum === 2) {
+        // Oculta Mecánica y Pendientes para tipos sin interior (p. ej. Moto), como antes
         window.updateServicesByTipo = function() {
-            const select = document.getElementById('veh-tipo-temp');
-            const masterList = document.getElementById('services-master-list');
-            if (select.value) {
-                masterList.style.display = 'flex';
-                const isMoto = (select.value === 'MOTO');
-                document.getElementById('card-mecanica').style.display = isMoto ? 'none' : 'flex';
-                document.getElementById('card-pendientes').style.display = isMoto ? 'none' : 'flex';
-                if (isMoto) {
-                    const cbMec = document.querySelector('input[value="Mecanica"]');
-                    if(cbMec) cbMec.checked = false;
-                    const cbPend = document.querySelector('input[value="Entrada pero servicios pendientes"]');
-                    if(cbPend) cbPend.checked = false;
-                }
-            } else {
-                masterList.style.display = 'none';
+            const tipo = document.getElementById('veh-tipo-temp').value;
+            const isMotoTipo = !TiposVehiculo.tieneInterior(tipo);
+            document.getElementById('card-mecanica').style.display = isMotoTipo ? 'none' : 'flex';
+            document.getElementById('card-pendientes').style.display = isMotoTipo ? 'none' : 'flex';
+            if (isMotoTipo) {
+                const cbMec = document.querySelector('input[value="Mecanica"]');
+                if (cbMec) cbMec.checked = false;
+                const cbPend = document.querySelector('input[value="Entrada pero servicios pendientes"]');
+                if (cbPend) cbPend.checked = false;
             }
         };
-        if(!document.getElementById('veh-tipo-temp').value) {
-            document.getElementById('services-master-list').style.display = 'none';
+        // Si ya hay tipo elegido (al volver desde un paso siguiente o al editar) se va directo a servicios
+        if (document.getElementById('veh-tipo-temp').value) {
+            mostrarSubpasoServicios();
         } else {
-            window.updateServicesByTipo();
+            mostrarSubpasoTipo();
         }
+    }
+
+    if (stepNum === 3) {
+        // Paquetes configurados para Local y para el tipo de vehículo elegido
+        pintarPasoPaquetes();
     }
 
     if (stepNum === 4) {
-        // Bloqueo condicional si eligió Clásico
-        const isClasico = (ordenData.detallado_tipo === 'Detallado clasico');
-        const cardMate = document.getElementById('card-mate');
-        const cardBrillante = document.getElementById('card-brillante');
-        const warn = document.getElementById('interior-warning');
-        if (isClasico) {
-            cardMate.classList.add('disabled');
-            cardBrillante.classList.add('disabled');
-            warn.style.display = 'block';
-            const checkedInterior = document.querySelector('input[name="extra_interior"]:checked');
-            if (checkedInterior && (checkedInterior.value === 'Mate' || checkedInterior.value === 'Brillante')) {
-                checkedInterior.checked = false;
-            }
-        } else {
-            cardMate.classList.remove('disabled');
-            cardBrillante.classList.remove('disabled');
-            warn.style.display = 'none';
-        }
+        // Detalladores y aromatizantes asignados al paquete elegido
+        pintarPasoInterior();
     }
 
     if (stepNum === 5) {
-        // Ocultar opciones de no-moto
-        document.querySelectorAll('.auto-only').forEach(el => {
-            el.style.display = isMoto ? 'none' : 'flex';
-        });
+        // Detallados especiales configurados para Local y el tipo de vehículo
+        pintarPasoEspeciales();
+    }
+
+    if (stepNum === 6) {
+        // Categorías configuradas (Configuración > Mecánica)
+        pintarPasoMecanica();
     }
 
     if (stepNum === 7) {
@@ -239,15 +367,102 @@ window.goToStep = function(stepNum) {
     }
 
     if (stepNum === 8) {
-        // Ocultar protector interior si es moto
-        document.querySelectorAll('.auto-only').forEach(el => {
-            el.style.display = isMoto ? 'none' : 'flex';
-        });
+        // Extras configurados (los "solo con interior" no salen para Moto)
+        pintarPasoExtras();
     }
 
     if (stepNum === 10) {
         buildResumen();
     }
+}
+
+// ==========================================
+// PAQUETES, DETALLADORES Y AROMATIZANTES (Configuración)
+// Solo se muestra lo configurado y con sus reglas: módulo, tipo de vehículo,
+// activos y asignados al paquete. Ver js/catalogo_detallado.js
+// ==========================================
+async function pintarPasoPaquetes() {
+    const cont = document.getElementById('paquetes-detallado-lista');
+    const promo = document.getElementById('promo-input-container');
+    CatalogoDetallado.mensaje(cont, 'Cargando paquetes…');
+    promo.style.display = 'none';
+
+    try {
+        await CatalogoDetallado.cargar('local');
+    } catch (e) {
+        console.error('[Paquetes] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeError(e), true);
+        return;
+    }
+
+    const esPromo = ordenData.detallado_tipo === CatalogoDetallado.PROMOCION;
+    CatalogoDetallado.pintarPaquetes(cont, currentVehicleTipo, {
+        seleccionado: ordenData.detallado_tipo,
+        onChange: (paquete) => { promo.style.display = paquete ? 'none' : 'block'; }
+    });
+    promo.style.display = esPromo ? 'block' : 'none';
+    if (esPromo && ordenData.promo_detalle) document.getElementById('promo-detalle').value = ordenData.promo_detalle;
+}
+
+/** Detalladores internos y aromatizantes del paquete elegido. */
+function pintarPasoInterior() {
+    const paqueteId = ordenData.paquete ? ordenData.paquete.id : null;
+    CatalogoDetallado.pintarOpciones(
+        document.getElementById('detalladores-lista'), 'extra_interior',
+        CatalogoDetallado.detalladores(paqueteId), ordenData.extra_interior,
+        { vacio: 'Este paquete no tiene detalladores internos configurados para Local.' }
+    );
+    CatalogoDetallado.pintarOpciones(
+        document.getElementById('aromatizantes-lista'), 'extra_aroma',
+        CatalogoDetallado.aromatizantes(paqueteId), ordenData.extra_aroma,
+        { extraFinal: CatalogoDetallado.SIN_AROMA }
+    );
+}
+
+/** Extras finales configurados (Configuración > Extras). */
+async function pintarPasoExtras() {
+    const cont = document.getElementById('extras-lista');
+    CatalogoDetallado.mensaje(cont, 'Cargando extras…');
+    try {
+        await CatalogoDetallado.cargarExtras('local');
+    } catch (e) {
+        console.error('[Extras] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeErrorExtras(e), true);
+        return;
+    }
+    CatalogoDetallado.pintarExtras(cont, currentVehicleTipo, ordenData.extras_finales);
+}
+
+/** Detallados especiales configurados (Configuración > Detallados especiales). */
+async function pintarPasoEspeciales() {
+    const cont = document.getElementById('especiales-list');
+    CatalogoDetallado.mensaje(cont, 'Cargando detallados especiales…');
+    try {
+        await CatalogoDetallado.cargarEspeciales('local');
+    } catch (e) {
+        console.error('[Especiales] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeErrorEspeciales(e), true);
+        return;
+    }
+    CatalogoDetallado.pintarEspeciales(cont, currentVehicleTipo, ordenData.detallados_especiales);
+}
+
+/** Lo que suma el cobro sugerido: paquete (si hay detallado) + especiales elegidos. */
+function partesDelCobro() {
+    const partes = [];
+    if (ordenData.servicios_maestros.includes('Detallado y lavado') && ordenData.paquete) {
+        partes.push(ordenData.paquete);
+    }
+    if (ordenData.servicios_maestros.includes('Detallados especiales')) {
+        partes.push(...CatalogoDetallado.especialesElegidos(currentVehicleTipo, ordenData.detallados_especiales));
+    }
+    return partes;
+}
+
+/** Paquete elegido en el paso de Tipo de Detallado (null si es Promoción o no aplica). */
+function paqueteElegido(valor) {
+    if (!valor || valor === CatalogoDetallado.PROMOCION) return null;
+    return CatalogoDetallado.paquetes(currentVehicleTipo).find(p => p.nombre === valor) || null;
 }
 
 // Funciones de ruteo del árbol (Lógica de saltos)
@@ -272,7 +487,7 @@ function proceedFromDetalladosEspeciales() {
 function proceedFromMecanicaCategorias() {
     // Si seleccionó una categoria de Salto Directo sin seleccionar categorías específicas, salta.
     // Ej: Mantenimiento General, Promo, Otro.
-    const hasSpecific = ordenData.mecanica_categorias.some(c => MECANICA_OPTIONS[c]);
+    const hasSpecific = ordenData.mecanica_categorias.some(c => CatalogoMecanica.usaServicios(CatalogoMecanica.buscar(c)));
     
     if (hasSpecific) {
         goToStep(7);
@@ -453,17 +668,21 @@ function setupStep9() {
         }, 300);
     });
 
-    // Custom Dropdown para Marcas
-    const marcasLista = [
-        "TOYOTA", "LEXUS", "HONDA", "ACURA", "NISSAN", "INFINITI", "MAZDA", "SUBARU", "MITSUBISHI", "SUZUKI", "ISUZU",
-        "HYUNDAI", "KIA", "GENESIS", "SSANGYONG", "FORD", "CHEVROLET", "GMC", "CADILLAC", "BUICK", "JEEP", "DODGE", "RAM", "CHRYSLER", "TESLA",
-        "MERCEDES-BENZ", "BMW", "MINI", "AUDI", "VOLKSWAGEN", "PORSCHE", "OPEL", "FERRARI", "LAMBORGHINI", "MASERATI", "FIAT", "ALFA ROMEO", "ABARTH",
-        "RENAULT", "PEUGEOT", "CITROËN", "DS AUTOMOBILES", "LAND ROVER", "RANGE ROVER", "JAGUAR", "ASTON MARTIN", "BENTLEY", "ROLLS-ROYCE", "MCLAREN",
-        "VOLVO", "POLESTAR", "SEAT", "CUPRA", "ŠKODA", "DACIA",
-        "BYD", "CHERY", "GEELY", "JETOUR", "OMODA", "JAECOO", "JAC", "MG", "GAC", "AION", "HAVAL", "TANK", "ORA", "WEY", "CHANGAN", "DONGFENG", "BAIC", "FOTON", "MAXUS", "KAIYI", "FAW", "BESTUNE", "JMC", "SERES", "NIO", "XPENG", "ZEEKR", "LEAPMOTOR", "LI AUTO",
-        "TATA", "MAHINDRA", "VINFAST",
-        "YAMAHA", "KAWASAKI", "KTM", "FREEDOM", "FORMULA", "KATANA", "SERPENTO", "OTRA"
-    ];
+    // Marcas desde Configuración > Marcas de vehículo (solo activas).
+    // Si no cargan, el campo sigue aceptando cualquier marca escrita a mano.
+    let marcasLista = [];
+    window.supabase
+        .from('marcas_vehiculo')
+        .select('nombre')
+        .eq('activo', true)
+        .order('nombre', { ascending: true })
+        .then(({ data, error }) => {
+            if (error) throw error;
+            marcasLista = (data || []).map(m => m.nombre.toUpperCase());
+            // "OTRA" siempre al final, como antes
+            marcasLista.sort((a, b) => (a === 'OTRA') - (b === 'OTRA'));
+        })
+        .catch(e => console.error('[Marcas] Error al cargar:', e));
     
     const marcaInput = document.getElementById('veh-marca');
     const marcaList = document.getElementById('marca-autocomplete-list');
@@ -561,8 +780,7 @@ function setupStep2() {
         const tipoSel = document.getElementById('veh-tipo-temp').value;
         const err = document.getElementById('error-step2');
         if (!tipoSel) {
-            err.textContent = "Seleccione el tipo de vehículo.";
-            err.style.display = 'block';
+            mostrarSubpasoTipo();
             return;
         }
         currentVehicleTipo = tipoSel;
@@ -602,11 +820,14 @@ function setupStep3() {
             const detail = document.getElementById('promo-detalle').value.trim();
             if (!detail) { err.style.display = 'block'; return; }
             ordenData.promo_detalle = detail;
+        } else {
+            ordenData.promo_detalle = null;
         }
         err.style.display = 'none';
         ordenData.detallado_tipo = selected.value;
-        if(currentVehicleTipo === 'MOTO') {
-            // Motos no tienen extras de interior
+        ordenData.paquete = paqueteElegido(selected.value);
+        if(!TiposVehiculo.tieneInterior(currentVehicleTipo)) {
+            // Tipos sin interior (p. ej. Motos) no tienen extras de interior
             proceedFromDetalladoLavadoExtras();
         } else {
             goToStep(4);
@@ -620,11 +841,13 @@ function setupStep4() {
         const aroma = document.querySelector('input[name="extra_aroma"]:checked');
         const alfombras = document.querySelector('input[name="extra_alfombras"]:checked');
         const err = document.getElementById('error-step4');
-        
-        if (!interior || !aroma || !alfombras) { err.style.display = 'block'; return; }
+        // Si el paquete no tiene detalladores internos configurados, no se pide
+        const hayDetalladores = !!document.querySelector('input[name="extra_interior"]');
+
+        if ((hayDetalladores && !interior) || !aroma || !alfombras) { err.style.display = 'block'; return; }
         err.style.display = 'none';
-        
-        ordenData.extra_interior = interior.value;
+
+        ordenData.extra_interior = interior ? interior.value : 'No aplica';
         ordenData.extra_aroma = aroma.value;
         ordenData.extra_alfombras = alfombras.value;
         
@@ -648,137 +871,200 @@ function setupStep5() {
 }
 
 // ==========================================
-// STEP 7: MECANICA CATEGORIAS
+// MECÁNICA: CATEGORÍAS (Configuración > Mecánica)
 // ==========================================
+function mensajeEn(cont, texto, esError) {
+    cont.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'step-desc';
+    p.style.gridColumn = '1 / -1';
+    if (esError) p.style.color = 'var(--danger-color, var(--sa-error))';
+    p.textContent = texto;
+    cont.appendChild(p);
+}
+
+/** Tarjetas de categorías configuradas (activas). Las que piden detalle muestran su campo de texto. */
+async function pintarPasoMecanica() {
+    const cont = document.getElementById('mecanica-cat-list');
+    mensajeEn(cont, 'Cargando categorías…');
+    try {
+        await CatalogoMecanica.cargar();
+    } catch (e) {
+        console.error('[Mecánica] Error al cargar:', e);
+        mensajeEn(cont, CatalogoMecanica.mensajeError(e), true);
+        return;
+    }
+
+    const categorias = CatalogoMecanica.lista();
+    if (!categorias.length) {
+        mensajeEn(cont, 'No hay categorías de mecánica activas. Se crean en Configuración > Mecánica.', true);
+        return;
+    }
+
+    const elegidas = ordenData.mecanica_categorias || [];
+    const previos = ordenData.mecanica_detalles || {};
+    cont.innerHTML = '';
+
+    categorias.forEach(cat => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-card';
+        // Las que no abren lista de servicios ocupan todo el ancho (como antes)
+        if (!CatalogoMecanica.usaServicios(cat)) label.style.gridColumn = 'span 2';
+        label.innerHTML = '<input type="checkbox" class="mecanica-cat-cb"><div class="checkbox-card-content"><span></span></div>';
+        const input = label.querySelector('input');
+        input.value = cat.nombre;
+        input.checked = elegidas.includes(cat.nombre);
+        label.querySelector('span').textContent = cat.nombre;
+        cont.appendChild(label);
+
+        if (cat.pide_detalle) {
+            const caja = document.createElement('div');
+            caja.style.gridColumn = 'span 2';
+            caja.style.display = input.checked ? 'block' : 'none';
+            caja.innerHTML = '<input type="text" class="form-control mec-cat-texto" placeholder="Describa…">';
+            const texto = caja.querySelector('input');
+            texto.dataset.cat = cat.nombre;
+            texto.setAttribute('aria-label', `Detalle de ${cat.nombre}`);
+            if (previos[cat.nombre] && previos[cat.nombre][0]) texto.value = previos[cat.nombre][0];
+            input.addEventListener('change', () => {
+                caja.style.display = input.checked ? 'block' : 'none';
+                if (input.checked) texto.focus();
+            });
+            cont.appendChild(caja);
+        }
+    });
+}
+
 function setupStep6() {
     window.processStep6 = function() {
-        const checkboxes = document.querySelectorAll('.mecanica-cat-cb:checked');
+        const checkboxes = Array.from(document.querySelectorAll('.mecanica-cat-cb:checked'));
         const err = document.getElementById('error-step6');
         if (checkboxes.length === 0) { err.style.display = 'block'; return; }
-        
-        let cats = [];
-        ordenData.promo_mec_detalle = null;
-        ordenData.otro_mec_detalle = null;
-        
-        for (let cb of checkboxes) {
-            cats.push(cb.value);
-            if (cb.value === 'Promociones mecanicas') {
-                const text = document.getElementById('promo-mec-text').value.trim();
-                if(!text) { err.style.display='block'; return; }
-                ordenData.promo_mec_detalle = text;
-            }
-            if (cb.value === 'Otro') {
-                const text = document.getElementById('otro-mec-text').value.trim();
-                if(!text) { err.style.display='block'; return; }
-                ordenData.otro_mec_detalle = text;
-            }
-        }
-        
-        err.style.display = 'none';
-        ordenData.mecanica_categorias = cats;
 
-        // Asignar inmediatamente los detalles para categorías directas
-        ordenData.mecanica_detalles = {};
-        if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
-            ordenData.mecanica_detalles['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
+        const cats = [];
+        const directos = {};   // categorías que no pasan por "Detalles Mecánicos"
+        const textos = Array.from(document.querySelectorAll('.mec-cat-texto'));
+
+        for (const cb of checkboxes) {
+            const cat = CatalogoMecanica.buscar(cb.value);
+            cats.push(cb.value);
+            if (cat && cat.pide_detalle) {
+                const input = textos.find(t => t.dataset.cat === cb.value);
+                const text = input ? input.value.trim() : '';
+                if (!text) {
+                    err.style.display = 'block';
+                    if (input) input.focus();
+                    return;
+                }
+                directos[cb.value] = [text];
+            } else if (!CatalogoMecanica.usaServicios(cat)) {
+                directos[cb.value] = [cb.value];   // p. ej. Mantenimiento general
+            }
         }
-        if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
-            ordenData.mecanica_detalles['Otro'] = [ordenData.otro_mec_detalle];
-        }
-        if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
-            ordenData.mecanica_detalles['Mantenimiento general'] = ['Mantenimiento general'];
-        }
+
+        err.style.display = 'none';
+        // Lo elegido antes (al volver atrás o al editar) sirve para dejar marcados los servicios
+        ordenData.mecanica_previos = ordenData.mecanica_detalles || {};
+        ordenData.mecanica_categorias = cats;
+        ordenData.mecanica_directos = directos;
+        ordenData.mecanica_detalles = { ...directos };
 
         proceedFromMecanicaCategorias();
     }
 }
 
 // ==========================================
-// STEP 8: MECANICA DETALLES
+// MECÁNICA: DETALLES (servicios de cada categoría)
 // ==========================================
 function renderMecanicaDetalles() {
     const container = document.getElementById('mecanica-dynamic-container');
     container.innerHTML = '';
-    
-    // Mantener los directos si existen
-    const directos = {};
-    if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
-        directos['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
-    }
-    if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
-        directos['Otro'] = [ordenData.otro_mec_detalle];
-    }
-    if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
-        directos['Mantenimiento general'] = ['Mantenimiento general'];
-    }
-    ordenData.mecanica_detalles = directos;
+    const previos = ordenData.mecanica_previos || {};
 
-    ordenData.mecanica_categorias.forEach(cat => {
-        if (MECANICA_OPTIONS[cat]) {
-            let html = `<div class="extra-section" style="margin-bottom: 24px;">
-                            <h3>${cat}</h3>
-                            <div class="checkbox-group-cards grid-2" id="grid-${cat.replace(/\s/g,'')}">`;
-            
-            MECANICA_OPTIONS[cat].forEach(opt => {
-                html += `<label class="checkbox-card">
-                            <input type="checkbox" value="${opt}" class="mec-det-cb" data-cat="${cat}">
-                            <div class="checkbox-card-content"><span>${opt}</span></div>
-                         </label>`;
-            });
+    ordenData.mecanica_categorias.forEach(nombre => {
+        const cat = CatalogoMecanica.buscar(nombre);
+        if (!CatalogoMecanica.usaServicios(cat)) return;
+        const antes = previos[nombre] || [];
 
-            // "Otro" field for each category
-            html += `<label class="checkbox-card" style="grid-column: span 2;">
-                        <input type="checkbox" class="mec-det-cb mec-otro-cb" data-cat="${cat}" onchange="document.getElementById('otro-div-${cat.replace(/\s/g,'')}').style.display = this.checked ? 'block' : 'none'">
-                        <div class="checkbox-card-content"><span>Otro</span></div>
-                     </label>
-                     <div id="otro-div-${cat.replace(/\s/g,'')}" style="display:none; grid-column:span 2;">
-                        <input type="text" class="form-control mec-otro-text" data-cat="${cat}" placeholder="Describa...">
-                     </div>`;
+        const seccion = document.createElement('div');
+        seccion.className = 'extra-section';
+        seccion.innerHTML = '<h3 class="extra-title"></h3><div class="checkbox-group-cards grid-2" style="margin-top: 16px;"></div>';
+        seccion.querySelector('h3').textContent = nombre;
+        const grid = seccion.querySelector('.checkbox-group-cards');
 
-            html += `</div></div>`;
-            container.innerHTML += html;
-        }
+        cat.servicios.forEach(servicio => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-card';
+            label.innerHTML = '<input type="checkbox" class="mec-det-cb"><div class="checkbox-card-content"><span></span></div>';
+            const input = label.querySelector('input');
+            input.value = servicio;
+            input.dataset.cat = nombre;
+            input.checked = antes.includes(servicio);
+            label.querySelector('span').textContent = servicio;
+            grid.appendChild(label);
+        });
+
+        // "Otro" con texto en cada categoría
+        const otroPrevio = antes.find(x => typeof x === 'string' && x.startsWith('Otro: '));
+        const otro = document.createElement('label');
+        otro.className = 'checkbox-card';
+        otro.style.gridColumn = 'span 2';
+        otro.innerHTML = '<input type="checkbox" class="mec-det-cb mec-otro-cb"><div class="checkbox-card-content"><span>Otro</span></div>';
+        const otroCb = otro.querySelector('input');
+        otroCb.dataset.cat = nombre;
+        otroCb.checked = !!otroPrevio;
+
+        const caja = document.createElement('div');
+        caja.style.gridColumn = 'span 2';
+        caja.style.display = otroPrevio ? 'block' : 'none';
+        caja.innerHTML = '<input type="text" class="form-control mec-otro-text" placeholder="Describa…">';
+        const texto = caja.querySelector('input');
+        texto.dataset.cat = nombre;
+        texto.setAttribute('aria-label', `Otro servicio de ${nombre}`);
+        if (otroPrevio) texto.value = otroPrevio.slice('Otro: '.length);
+        otroCb.addEventListener('change', () => {
+            caja.style.display = otroCb.checked ? 'block' : 'none';
+            if (otroCb.checked) texto.focus();
+        });
+
+        grid.appendChild(otro);
+        grid.appendChild(caja);
+        container.appendChild(seccion);
     });
 }
 
 function setupStep7() {
     window.processStep7 = function() {
         let isValid = true;
-        ordenData.mecanica_detalles = {};
-        const catsRendered = Array.from(new Set(Array.from(document.querySelectorAll('.mec-det-cb')).map(cb => cb.dataset.cat)));
-        
+        const detalles = {};
+        const cbs = Array.from(document.querySelectorAll('.mec-det-cb'));
+        const textos = Array.from(document.querySelectorAll('.mec-otro-text'));
+        const catsRendered = Array.from(new Set(cbs.map(cb => cb.dataset.cat)));
+
         catsRendered.forEach(cat => {
-            const checked = document.querySelectorAll(`.mec-det-cb[data-cat="${cat}"]:checked`);
-            if(checked.length === 0) isValid = false;
-            
-            let arr = [];
+            const checked = cbs.filter(cb => cb.dataset.cat === cat && cb.checked);
+            if (checked.length === 0) isValid = false;
+
+            const arr = [];
             checked.forEach(cb => {
-                if(cb.classList.contains('mec-otro-cb')) {
-                    const text = document.querySelector(`.mec-otro-text[data-cat="${cat}"]`).value.trim();
-                    if(!text) isValid = false;
-                    arr.push("Otro: " + text);
+                if (cb.classList.contains('mec-otro-cb')) {
+                    const input = textos.find(t => t.dataset.cat === cat);
+                    const text = input ? input.value.trim() : '';
+                    if (!text) isValid = false;
+                    arr.push('Otro: ' + text);
                 } else {
                     arr.push(cb.value);
                 }
             });
-            ordenData.mecanica_detalles[cat] = arr;
+            detalles[cat] = arr;
         });
-
-        // Asegurar que las categorías directas (Otro, Promo, Mantenimiento) no se pierdan
-        if (ordenData.mecanica_categorias.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
-            ordenData.mecanica_detalles['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
-        }
-        if (ordenData.mecanica_categorias.includes('Otro') && ordenData.otro_mec_detalle) {
-            ordenData.mecanica_detalles['Otro'] = [ordenData.otro_mec_detalle];
-        }
-        if (ordenData.mecanica_categorias.includes('Mantenimiento general')) {
-            ordenData.mecanica_detalles['Mantenimiento general'] = ['Mantenimiento general'];
-        }
 
         const err = document.getElementById('error-step7');
         if (!isValid) { err.style.display = 'block'; return; }
         err.style.display = 'none';
 
+        // Se suman las categorías directas (con detalle escrito o "se marca y listo")
+        ordenData.mecanica_detalles = { ...(ordenData.mecanica_directos || {}), ...detalles };
         proceedFromMecanicaDetalles();
     }
 }
@@ -829,7 +1115,7 @@ function setupStep10() {
         
         const total = montoDetallado + montoMecanica;
         if (total <= 0 && (!ordenData.servicios_maestros.includes('Entrada pero servicios pendientes'))) {
-            alert('Por favor ingrese un monto válido (mayor a 0).');
+            SaNotificar.aviso('Por favor ingrese un monto válido (mayor a 0).', 'advertencia');
             return;
         }
 
@@ -843,7 +1129,7 @@ function setupStep10() {
             const tieneDetallado = ordenData.servicios_maestros.includes('Detallado y lavado');
             const tieneEspeciales = ordenData.servicios_maestros.includes('Detallados especiales');
             const tieneMecanica = ordenData.servicios_maestros.includes('Mecanica');
-            const isMoto = (currentVehicleTipo === 'MOTO');
+            const isMoto = !TiposVehiculo.tieneInterior(currentVehicleTipo);
 
             let detalladoTipoFinal = "No aplica";
             let extraInteriorFinal = "No aplica";
@@ -869,15 +1155,10 @@ function setupStep10() {
             let mecanicaCategoriasFinal = tieneMecanica ? (ordenData.mecanica_categorias || []) : [];
             let mecanicaDetallesFinal = tieneMecanica ? { ...(ordenData.mecanica_detalles || {}) } : {};
             if (tieneMecanica) {
-                if (mecanicaCategoriasFinal.includes('Promociones mecanicas') && ordenData.promo_mec_detalle) {
-                    mecanicaDetallesFinal['Promociones mecanicas'] = [ordenData.promo_mec_detalle];
-                }
-                if (mecanicaCategoriasFinal.includes('Otro') && ordenData.otro_mec_detalle) {
-                    mecanicaDetallesFinal['Otro'] = [ordenData.otro_mec_detalle];
-                }
-                if (mecanicaCategoriasFinal.includes('Mantenimiento general') && !mecanicaDetallesFinal['Mantenimiento general']) {
-                    mecanicaDetallesFinal['Mantenimiento general'] = ['Mantenimiento general'];
-                }
+                // Categorías directas (detalle escrito o "se marca y listo") por si no pasaron por el paso 7
+                Object.entries(ordenData.mecanica_directos || {}).forEach(([cat, valor]) => {
+                    if (!mecanicaDetallesFinal[cat]) mecanicaDetallesFinal[cat] = valor;
+                });
             }
 
             let especialesFinal = tieneEspeciales ? (ordenData.detallados_especiales || []) : [];
@@ -926,7 +1207,7 @@ function setupStep10() {
             let nuevaOrden;
             if (isEditingOrdenId) {
                 if (window.originalOrderDataForAlert) {
-                    const EMAIL_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
+                    const EMAIL_WEBHOOK_URL = window.APP_CONFIG.alertWebhookUrl; // js/config.js
                     const alertPayload = {
                         action: 'edit_alert',
                         modulo: 'Local Comercial',
@@ -1004,7 +1285,7 @@ function setupStep10() {
                 }
 
                 // Generar Ticket PDF Silencioso
-                const TICKET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyhxNlGauKA8DQDsmDpEAPUzXT_TraP2_oimr6YsuTDv74zrQsIXMYYh83w_p9WnMtn6w/exec";
+                const TICKET_WEBHOOK_URL = window.APP_CONFIG.ticketWebhookUrl; // js/config.js
                 const ticketPayload = {
                     action: "generar_ticket",
                     orden_id: ordenGenerada.id,
@@ -1059,6 +1340,14 @@ function buildResumen() {
     document.getElementById('cobro-detallado-container').style.display = hasDetallado ? 'block' : 'none';
     document.getElementById('cobro-mecanico-container').style.display = hasMecanica ? 'block' : 'none';
 
+    // Monto sugerido: paquete + detallados especiales, según tipo de vehículo
+    CatalogoDetallado.sugerirMonto(
+        document.getElementById('monto-detallado'),
+        document.getElementById('precio-paquete-sugerido'),
+        partesDelCobro(),
+        currentVehicleTipo
+    );
+
     const ul = document.getElementById('resumen-final');
     let html = `
         <li><strong>Cliente:</strong> ${currentClientName} (${currentEspera})</li>
@@ -1073,7 +1362,7 @@ function buildResumen() {
                  <li><h3 style="color:var(--primary-accent); margin-bottom:8px;">Detallado</h3></li>
                  <li><strong>Paquete:</strong> ${ordenData.detallado_tipo === 'Promocion' ? 'Promoción: ' + ordenData.promo_detalle : ordenData.detallado_tipo}</li>`;
         
-        if (currentVehicleTipo !== 'MOTO') {
+        if (TiposVehiculo.tieneInterior(currentVehicleTipo)) {
             html += `<li><strong>Interior:</strong> ${ordenData.extra_interior} | <strong>Aroma:</strong> ${ordenData.extra_aroma} | <strong>Alfombras:</strong> ${ordenData.extra_alfombras}</li>`;
         }
     }
@@ -1090,9 +1379,7 @@ function buildResumen() {
         
         ordenData.mecanica_categorias.forEach(cat => {
             html += `<li><strong>${cat}:</strong> `;
-            if (cat === 'Promociones mecanicas') html += ordenData.promo_mec_detalle;
-            else if (cat === 'Otro') html += ordenData.otro_mec_detalle;
-            else if (ordenData.mecanica_detalles[cat]) html += ordenData.mecanica_detalles[cat].join(', ');
+            if (ordenData.mecanica_detalles[cat]) html += ordenData.mecanica_detalles[cat].join(', ');
             else html += 'General';
             html += `</li>`;
         });
@@ -1128,8 +1415,8 @@ function showToast(title, message, type = 'success') {
     toast.className = `toast ${type}`;
     
     // Force toast base styles
-    toast.style.background = 'rgba(30, 38, 55, 0.95)';
-    toast.style.border = type === 'error' ? '1px solid #ef4444' : '1px solid #10b981';
+    toast.style.background = 'rgba(20, 20, 21, 0.95)';
+    toast.style.border = type === 'error' ? '1px solid var(--sa-error)' : '1px solid var(--sa-success)';
     toast.style.padding = '16px 20px';
     toast.style.borderRadius = '12px';
     toast.style.color = '#fff';
@@ -1142,14 +1429,14 @@ function showToast(title, message, type = 'success') {
     toast.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
     
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
-    const iconColor = type === 'error' ? '#ef4444' : '#10b981';
+    const iconColor = type === 'error' ? 'var(--sa-error)' : 'var(--sa-success)';
     
     toast.innerHTML = `
         <div class="toast-header" style="display:flex; align-items:center; gap:8px; font-weight:600; margin-bottom:4px; color:${iconColor}">
             <i class="fa-solid ${icon}"></i>
             <span>${title}</span>
         </div>
-        <div class="toast-message" style="font-size:14px; color:#94a3b8;">${message}</div>
+        <div class="toast-message" style="font-size:14px; color:var(--sa-text-secondary);">${message}</div>
     `;
     
     container.appendChild(toast);

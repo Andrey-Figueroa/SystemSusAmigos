@@ -8,12 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 2. Set User Displays
-    const displayUser = document.getElementById('display-user');
-    const displayResponsable = document.getElementById('responsable-text');
-    
-    if (displayUser) displayUser.textContent = activeUser;
-    if (displayResponsable) displayResponsable.textContent = activeUser;
 
     // 3. Drag & Drop UI Logic
     const dropzone = document.getElementById('dropzone');
@@ -97,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // URL del Google Apps Script (Webhook)
     // El usuario deberá reemplazar esto con la URL obtenida al desplegar el script
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec';
+    const APPS_SCRIPT_URL = window.APP_CONFIG.sheetsWebhookUrl; // js/config.js
 
     // 4. Form Submit (Actual Implementation)
     const form = document.getElementById('cierre-form');

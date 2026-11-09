@@ -87,7 +87,7 @@ function initNavigation() {
     if (btnNext) {
         btnNext.addEventListener('click', () => {
             if (currentStep === 1 && !validatePaso1()) {
-                alert('Por favor, complete todos los campos obligatorios del vehículo (Placa, Cliente, Mecánico, Marca, Modelo, Año, Kilometraje).');
+                SaNotificar.aviso('Por favor, complete todos los campos obligatorios del vehículo (Placa, Cliente, Mecánico, Marca, Modelo, Año, Kilometraje).', 'advertencia');
                 return;
             }
             if (currentStep < totalSteps) {
@@ -122,7 +122,7 @@ function initNavigation() {
             const targetStep = parseInt(dot.getAttribute('data-step'));
             if (targetStep !== currentStep) {
                 if (currentStep === 1 && targetStep > 1 && !validatePaso1()) {
-                    alert('Por favor, complete todos los campos obligatorios del vehículo primero.');
+                    SaNotificar.aviso('Por favor, complete todos los campos obligatorios del vehículo primero.', 'advertencia');
                     return;
                 }
                 currentStep = targetStep;
@@ -252,7 +252,7 @@ function generateSummary() {
 // ===================== GENERAR PDF DIRECTO DESDE FORMULARIO =====================
 async function generarPDFDirecto() {
     if (!window.jspdf || !window.jspdf.jsPDF) {
-        alert("Error: Librería jsPDF no disponible.");
+        SaNotificar.aviso("Error: Librería jsPDF no disponible.", 'error');
         return;
     }
     const btnPdf = document.getElementById('btnPdf');
@@ -413,7 +413,7 @@ async function generarPDFDirecto() {
         doc.save(`Inspeccion_${formData.vehiculo.placa || 'SP'}_${formData.vehiculo.fecha || 'SF'}.pdf`);
     } catch (err) {
         console.error("Error generando PDF:", err);
-        alert("Error al generar PDF: " + err.message);
+        SaNotificar.aviso("Error al generar PDF: " + err.message, 'error');
     } finally {
         if (btnPdf) { btnPdf.disabled = false; btnPdf.textContent = '📄 Generar PDF'; }
     }
@@ -428,7 +428,7 @@ async function saveForm() {
     }
 
     if (!supabaseClient) {
-        alert("Error de conexión a la base de datos.");
+        SaNotificar.aviso("Error de conexión a la base de datos.", 'error');
         if(btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Guardar Inspección'; }
         return;
     }
@@ -494,12 +494,12 @@ async function saveForm() {
         }
 
         // 4. Éxito y redirección
-        alert('Inspección guardada correctamente!');
+        SaNotificar.aviso('¡Inspección guardada correctamente!', 'exito');
         window.location.href = 'index.html';
 
     } catch (err) {
         console.error(err);
-        alert('Error al guardar: ' + err.message);
+        SaNotificar.aviso('Error al guardar: ' + err.message, 'error');
         if(btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Guardar Inspección'; }
     }
 }

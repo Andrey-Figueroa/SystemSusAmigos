@@ -5,7 +5,8 @@
 // ══════════════════════════════════════════════════════════════════
 
 // ── Estado global ──────────────────────────────────────────────────
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 
 let activeUser = null;
 let activeUserRole = null;
@@ -23,7 +24,7 @@ const wizardState = {
 // ══════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
     if (!window.supabase) {
-        alert('Supabase no está inicializado.');
+        SaNotificar.aviso('Supabase no está inicializado.', 'error');
         return;
     }
 
@@ -43,17 +44,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fecha default paso 3
     document.getElementById('cxc-date').value = new Date().toISOString().split('T')[0];
 
-    // Buscador
-    document.getElementById('search-input').addEventListener('input', function () {
-        const q = this.value.trim().toLowerCase();
-        renderTable(q ? cxcData.filter(r =>
-            r.cliente_nombre?.toLowerCase().includes(q) ||
-            r.cliente_telefono?.includes(q) ||
-            r.vehiculo_placa?.toLowerCase().includes(q) ||
-            r.fecha_deuda?.includes(q) ||
-            r.concepto?.toLowerCase().includes(q)
-        ) : cxcData);
-    });
+    // Buscador y filtro Pendientes / Pagadas / Todas
+    document.getElementById('search-input').addEventListener('input', aplicarFiltros);
+    document.querySelectorAll('input[name="filtro-estado"]').forEach(r => r.addEventListener('change', aplicarFiltros));
+
+    // Pestañas: Cuentas / Historial de abonos
+    document.querySelectorAll('.cxc-vista').forEach(b => b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+    // Historial de abonos
+    document.getElementById('buscar-abonos').addEventListener('input', renderAbonos);
+    document.getElementById('periodo-abonos').addEventListener('change', renderAbonos);
+    await loadAbonos();
+
+    // Ficha de la cuenta
+    const dlg = document.getElementById('dialog-detalle');
+    document.getElementById('detalle-cerrar').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 
     // Cerrar wizard con Escape o clic fuera
     document.getElementById('wizard-overlay').addEventListener('click', e => {
@@ -74,11 +80,45 @@ async function loadCxC() {
 
         if (error) throw error;
         cxcData = data || [];
-        renderTable(cxcData);
+        aplicarFiltros();
     } catch (err) {
         console.error('Error cargando CxC:', err);
         showToast('error', 'Error', 'No se pudieron cargar las cuentas por cobrar.');
     }
+}
+
+/** Escapa texto antes de ponerlo en HTML. */
+function esc(t) {
+    return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Filtro por estado (Pendientes = pendiente + parcial) y búsqueda. */
+function aplicarFiltros() {
+    const q = (document.getElementById('search-input').value || '').trim().toLowerCase();
+    const filtro = (document.querySelector('input[name="filtro-estado"]:checked') || {}).value || 'abiertas';
+    const lista = cxcData.filter(r => {
+        if (filtro === 'abiertas' && r.estado === 'pagado') return false;
+        if (filtro === 'pagado' && r.estado !== 'pagado') return false;
+        if (!q) return true;
+        return r.cliente_nombre?.toLowerCase().includes(q) ||
+            r.cliente_telefono?.includes(q) ||
+            r.vehiculo_placa?.toLowerCase().includes(q) ||
+            r.fecha_deuda?.includes(q) ||
+            r.concepto?.toLowerCase().includes(q);
+    });
+
+    const titulo = document.getElementById('empty-titulo');
+    const texto = document.getElementById('empty-texto');
+    if (filtro === 'pagado') {
+        titulo.textContent = 'Aún no hay cuentas pagadas';
+        texto.textContent = 'Cuando una cuenta se salda queda aquí como historial, con todos sus abonos.';
+    } else {
+        titulo.textContent = q ? 'Ninguna cuenta coincide con la búsqueda' : 'No hay cuentas por cobrar pendientes';
+        texto.textContent = 'Agrega una nueva cuenta manualmente o las órdenes con cuenta pendiente aparecerán aquí.';
+    }
+    renderTable(lista);
 }
 
 function renderTable(data = cxcData) {
@@ -93,28 +133,28 @@ function renderTable(data = cxcData) {
 
     empty.style.display = 'none';
     tbody.innerHTML = data.map(r => `
-        <tr>
+        <tr class="${r.estado === 'pagado' ? 'cxc-fila-pagada' : ''}">
             <td>
                 <div class="client-cell">
-                    <div class="client-avatar-sm">${getInitials(r.cliente_nombre)}</div>
+                    <div class="client-avatar-sm">${esc(getInitials(r.cliente_nombre))}</div>
                     <div>
-                        <div class="client-name-cell">${r.cliente_nombre}</div>
-                        <div class="client-phone-cell">${r.cliente_telefono || '—'}</div>
+                        <div class="client-name-cell">${esc(r.cliente_nombre)}</div>
+                        <div class="client-phone-cell">${esc(r.cliente_telefono || '—')}</div>
                     </div>
                 </div>
             </td>
-            <td>${r.vehiculo_placa ? `<span class="placa-tag">${r.vehiculo_placa}</span>` : '<span style="opacity:0.4">—</span>'}</td>
+            <td>${r.vehiculo_placa ? `<span class="placa-tag">${esc(r.vehiculo_placa)}</span>` : '<span style="opacity:0.4">—</span>'}</td>
             <td class="date-cell">${formatDate(r.fecha_deuda)}</td>
-            <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.concepto}">${r.concepto}</td>
+            <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(r.concepto)}">${esc(r.concepto)}</td>
             <td class="amount-cell">${formatMoney(r.monto_total)}</td>
-            <td class="amount-cell pending">${formatMoney(r.saldo_pendiente)}</td>
+            <td class="amount-cell ${r.estado === 'pagado' ? '' : 'pending'}">${formatMoney(r.saldo_pendiente)}</td>
             <td>${getBadgeOrigen(r.origen)}</td>
             <td>${getBadgeEstado(r.estado)}</td>
             <td>
                 <div class="actions-cell">
-                    <button class="btn-icon view"   title="Ver detalle"       onclick="viewCxC(${r.id})"><i class="fa-solid fa-eye"></i></button>
-                    <button class="btn-icon edit"   title="Registrar abono"   onclick="openAbonoModal(${r.id})"><i class="fa-solid fa-hand-holding-dollar"></i></button>
-                    ${(activeUserRole === 'Dueño' || activeUserRole === 'Soporte TI / Programador') ? `<button class="btn-icon delete" title="Eliminar" onclick="deleteCxC(${r.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    <button class="btn-icon view"   title="Ver cuenta y abonos" onclick="viewCxC(${Number(r.id)})"><i class="fa-solid fa-eye"></i></button>
+                    ${r.estado !== 'pagado' ? `<button class="btn-icon edit" title="Registrar abono" onclick="openAbonoModal(${Number(r.id)})"><i class="fa-solid fa-hand-holding-dollar"></i></button>` : ''}
+                    ${window.AppSession.puedeEliminar() ? `<button class="btn-icon delete" title="Eliminar" onclick="deleteCxC(${r.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
                 </div>
             </td>
         </tr>
@@ -122,16 +162,165 @@ function renderTable(data = cxcData) {
 }
 
 // ── Acciones de tabla ──────────────────────────────────────────────
-function viewCxC(id) {
+/** Ficha de la cuenta: datos y todos sus abonos con fecha y hora. */
+async function viewCxC(id) {
     const r = cxcData.find(x => x.id === id);
     if (!r) return;
-    showToast('info', 'Detalle', `${r.cliente_nombre} · ${formatMoney(r.saldo_pendiente)} pendiente`);
-    // TODO: abrir modal de detalle con historial de abonos
+
+    document.getElementById('detalle-titulo').textContent = r.cliente_nombre || 'Cuenta';
+    document.getElementById('detalle-sub').textContent =
+        `${r.concepto || 'Sin concepto'}${r.vehiculo_placa ? ' · ' + r.vehiculo_placa : ''}`;
+
+    const datos = document.getElementById('detalle-datos');
+    const abonadoTotal = Math.max(0, Number(r.monto_total || 0) - Number(r.saldo_pendiente || 0));
+    datos.innerHTML = [
+        ['Fecha de la deuda', formatDate(r.fecha_deuda)],
+        ['Monto total', formatMoney(r.monto_total)],
+        ['Abonado', formatMoney(abonadoTotal)],
+        ['Saldo pendiente', formatMoney(r.saldo_pendiente)],
+        ['Origen', ({ manual: 'Manual', local_comercial: 'Local Comercial', domicilio: 'Domicilio' })[r.origen] || r.origen || '—'],
+        ['Estado', ({ pendiente: 'Pendiente', parcial: 'Parcial', pagado: 'Pagada' })[r.estado] || r.estado || '—']
+    ].map(([k, v]) => `<div class="cxc-dato"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('');
+
+    const cont = document.getElementById('detalle-abonos');
+    cont.innerHTML = '<p class="cxc-detalle-vacio">Cargando abonos…</p>';
+    document.getElementById('dialog-detalle').showModal();
+
+    try {
+        const { data, error } = await window.supabase
+            .from('cxc_abonos')
+            .select('id, monto_abono, metodo_pago, notas, registrado_por, fecha')
+            .eq('cxc_id', id)
+            .order('fecha', { ascending: false });
+        if (error) throw error;
+        if (!data || !data.length) {
+            cont.innerHTML = '<p class="cxc-detalle-vacio">Esta cuenta aún no tiene abonos.</p>';
+            return;
+        }
+        cont.innerHTML = `
+            <div class="table-container cxc-detalle-tabla">
+                <table class="data-table">
+                    <thead><tr><th>Fecha del abono</th><th class="text-right">Monto</th><th>Método</th><th>Registrado por</th><th>Notas</th></tr></thead>
+                    <tbody>${data.map(a => `
+                        <tr>
+                            <td class="date-cell">${esc(formatDateTime(a.fecha))}</td>
+                            <td class="amount-cell text-right">${formatMoney(a.monto_abono)}</td>
+                            <td>${esc(a.metodo_pago || '—')}</td>
+                            <td>${esc(a.registrado_por || '—')}</td>
+                            <td>${esc(a.notas || '—')}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    } catch (err) {
+        console.error('Error cargando abonos de la cuenta:', err);
+        cont.innerHTML = '<p class="cxc-detalle-vacio">No se pudieron cargar los abonos.</p>';
+    }
+}
+
+/** Recalcula saldo y estado de una cuenta con la suma de sus abonos. */
+async function recalcularSaldo(cxcId) {
+    try {
+        const [{ data: cuenta }, { data: abonos }] = await Promise.all([
+            window.supabase.from('cxc_manuales').select('monto_total').eq('id', cxcId).single(),
+            window.supabase.from('cxc_abonos').select('monto_abono').eq('cxc_id', cxcId)
+        ]);
+        if (!cuenta) return;
+        const abonado = (abonos || []).reduce((s, a) => s + Number(a.monto_abono || 0), 0);
+        const saldo = Math.max(0, Number(cuenta.monto_total || 0) - abonado);
+        const estado = saldo <= 0 ? 'pagado' : (abonado > 0 ? 'parcial' : 'pendiente');
+        await window.supabase.from('cxc_manuales')
+            .update({ saldo_pendiente: saldo, estado, updated_at: new Date().toISOString() })
+            .eq('id', cxcId);
+    } catch (err) {
+        console.error('Error recalculando el saldo:', err);
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   VISTAS: Cuentas / Historial de abonos
+   ══════════════════════════════════════════════════════════════════ */
+function cambiarVista(vista) {
+    document.querySelectorAll('.cxc-vista').forEach(b => {
+        const activa = b.dataset.vista === vista;
+        b.classList.toggle('is-activa', activa);
+        b.setAttribute('aria-selected', activa ? 'true' : 'false');
+    });
+    document.getElementById('vista-cuentas').hidden = vista !== 'cuentas';
+    document.getElementById('vista-abonos').hidden = vista !== 'abonos';
+    if (vista === 'abonos') renderAbonos();
+}
+
+let abonosData = [];
+
+async function loadAbonos() {
+    try {
+        const { data, error } = await window.supabase
+            .from('cxc_abonos')
+            .select('id, cxc_id, monto_abono, metodo_pago, notas, registrado_por, fecha, cxc_manuales ( cliente_nombre, vehiculo_placa, concepto )')
+            .order('fecha', { ascending: false })
+            .limit(5000);
+        if (error) throw error;
+        abonosData = data || [];
+        renderAbonos();
+    } catch (err) {
+        console.error('Error cargando abonos:', err);
+        showToast('error', 'Error', 'No se pudo cargar el historial de abonos.');
+    }
+}
+
+/** Inicio del período elegido (hora de Costa Rica). */
+function inicioPeriodo(periodo) {
+    if (periodo === 'todo') return null;
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Costa_Rica' }).format(new Date());
+    let desde = hoy;
+    if (periodo === 'semana') {
+        const dow = new Date(hoy + 'T12:00:00Z').getUTCDay();
+        const d = new Date(hoy + 'T12:00:00Z');
+        d.setUTCDate(d.getUTCDate() - ((dow + 6) % 7));
+        desde = d.toISOString().slice(0, 10);
+    } else if (periodo === 'mes') {
+        desde = hoy.slice(0, 7) + '-01';
+    }
+    return new Date(desde + 'T00:00:00-06:00');
+}
+
+function renderAbonos() {
+    const q = (document.getElementById('buscar-abonos').value || '').trim().toLowerCase();
+    const desde = inicioPeriodo(document.getElementById('periodo-abonos').value);
+    const lista = abonosData.filter(a => {
+        if (desde && new Date(a.fecha) < desde) return false;
+        if (!q) return true;
+        const c = a.cxc_manuales || {};
+        return `${c.cliente_nombre || ''} ${c.vehiculo_placa || ''} ${c.concepto || ''} ${a.metodo_pago || ''}`.toLowerCase().includes(q);
+    });
+
+    document.getElementById('abonos-cantidad').textContent = lista.length.toLocaleString('es-CR');
+    document.getElementById('abonos-total').textContent = formatMoney(lista.reduce((s, a) => s + Number(a.monto_abono || 0), 0));
+
+    const tbody = document.getElementById('abonos-table-body');
+    document.getElementById('abonos-vacio').style.display = lista.length ? 'none' : 'block';
+    tbody.innerHTML = lista.map(a => {
+        const c = a.cxc_manuales || {};
+        return `
+        <tr>
+            <td class="date-cell">${esc(formatDateTime(a.fecha))}</td>
+            <td class="client-name-cell">${esc(c.cliente_nombre || '—')}</td>
+            <td style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(c.concepto || '')}">
+                <button type="button" class="cxc-link" onclick="viewCxC(${Number(a.cxc_id)})">${esc(c.concepto || 'Ver cuenta')}</button>
+            </td>
+            <td>${c.vehiculo_placa ? `<span class="placa-tag">${esc(c.vehiculo_placa)}</span>` : '<span style="opacity:0.4">—</span>'}</td>
+            <td class="amount-cell text-right">${formatMoney(a.monto_abono)}</td>
+            <td>${esc(a.metodo_pago || '—')}</td>
+            <td>${esc(a.registrado_por || '—')}</td>
+            <td>${esc(a.notas || '—')}</td>
+        </tr>`;
+    }).join('');
 }
 
 async function deleteCxC(id) {
-    if (activeUserRole !== 'Dueño' && activeUserRole !== 'Soporte TI / Programador') {
-        showToast('error', 'Acceso denegado', 'Solo el Dueño puede eliminar cuentas.');
+    if (!window.AppSession.puedeEliminar()) {
+        showToast('error', 'Acceso denegado', 'Solo el Dueño y Soporte TI pueden eliminar.');
         return;
     }
 
@@ -140,7 +329,7 @@ async function deleteCxC(id) {
         ? `Cuenta por Cobrar ID: ${id}\nCliente: ${r.cliente_nombre}\nVehículo Placa: ${r.vehiculo_placa || 'N/A'}\nMonto Total: ${formatMoney(r.monto_total)}\nSaldo Pendiente: ${formatMoney(r.saldo_pendiente)}\nConcepto: ${r.concepto || 'Sin concepto'}`
         : `Cuenta por Cobrar ID: ${id}`;
 
-    if (!confirm('¿Eliminar esta cuenta por cobrar permanentemente?')) return;
+    if (!(await SaNotificar.confirmar({ titulo: 'Eliminar cuenta por cobrar', textoConfirmar: 'Eliminar', peligro: true, mensaje: '¿Eliminar esta cuenta por cobrar permanentemente?'}))) return;
 
     try {
         const { error } = await window.supabase
@@ -155,7 +344,7 @@ async function deleteCxC(id) {
         }
 
         cxcData = cxcData.filter(r => r.id !== id);
-        renderTable(cxcData);
+        aplicarFiltros();
         showToast('success', 'Eliminado', 'La cuenta fue eliminada correctamente.');
     } catch (err) {
         console.error(err);
@@ -313,22 +502,16 @@ async function submitAbono(e) {
             console.error("Error enviando abono a Sheets:", e);
         }
 
-        // 🔴 SI SE SALDÓ TODA LA CUENTA, ELIMINARLA 🔴
-        if (monto === parseFloat(registro.saldo_pendiente)) {
-            try {
-                await window.supabase
-                    .from('cxc_manuales')
-                    .delete()
-                    .eq('id', cxcId);
-            } catch (delErr) {
-                console.error("Error eliminando cuenta saldada:", delErr);
-            }
-        }
+        // La cuenta NUNCA se borra al saldarla: queda en estado "pagado" con su
+        // historial de abonos. El saldo se recalcula con la suma de los abonos
+        // (por si el trigger de la base de datos no estuviera instalado).
+        await recalcularSaldo(cxcId);
 
         closeAbonoModal();
 
-        // Recargar datos frescos desde Supabase (el trigger ya actualizó el saldo o se eliminó la cuenta)
+        // Recargar datos frescos desde Supabase
         await loadCxC();
+        await loadAbonos();
 
         const esTotal = tipo === 'total';
         showToast(
@@ -695,7 +878,7 @@ async function submitCxC(e) {
         if (error) throw error;
 
         cxcData.unshift(data);   // agregar al inicio de la lista local
-        renderTable(cxcData);
+        aplicarFiltros();
         closeWizard();
         showToast('success', 'Cuenta registrada',
             `₡${monto.toLocaleString('es-CR')} a nombre de ${wizardState.client.nombre}`);
@@ -722,6 +905,15 @@ function formatDate(iso) {
     return d.toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/** Fecha y hora de un abono, en hora de Costa Rica (p. ej. "9 nov 2026, 10:35 a. m."). */
+function formatDateTime(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleString("es-CR", {
+        timeZone: "America/Costa_Rica", day: "numeric", month: "short", year: "numeric",
+        hour: "numeric", minute: "2-digit"
+    });
+}
+
 function formatMoney(n) {
     return '₡' + Number(n || 0).toLocaleString('es-CR');
 }
@@ -730,7 +922,7 @@ function getBadgeOrigen(origen) {
     const map = {
         manual: '<span class="badge badge-manual">Manual</span>',
         local_comercial: '<span class="badge badge-auto">Local Comercial</span>',
-        domicilio: '<span class="badge badge-auto" style="background:rgba(155,89,182,0.1);color:#a78bfa;border-color:rgba(155,89,182,0.25);">Domicilio</span>',
+        domicilio: '<span class="badge badge-domicilio">Domicilio</span>',
     };
     return map[origen] || `<span class="badge badge-manual">${origen}</span>`;
 }

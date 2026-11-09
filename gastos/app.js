@@ -1,4 +1,5 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 let gastosData = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -9,7 +10,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../login/index.html';
         return;
     }
-    document.getElementById('display-user').textContent = activeUser;
 
     await loadPersonal();
     await loadGastos();
@@ -107,7 +107,7 @@ async function loadGastos() {
             const gastoData = encodeURIComponent(JSON.stringify(gasto));
 
             const activeUserRole = localStorage.getItem('activeUserRole');
-            const deleteBtnHTML = activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador' ? 
+            const deleteBtnHTML = window.AppSession.puedeEliminar() ? 
                 `<button class="btn-icon delete" style="width:26px; height:26px;" title="Eliminar Gasto" onclick="eliminarGasto('${gasto.id}')"><i class="fa-solid fa-trash-can" style="font-size:10px;"></i></button>` : '';
 
             li.innerHTML = `
@@ -207,7 +207,7 @@ async function handleExpenseSubmit(e) {
 
 window.eliminarGasto = async function(id) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (activeUserRole !== 'Dueño' && activeUserRole !== 'Administrador' && activeUserRole !== 'Soporte TI / Programador') {
+    if (!window.AppSession.puedeEliminar()) {
         showToast('Acceso Denegado', 'No tienes permisos para eliminar gastos.', 'error');
         return;
     }
@@ -216,7 +216,7 @@ window.eliminarGasto = async function(id) {
         ? `Gasto ID: ${id}\nMonto: ₡${parseFloat(g.monto).toLocaleString('en-US')}\nDescripción: ${g.descripcion}\nResponsable: ${g.responsable}\nAutorizó: ${g.autoriza || 'N/A'}`
         : `Gasto ID: ${id}`;
 
-    if (!confirm(`¿Estás seguro de que deseas eliminar este gasto de la base de datos permanentemente?`)) return;
+    if (!(await SaNotificar.confirmar({ titulo: 'Eliminar gasto', textoConfirmar: 'Eliminar', peligro: true, mensaje: `¿Estás seguro de que deseas eliminar este gasto de la base de datos permanentemente?`}))) return;
 
     try {
         const { error } = await window.supabase

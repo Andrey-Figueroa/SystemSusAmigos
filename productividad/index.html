@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productividad | Sus Amigos</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tema único + estilos del módulo -->
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=1">
+    <!-- Configuración, layout compartido y verificación de sesión -->
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
+</head>
+<body>
+    <main class="prod-content">
+        <header class="prod-header">
+            <div>
+                <h1>Productividad por empleado</h1>
+                <p>Quién genera más, cuánto dura y qué tipo de trabajo hace cada persona. Se alimenta de la Pizarra al pasar órdenes a Terminado.</p>
+            </div>
+        </header>
+
+        <!-- Filtros (una sola fila) -->
+        <section class="prod-filtros" aria-label="Filtros">
+            <div class="prod-filtro">
+                <label for="filtro-periodo">Período</label>
+                <select id="filtro-periodo" class="prod-input">
+                    <option value="hoy">Hoy</option>
+                    <option value="semana">Esta semana</option>
+                    <option value="mes" selected>Este mes</option>
+                    <option value="mes-pasado">Mes pasado</option>
+                    <option value="rango">Rango de fechas…</option>
+                </select>
+            </div>
+            <div class="prod-filtro prod-rango" id="filtro-rango" hidden>
+                <label for="filtro-desde">Desde</label>
+                <input type="date" id="filtro-desde" class="prod-input">
+                <label for="filtro-hasta">Hasta</label>
+                <input type="date" id="filtro-hasta" class="prod-input">
+            </div>
+            <div class="prod-filtro">
+                <span class="prod-filtro-label" id="area-label">Área</span>
+                <div class="prod-segmented" role="radiogroup" aria-labelledby="area-label">
+                    <label><input type="radio" name="filtro-area" value="todas" checked><span>Todas</span></label>
+                    <label><input type="radio" name="filtro-area" value="detallado"><span>Detallado</span></label>
+                    <label><input type="radio" name="filtro-area" value="mecanica"><span>Mecánica</span></label>
+                </div>
+            </div>
+            <p class="prod-periodo-texto" id="periodo-texto" aria-live="polite"></p>
+        </section>
+
+        <!-- Totales del período -->
+        <section class="prod-kpis" id="kpis" aria-label="Totales del período">
+            <article class="prod-kpi"><span class="prod-kpi-label">Trabajos realizados</span><strong class="prod-kpi-valor" id="kpi-trabajos">—</strong></article>
+            <article class="prod-kpi"><span class="prod-kpi-label">Ingreso generado</span><strong class="prod-kpi-valor" id="kpi-ingreso">—</strong></article>
+            <article class="prod-kpi"><span class="prod-kpi-label">Tiempo promedio por trabajo <small>(aprox.)</small></span><strong class="prod-kpi-valor" id="kpi-tiempo">—</strong></article>
+            <article class="prod-kpi"><span class="prod-kpi-label">Personas con trabajos</span><strong class="prod-kpi-valor" id="kpi-personas">—</strong></article>
+        </section>
+
+        <!-- Ranking -->
+        <section class="prod-card" aria-labelledby="titulo-ranking">
+            <div class="prod-card-head">
+                <h2 id="titulo-ranking">Ranking</h2>
+                <p class="prod-card-sub">Toca una persona para ver su detalle.</p>
+            </div>
+            <div class="prod-table-wrap" id="ranking" aria-live="polite">
+                <div class="prod-sk"></div><div class="prod-sk"></div><div class="prod-sk"></div>
+            </div>
+        </section>
+
+        <!-- Detalle de la persona elegida -->
+        <section class="prod-card" id="detalle" hidden aria-live="polite"></section>
+
+        <!-- Cómo se calcula -->
+        <details class="prod-card prod-ayuda">
+            <summary><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ¿Cómo se calcula el puntaje?</summary>
+            <div class="prod-ayuda-body">
+                <p>Cada indicador se compara contra <strong>la mejor persona del período</strong> (la mejor = 100) y se suman con estos pesos:</p>
+                <ul id="lista-pesos"></ul>
+                <p><strong>Eficiencia:</strong> cada trabajo se compara contra el tiempo promedio del equipo para <em>el mismo servicio en el mismo tipo de vehículo</em>. Más de 1,00 = más rápido que el promedio.</p>
+                <p><strong>Tiempo:</strong> es aproximado, desde que entró la orden hasta que se pasó a Terminado. Si una persona hizo detallado y mecánica en la misma orden, ese tiempo se cuenta una sola vez.</p>
+                <p><strong>Ingreso:</strong> el monto del área (detallado o mecánica) tal como se cobró. Si varias personas hicieron la misma área, cada una queda con el monto completo.</p>
+            </div>
+        </details>
+    </main>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script src="app.js?v=1"></script>
+</body>
+</html>

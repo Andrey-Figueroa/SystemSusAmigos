@@ -1,4 +1,5 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 
 // Global Variables
 let activeUser = null;
@@ -21,6 +22,7 @@ let ordenData = {
     hora_agendada: null,
     servicios_maestros: [],
     detallado_tipo: null,
+    paquete: null,          // paquete de Configuración elegido ({ id, nombre, total, ... })
     promo_detalle: null,
     extra_interior: null,
     extra_aroma: null,
@@ -38,7 +40,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    document.getElementById('display-user').textContent = activeUser;
+
+    // Tipos de vehículo desde Configuración (tabla tipos_vehiculo)
+    cargarTiposVehiculoDomicilio();
+    // Paquetes, detalladores y aromatizantes desde Configuración (se cargan en segundo plano)
+    CatalogoDetallado.cargar('domicilio').catch(e => console.error('[Paquetes] Error al cargar:', e));
+    CatalogoDetallado.cargarEspeciales('domicilio').catch(e => console.error('[Especiales] Error al cargar:', e));
     
     const today = new Date();
     document.getElementById('today-date-badge').textContent = today.toLocaleDateString('es-CR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -92,21 +99,24 @@ function goToStep(stepNum) {
         if (backBtn) {
             backBtn.style.display = isEditingOrdenId ? 'none' : 'inline-block';
         }
+        // "Detallados especiales" solo si el vehículo tiene alguno configurado (p. ej. Moto no)
+        CatalogoDetallado.mostrarServicioEspeciales('domicilio', currentVehicleTipo);
+    }
+    if (stepNum === 4) {
+        // Paquetes configurados para Domicilio y para el tipo de vehículo elegido
+        pintarPasoPaquetes();
+    }
+    if (stepNum === 5) {
+        // Detalladores y aromatizantes asignados al paquete elegido
+        pintarPasoInterior();
     }
     if (stepNum === 6) {
-        // Toggle Moto Options
-        const isMoto = currentVehicleTipo === 'MOTO';
-        document.querySelectorAll('#especiales-list .auto-only').forEach(el => {
-            el.style.display = isMoto ? 'none' : 'flex';
-            if (isMoto) el.querySelector('input').checked = false;
-        });
+        // Detallados especiales configurados para Domicilio y el tipo de vehículo
+        pintarPasoEspeciales();
     }
     if (stepNum === 7) {
-        const isMoto = currentVehicleTipo === 'MOTO';
-        document.querySelectorAll('#step-7 .auto-only').forEach(el => {
-            el.style.display = isMoto ? 'none' : 'flex';
-            if (isMoto) el.querySelector('input').checked = false;
-        });
+        // Extras configurados (los "solo con interior" no salen para Moto)
+        pintarPasoExtras();
     }
 }
 
@@ -116,19 +126,108 @@ function getPreviousStep(currentStep) {
     if (currentStep === 5) return 4;
     if (currentStep === 6) {
         if (ordenData.servicios_maestros.includes('Detallado y lavado')) {
-            return currentVehicleTipo === 'MOTO' ? 4 : 5;
+            return !TiposVehiculo.tieneInterior(currentVehicleTipo) ? 4 : 5;
         }
         return 3;
     }
     if (currentStep === 7) {
         if (ordenData.servicios_maestros.includes('Detallados especiales')) return 6;
         if (ordenData.servicios_maestros.includes('Detallado y lavado')) {
-            return currentVehicleTipo === 'MOTO' ? 4 : 5;
+            return !TiposVehiculo.tieneInterior(currentVehicleTipo) ? 4 : 5;
         }
         return 3;
     }
     if (currentStep === 8) return 7;
     return currentStep - 1;
+}
+
+// ==========================================
+// PAQUETES, DETALLADORES Y AROMATIZANTES (Configuración)
+// Solo se muestra lo configurado y con sus reglas: módulo, tipo de vehículo,
+// activos y asignados al paquete. Ver js/catalogo_detallado.js
+// ==========================================
+async function pintarPasoPaquetes() {
+    const cont = document.getElementById('paquetes-detallado-lista');
+    const promo = document.getElementById('promo-input-container');
+    CatalogoDetallado.mensaje(cont, 'Cargando paquetes…');
+    promo.style.display = 'none';
+
+    try {
+        await CatalogoDetallado.cargar('domicilio');
+    } catch (e) {
+        console.error('[Paquetes] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeError(e), true);
+        return;
+    }
+
+    const esPromo = ordenData.detallado_tipo === CatalogoDetallado.PROMOCION;
+    CatalogoDetallado.pintarPaquetes(cont, currentVehicleTipo, {
+        seleccionado: ordenData.detallado_tipo,
+        onChange: (paquete) => { promo.style.display = paquete ? 'none' : 'block'; }
+    });
+    promo.style.display = esPromo ? 'block' : 'none';
+    if (esPromo && ordenData.promo_detalle) document.getElementById('promo-detalle').value = ordenData.promo_detalle;
+}
+
+/** Detalladores internos y aromatizantes del paquete elegido. */
+function pintarPasoInterior() {
+    const paqueteId = ordenData.paquete ? ordenData.paquete.id : null;
+    CatalogoDetallado.pintarOpciones(
+        document.getElementById('detalladores-lista'), 'extra_interior',
+        CatalogoDetallado.detalladores(paqueteId), ordenData.extra_interior,
+        { vacio: 'Este paquete no tiene detalladores internos configurados para Domicilio.' }
+    );
+    CatalogoDetallado.pintarOpciones(
+        document.getElementById('aromatizantes-lista'), 'extra_aroma',
+        CatalogoDetallado.aromatizantes(paqueteId), ordenData.extra_aroma,
+        { extraFinal: CatalogoDetallado.SIN_AROMA }
+    );
+}
+
+/** Extras finales configurados (Configuración > Extras). */
+async function pintarPasoExtras() {
+    const cont = document.getElementById('extras-lista');
+    CatalogoDetallado.mensaje(cont, 'Cargando extras…');
+    try {
+        await CatalogoDetallado.cargarExtras('domicilio');
+    } catch (e) {
+        console.error('[Extras] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeErrorExtras(e), true);
+        return;
+    }
+    CatalogoDetallado.pintarExtras(cont, currentVehicleTipo, ordenData.extras_finales);
+}
+
+/** Detallados especiales configurados (Configuración > Detallados especiales). */
+async function pintarPasoEspeciales() {
+    const cont = document.getElementById('especiales-list');
+    CatalogoDetallado.mensaje(cont, 'Cargando detallados especiales…');
+    try {
+        await CatalogoDetallado.cargarEspeciales('domicilio');
+    } catch (e) {
+        console.error('[Especiales] Error al cargar:', e);
+        CatalogoDetallado.mensaje(cont, CatalogoDetallado.mensajeErrorEspeciales(e), true);
+        return;
+    }
+    CatalogoDetallado.pintarEspeciales(cont, currentVehicleTipo, ordenData.detallados_especiales);
+}
+
+/** Lo que suma el cobro sugerido: paquete (si hay detallado) + especiales elegidos. */
+function partesDelCobro() {
+    const partes = [];
+    if (ordenData.servicios_maestros.includes('Detallado y lavado') && ordenData.paquete) {
+        partes.push(ordenData.paquete);
+    }
+    if (ordenData.servicios_maestros.includes('Detallados especiales')) {
+        partes.push(...CatalogoDetallado.especialesElegidos(currentVehicleTipo, ordenData.detallados_especiales));
+    }
+    return partes;
+}
+
+/** Paquete elegido en el paso de Tipo de Detallado (null si es Promoción o no aplica). */
+function paqueteElegido(valor) {
+    if (!valor || valor === CatalogoDetallado.PROMOCION) return null;
+    return CatalogoDetallado.paquetes(currentVehicleTipo).find(p => p.nombre === valor) || null;
 }
 
 // ==========================================
@@ -268,6 +367,50 @@ function setupStep2() {
     // Ya no se inicializan búsquedas ni modales aquí.
 }
 
+// ==========================================
+// TIPOS DE VEHÍCULO (Configuración > Tipos de vehículo)
+// ==========================================
+async function cargarTiposVehiculoDomicilio() {
+    const cont = document.getElementById('tipos-vehiculo-domicilio');
+    if (!cont) return;
+
+    const mensaje = (texto, esError) => {
+        cont.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'step-desc';
+        p.style.gridColumn = '1 / -1';
+        if (esError) p.style.color = 'var(--danger-color, var(--sa-error))';
+        p.textContent = texto;
+        cont.appendChild(p);
+    };
+
+    mensaje('Cargando tipos de vehículo…');
+
+    try {
+        const tipos = await TiposVehiculo.cargar('domicilio');
+        if (!tipos.length) {
+            mensaje('No hay tipos de vehículo disponibles para Domicilio. Créalos en Configuración > Tipos de vehículo.', true);
+            return;
+        }
+        cont.innerHTML = '';
+        tipos.forEach(t => {
+            const label = document.createElement('label');
+            label.className = 'radio-card';
+            label.innerHTML = '<input type="radio" name="tipo_vehiculo_domicilio">' +
+                '<div class="radio-card-content"><i class="fa-solid ' + TiposVehiculo.icono(t.nombre) +
+                '" style="font-size: 24px; margin-bottom: 8px;" aria-hidden="true"></i><span></span></div>';
+            const input = label.querySelector('input');
+            input.value = t.nombre;
+            input.addEventListener('change', () => seleccionarVehiculoDomicilio(t.nombre));
+            label.querySelector('span').textContent = t.nombre;
+            cont.appendChild(label);
+        });
+    } catch (e) {
+        console.error('[Domicilio] Error al cargar tipos de vehículo:', e);
+        mensaje(TiposVehiculo.mensajeError(e), true);
+    }
+}
+
 window.seleccionarVehiculoDomicilio = function(tipo) {
     currentVehicleTipo = tipo;
     currentVehiclePlaca = "SIN PLACA";
@@ -307,41 +450,7 @@ function setupStep3() {
 // STEP 4: TIPO DE DETALLADO
 // ==========================================
 function setupStep4() {
-    document.querySelectorAll('input[name="detallado_tipo"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const promoContainer = document.getElementById('promo-input-container');
-            if (e.target.value === 'Promocion') {
-                promoContainer.style.display = 'block';
-            } else {
-                promoContainer.style.display = 'none';
-            }
-            
-            const warning = document.getElementById('interior-warning');
-            const cardMate = document.getElementById('card-mate');
-            const cardBri = document.getElementById('card-brillante');
-            if (cardMate && cardBri && warning) {
-                if (e.target.value === 'Detallado clasico') {
-                    cardMate.style.opacity = '0.5';
-                    cardMate.querySelector('input').disabled = true;
-                    cardBri.style.opacity = '0.5';
-                    cardBri.querySelector('input').disabled = true;
-                    warning.style.display = 'block';
-                    
-                    let currInt = document.querySelector('input[name="extra_interior"]:checked');
-                    if(currInt && (currInt.value==='Mate'||currInt.value==='Brillante')) {
-                        currInt.checked = false;
-                    }
-                } else {
-                    cardMate.style.opacity = '1';
-                    cardMate.querySelector('input').disabled = false;
-                    cardBri.style.opacity = '1';
-                    cardBri.querySelector('input').disabled = false;
-                    warning.style.display = 'none';
-                }
-            }
-        });
-    });
-
+    // Las tarjetas de paquetes se pintan al entrar al paso (pintarPasoPaquetes)
     window.processStep4 = function() {
         const selected = document.querySelector('input[name="detallado_tipo"]:checked');
         const err = document.getElementById('error-step4');
@@ -351,10 +460,13 @@ function setupStep4() {
             const detail = document.getElementById('promo-detalle').value.trim();
             if (!detail) { err.style.display = 'block'; return; }
             ordenData.promo_detalle = detail;
+        } else {
+            ordenData.promo_detalle = null;
         }
         err.style.display = 'none';
         ordenData.detallado_tipo = selected.value;
-        if(currentVehicleTipo === 'MOTO') {
+        ordenData.paquete = paqueteElegido(selected.value);
+        if(!TiposVehiculo.tieneInterior(currentVehicleTipo)) {
             proceedFromDetalladoLavadoExtras();
         } else {
             goToStep(5);
@@ -371,11 +483,13 @@ function setupStep5() {
         const aroma = document.querySelector('input[name="extra_aroma"]:checked');
         const alfombras = document.querySelector('input[name="extra_alfombras"]:checked');
         const err = document.getElementById('error-step5');
-        
-        if (!interior || !aroma || !alfombras) { err.style.display = 'block'; return; }
+        // Si el paquete no tiene detalladores internos configurados, no se pide
+        const hayDetalladores = !!document.querySelector('input[name="extra_interior"]');
+
+        if ((hayDetalladores && !interior) || !aroma || !alfombras) { err.style.display = 'block'; return; }
         err.style.display = 'none';
-        
-        ordenData.extra_interior = interior.value;
+
+        ordenData.extra_interior = interior ? interior.value : 'No aplica';
         ordenData.extra_aroma = aroma.value;
         ordenData.extra_alfombras = alfombras.value;
         
@@ -451,7 +565,7 @@ function buildResumen() {
                  <li><h3 style="color:var(--primary-accent); margin-bottom:8px;">Detallado</h3></li>
                  <li><strong>Paquete:</strong> ${ordenData.detallado_tipo === 'Promocion' ? 'Promoción: ' + ordenData.promo_detalle : ordenData.detallado_tipo}</li>`;
         
-        if (currentVehicleTipo !== 'MOTO') {
+        if (TiposVehiculo.tieneInterior(currentVehicleTipo)) {
             html += `<li><strong>Interior:</strong> ${ordenData.extra_interior} | <strong>Aroma:</strong> ${ordenData.extra_aroma} | <strong>Alfombras:</strong> ${ordenData.extra_alfombras}</li>`;
         }
     }
@@ -469,6 +583,14 @@ function buildResumen() {
     }
 
     ul.innerHTML = html;
+
+    // Total sugerido: paquete + detallados especiales, según tipo de vehículo
+    CatalogoDetallado.sugerirMonto(
+        document.getElementById('orden-total'),
+        document.getElementById('precio-paquete-sugerido'),
+        partesDelCobro(),
+        currentVehicleTipo
+    );
 }
 
 
@@ -488,7 +610,7 @@ function setupStep8() {
         let detalladoFull = "No aplica";
         if (ordenData.servicios_maestros.includes('Detallado y lavado')) {
             detalladoFull = ordenData.detallado_tipo === 'Promocion' ? 'Promoción: ' + ordenData.promo_detalle : ordenData.detallado_tipo;
-            if (currentVehicleTipo !== 'MOTO') {
+            if (TiposVehiculo.tieneInterior(currentVehicleTipo)) {
                 detalladoFull += ` | Int: ${ordenData.extra_interior} | Aroma: ${ordenData.extra_aroma} | Alf: ${ordenData.extra_alfombras}`;
             }
         }
@@ -529,7 +651,7 @@ function setupStep8() {
             let nuevaOrden;
             if (isEditingOrdenId) {
                 if (window.originalOrderDataForAlert) {
-                    const EMAIL_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
+                    const EMAIL_WEBHOOK_URL = window.APP_CONFIG.alertWebhookUrl; // js/config.js
                     const alertPayload = {
                         action: 'edit_alert',
                         modulo: 'Servicios a Domicilio',
@@ -670,8 +792,7 @@ async function loadTodayDomicilios() {
                 tagsHtml += `<span>Especiales</span>`;
             }
 
-            let icon = '<i class="fa-solid fa-car"></i>';
-            if(ord.tipo_vehiculo === 'MOTO') icon = '<i class="fa-solid fa-motorcycle"></i>';
+            const icon = `<i class="fa-solid ${TiposVehiculo.icono(ord.tipo_vehiculo)}"></i>`;
 
             let payBtnHtml = '';
             if (!isPagado) {
@@ -685,7 +806,7 @@ async function loadTodayDomicilios() {
             
             const activeUserRole = localStorage.getItem('activeUserRole');
 
-            if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
+            if (window.AppSession.puedeEliminar()) {
                 deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="deleteDomicilio('${ord.id}')"><i class="fa-solid fa-trash-can"></i></button>`;
             }
 
@@ -932,7 +1053,7 @@ window.abrirModalPago = function(id, total) {
         
         console.log("Modal abierto exitosamente en el DOM");
     } catch (e) {
-        alert("Error al abrir modal: " + e.message);
+        SaNotificar.aviso("Error al abrir modal: " + e.message, 'error');
         console.error(e);
     }
 }
@@ -946,8 +1067,8 @@ window.cerrarModalPago = function() {
 }
 
 
-window.modificarDomicilio = function(id) {
-    if (!confirm("Al modificar esta orden tendrás que re-ingresar los servicios en el asistente. ¿Deseas continuar?")) return;
+window.modificarDomicilio = async function(id) {
+    if (!(await SaNotificar.confirmar({ titulo: 'Modificar domicilio', textoConfirmar: 'Continuar', peligro: false, mensaje: "Al modificar esta orden tendrás que re-ingresar los servicios en el asistente. ¿Deseas continuar?"}))) return;
     
     const ordenToEdit = todayDomicilios.find(o => String(o.id) === String(id));
     if (!ordenToEdit) {
@@ -983,7 +1104,7 @@ window.modificarDomicilio = function(id) {
 
 window.deleteDomicilio = async function(id) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (activeUserRole !== 'Dueño' && activeUserRole !== 'Administrador' && activeUserRole !== 'Soporte TI / Programador') {
+    if (!window.AppSession.puedeEliminar()) {
         showToast('Acceso Denegado', 'Solo el Administrador o el Dueño pueden eliminar órdenes.', 'error');
         return;
     }
@@ -993,7 +1114,7 @@ window.deleteDomicilio = async function(id) {
         ? `Domicilio ID: ${id}\nCliente: ${ord.clientes ? ord.clientes.nombre : 'Desconocido'}\nVehículo Placa: ${ord.placa || 'SIN PLACA'}\nModelo: ${ord.marca || ''} ${ord.modelo || ''}\nHora Agendada: ${ord.hora_agendada}\nDirección: ${ord.direccion}\nMonto Total: ₡${parseFloat(ord.total_monto).toLocaleString('en-US')}`
         : `Domicilio ID: ${id}`;
 
-    if (!confirm('¿Estás seguro de que deseas eliminar este domicilio de hoy? (Se borrará de Supabase y de Google Sheets)')) return;
+    if (!(await SaNotificar.confirmar({ titulo: 'Eliminar domicilio', textoConfirmar: 'Eliminar', peligro: true, mensaje: '¿Estás seguro de que deseas eliminar este domicilio de hoy? (Se borrará de Supabase y de Google Sheets)'}))) return;
 
     try {
         const { error } = await window.supabase.from('ordenes_domicilio').delete().eq('id', id);

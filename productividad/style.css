@@ -1,0 +1,502 @@
+/* ==========================================================================
+   Productividad por empleado — tema único negro y dorado (css/theme.css)
+   ========================================================================== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--sa-bg);
+    color: var(--sa-text);
+    font-family: var(--sa-font);
+}
+
+.prod-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.prod-header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.prod-header p {
+    margin: 0;
+    color: var(--sa-text-secondary);
+    font-size: 14px;
+    max-width: 720px;
+}
+
+/* --------------------------------------------------------------------------
+   Filtros (una fila)
+   -------------------------------------------------------------------------- */
+.prod-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 24px;
+    padding: 16px 18px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+}
+
+.prod-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prod-filtro label,
+.prod-filtro-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+}
+
+.prod-rango {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.prod-rango[hidden] {
+    display: none;
+}
+
+.prod-input {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: var(--sa-radius);
+    border: 1px solid var(--sa-border-strong);
+    background: var(--sa-surface-input);
+    color: var(--sa-text);
+    font-family: inherit;
+    font-size: 14px;
+    color-scheme: dark;
+}
+
+.prod-input:focus {
+    outline: none;
+    border-color: var(--sa-gold);
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.prod-segmented {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: var(--sa-radius);
+    border: 1px solid var(--sa-border-strong);
+    background: var(--sa-surface-input);
+}
+
+.prod-segmented label {
+    cursor: pointer;
+}
+
+.prod-segmented input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.prod-segmented span {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+    transition: background var(--sa-transition), color var(--sa-transition);
+}
+
+.prod-segmented input:checked + span {
+    background: var(--sa-gold);
+    color: #121212;
+}
+
+.prod-segmented input:focus-visible + span {
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+.prod-periodo-texto {
+    margin: 0 0 10px auto;
+    font-size: 13px;
+    color: var(--sa-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Totales
+   -------------------------------------------------------------------------- */
+.prod-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.prod-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+}
+
+.prod-kpi-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+}
+
+.prod-kpi-label small {
+    color: var(--sa-text-muted);
+    font-weight: 400;
+}
+
+.prod-kpi-valor {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--sa-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Tarjetas y tablas
+   -------------------------------------------------------------------------- */
+.prod-card {
+    padding: 18px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border);
+    border-radius: 14px;
+}
+
+.prod-card[hidden] {
+    display: none;
+}
+
+.prod-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 14px;
+}
+
+.prod-card-head h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.prod-card-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--sa-text-muted);
+}
+
+.prod-table-wrap {
+    overflow-x: auto;
+}
+
+.prod-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.prod-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sa-text-secondary);
+    border-bottom: 1px solid var(--sa-border-strong);
+    white-space: nowrap;
+}
+
+.prod-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--sa-border);
+    color: var(--sa-text);
+}
+
+.prod-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.prod-table tbody tr {
+    cursor: pointer;
+    transition: background var(--sa-transition);
+}
+
+.prod-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.prod-table tbody tr:focus-visible {
+    outline: 2px solid var(--sa-gold);
+    outline-offset: -2px;
+}
+
+.prod-table tbody tr.is-selected {
+    background: var(--sa-gold-faint);
+}
+
+.prod-table-sm tbody tr {
+    cursor: default;
+}
+
+.prod-table-sm td {
+    padding: 9px 12px;
+    font-size: 13px;
+}
+
+.prod-pos {
+    color: var(--sa-text-muted);
+}
+
+.prod-nombre {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.col-puntaje {
+    min-width: 170px;
+}
+
+/* Puntaje: barra de un solo color con su valor */
+.prod-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prod-meter-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--sa-border);
+    overflow: hidden;
+}
+
+.prod-meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--sa-gold);
+}
+
+.prod-meter-valor {
+    min-width: 28px;
+    text-align: right;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Detalle de la persona
+   -------------------------------------------------------------------------- */
+.prod-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: var(--sa-radius);
+    border: 1px solid var(--sa-border-strong);
+    background: transparent;
+    color: var(--sa-text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.prod-btn-ghost:hover {
+    color: var(--sa-text);
+    border-color: rgba(212, 167, 44, 0.45);
+}
+
+.prod-mini-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.prod-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--sa-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.prod-mini span {
+    font-size: 11px;
+    color: var(--sa-text-secondary);
+}
+
+.prod-mini strong {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+}
+
+.prod-detalle-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) 2fr;
+    gap: 24px;
+}
+
+.prod-detalle-grid h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sa-text-secondary);
+}
+
+/* Mezcla de servicios: barras horizontales */
+.prod-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prod-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+}
+
+.prod-bar-label {
+    font-size: 13px;
+    color: var(--sa-text);
+}
+
+.prod-bar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "label label"
+        "track valor";
+    align-items: center;
+    column-gap: 10px;
+}
+
+.prod-bar-label { grid-area: label; }
+.prod-bar-track { grid-area: track; }
+.prod-bar-valor { grid-area: valor; }
+
+.prod-bar-track {
+    height: 10px;
+    border-radius: 0 4px 4px 0;
+    background: var(--sa-border);
+    overflow: hidden;
+}
+
+.prod-bar-fill {
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--sa-gold);
+}
+
+.prod-bar-valor {
+    min-width: 20px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--sa-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   Estados y ayuda
+   -------------------------------------------------------------------------- */
+.prod-estado {
+    padding: 32px 16px;
+    text-align: center;
+    line-height: 1.6;
+    color: var(--sa-text-secondary);
+    font-size: 14px;
+}
+
+.prod-estado i {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 26px;
+    color: var(--sa-gold);
+}
+
+.prod-estado.is-error i {
+    color: var(--sa-error);
+}
+
+.prod-sk {
+    height: 44px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--sa-border) 25%, var(--sa-border-strong) 50%, var(--sa-border) 75%);
+    background-size: 200% 100%;
+    animation: prod-sk 1.2s ease-in-out infinite;
+}
+
+@keyframes prod-sk {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+.prod-ayuda summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--sa-text-secondary);
+}
+
+.prod-ayuda summary i {
+    color: var(--sa-gold);
+    margin-right: 6px;
+}
+
+.prod-ayuda-body {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--sa-text-secondary);
+}
+
+.prod-ayuda-body strong {
+    color: var(--sa-text);
+}
+
+.prod-ayuda-body ul {
+    margin: 6px 0 12px;
+    padding-left: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+    .prod-kpis { grid-template-columns: repeat(2, 1fr); }
+    .prod-mini-kpis { grid-template-columns: repeat(3, 1fr); }
+    .prod-detalle-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+    .prod-content { padding: 20px 16px 40px; }
+    .prod-kpis { grid-template-columns: 1fr 1fr; }
+    .prod-kpi-valor { font-size: 20px; }
+    .prod-mini-kpis { grid-template-columns: 1fr 1fr; }
+    .prod-periodo-texto { margin-left: 0; }
+}

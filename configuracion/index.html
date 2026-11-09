@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración | Sus Amigos</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tema único + estilos del módulo -->
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=8">
+    <!-- Configuración, layout compartido y verificación de sesión -->
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
+</head>
+<body>
+    <main class="cfg-content">
+        <header class="cfg-header">
+            <div>
+                <h1>Configuración</h1>
+                <p>Administra los catálogos y ajustes del sistema.</p>
+            </div>
+        </header>
+
+        <div class="cfg-grid">
+            <a href="tipos-vehiculo.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-car-side"></i></span>
+                <div>
+                    <h2>Tipos de vehículo</h2>
+                    <p>Crea y edita los tipos de vehículo que se atienden (SUV, Sedán…), si tienen interior y dónde están disponibles.</p>
+                </div>
+            </a>
+
+            <a href="marcas.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-copyright"></i></span>
+                <div>
+                    <h2>Marcas de vehículo</h2>
+                    <p>Las marcas que salen al registrar un vehículo (TOYOTA, HYUNDAI, YAMAHA…) y si están activas.</p>
+                </div>
+            </a>
+
+            <a href="paquetes-detallado.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-spray-can-sparkles"></i></span>
+                <div>
+                    <h2>Paquetes de detallado</h2>
+                    <p>Clásico, Premium, Gold… Para qué vehículos aplica cada uno, su precio, IVA, detalladores internos y aromatizantes.</p>
+                </div>
+            </a>
+
+            <a href="detallados-especiales.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                <div>
+                    <h2>Detallados especiales</h2>
+                    <p>Pulidos, lavado de motor, tapicería… Dónde se ofrecen y su precio por tipo de vehículo.</p>
+                </div>
+            </a>
+
+            <a href="mecanica.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                <div>
+                    <h2>Mecánica</h2>
+                    <p>Categorías (Llantas, Frenos, Motor…) y los servicios de cada una. Sin precios: se cobran según el trabajo.</p>
+                </div>
+            </a>
+
+            <a href="detalladores-internos.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-pump-soap"></i></span>
+                <div>
+                    <h2>Detalladores internos</h2>
+                    <p>Nize, Trapo húmedo, Mate, Brillante… Si están activos y si se ofrecen en Local y Domicilio.</p>
+                </div>
+            </a>
+
+            <a href="aromatizantes.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-wind"></i></span>
+                <div>
+                    <h2>Aromatizantes</h2>
+                    <p>Limón, Frutos rojos, Carro nuevo… Si están activos y si se ofrecen en Local y Domicilio.</p>
+                </div>
+            </a>
+
+            <a href="extras.html" class="cfg-card">
+                <span class="cfg-card-icon" aria-hidden="true"><i class="fa-solid fa-star"></i></span>
+                <div>
+                    <h2>Extras</h2>
+                    <p>Cera premium, Anti empañante… Los extras finales que se ofrecen, si están activos y dónde.</p>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <!-- Supabase SDK (lo usa auth_guard.js para verificar la sesión) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+</body>
+</html>

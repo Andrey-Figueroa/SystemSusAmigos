@@ -3,8 +3,11 @@
 // ==========================================
 (function() {
     const userRole = localStorage.getItem('activeUserRole') || '';
-    const isMechanic = userRole.toLowerCase() === 'mecanico' || userRole.toLowerCase() === 'mecánico';
-    if (isMechanic) {
+    // Borrar inspecciones y fotos: solo Dueño y Soporte TI (regla única en js/config.js)
+    const puedeEliminar = window.AppSession
+        ? window.AppSession.puedeEliminar()
+        : ['Dueño', 'Soporte TI / Programador'].includes(userRole);
+    if (!puedeEliminar) {
         document.head.insertAdjacentHTML('beforeend', '<style>.btn-delete, .foto-delete { display: none !important; }</style>');
     }
 })();
@@ -657,6 +660,10 @@ function showToast(msg, type = 'success') {
 let deleteTargetId = null;
 
 function openDeleteModal(id) {
+    if (window.AppSession && !window.AppSession.puedeEliminar()) {
+        showToast('Solo el Dueño y Soporte TI pueden eliminar.', 'error');
+        return;
+    }
     deleteTargetId = id;
     const input = document.getElementById('deletePwInput');
     const error = document.getElementById('deletePwError');
@@ -867,6 +874,10 @@ async function uploadFotos(files) {
 }
 
 async function deleteFoto(id, name) {
+    if (window.AppSession && !window.AppSession.puedeEliminar()) {
+        showToast('Solo el Dueño y Soporte TI pueden eliminar.', 'error');
+        return;
+    }
     const { error } = await supabaseClient.storage.from(BUCKET).remove([`${id}/${name}`]);
     if (error) { showToast('Error al borrar foto', 'error'); return; }
     showToast('🗑️ Foto eliminada', 'success');

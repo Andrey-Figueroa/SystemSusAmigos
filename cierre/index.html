@@ -16,7 +16,9 @@
     <!-- Specific Styles for Cierre -->
     <link rel="stylesheet" href="style.css?v=2">
     <!-- Auth Guard -->
-    <script src="../js/auth_guard.js"></script>
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
     <div class="pos-layout">
@@ -25,14 +27,6 @@
             <div class="navbar-brand">
                 <i class="fa-solid fa-cash-register logo-icon"></i>
                 <span class="brand-text">Cierre de Operaciones</span>
-            </div>
-            
-            <div class="user-profile">
-                <span class="user-greeting">Sesión activa: <strong id="display-user">...</strong></span>
-                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Volver al Dashboard</span>
-                </button>
             </div>
         </header>
 
@@ -47,9 +41,6 @@
                             </h2>
                             <p class="section-subtitle">Completa el formulario para realizar el cierre del turno operativo.</p>
                         </div>
-                        <span id="responsable-badge" class="badge-responsable">
-                            <i class="fa-solid fa-user-lock"></i> <span id="responsable-text">Cargando...</span>
-                        </span>
                     </div>
                     
                     <form id="cierre-form">
@@ -102,7 +93,7 @@
     <script src="../js/supabase.js"></script>
     
     <!-- Application Script -->
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>
 

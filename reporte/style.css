@@ -1,0 +1,53 @@
+/* Hoja de Reporte — tema único negro y dorado (css/theme.css) */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--sa-bg);
+    color: var(--sa-text);
+    font-family: var(--sa-font);
+}
+
+.rep-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+}
+
+.rep-header h1 {
+    margin: 0 0 20px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.rep-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 56px 16px;
+    text-align: center;
+    background: var(--sa-surface);
+    border: 1px dashed var(--sa-border-strong);
+    border-radius: 14px;
+    color: var(--sa-text-secondary);
+}
+
+.rep-vacio i {
+    font-size: 32px;
+    color: var(--sa-gold);
+    margin-bottom: 4px;
+}
+
+.rep-vacio strong {
+    color: var(--sa-text);
+    font-size: 16px;
+}
+
+.rep-vacio p {
+    margin: 0;
+    font-size: 14px;
+}

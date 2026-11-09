@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Tema único de Sus Amigos (negro y dorado, tomado del logo)
+   Fuente de verdad de colores, fuente y radios. Lo usan el login, el layout
+   compartido (navbar + menú lateral) y el dashboard. Si cambia la marca,
+   se cambia solo aquí.
+   ========================================================================== */
+:root {
+    /* Fondo y superficies */
+    --sa-bg: #0a0a0b;
+    --sa-surface: #141415;
+    --sa-surface-input: #0e0e0f;
+    --sa-bar-bg: rgba(10, 10, 11, 0.92);
+    --sa-border: #262628;
+    --sa-border-strong: #353538;
+
+    /* Marca (dorado del logo) */
+    --sa-brand-panel: #050505;
+    --sa-gold: #d4a72c;
+    --sa-gold-light: #f0cd6a;
+    --sa-gold-dark: #a87e1c;
+    --sa-gold-hover: #e2b844;
+    --sa-gold-soft: rgba(212, 167, 44, 0.18);
+    --sa-gold-faint: rgba(212, 167, 44, 0.08);
+    --sa-gold-gradient: linear-gradient(135deg, #f0cd6a 0%, #d4a72c 50%, #a87e1c 100%);
+
+    /* Texto */
+    --sa-text: #f5f3ee;
+    --sa-text-secondary: #a3a09a;
+    --sa-text-muted: #67655f;
+
+    /* Estados */
+    --sa-error: #e5534b;
+    --sa-success: #3fb27f;
+    --sa-warning: #f59e0b;
+
+    /* Tipografía y forma */
+    --sa-font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --sa-radius: 10px;
+    --sa-transition: 0.2s ease;
+}
+
+/* ==========================================================================
+   Página "congelada": el texto de la interfaz no se comporta como un editor.
+   - Sin cursor de texto (la "I") al pasar el mouse sobre textos, títulos o tablas.
+   - Sin rayita parpadeante al hacer clic (aunque el navegador tenga activada la
+     navegación con cursor, tecla F7).
+   - El texto no se selecciona por accidente al hacer clic o arrastrar.
+   Los campos donde sí se escribe (inputs, textarea, select, contenteditable)
+   siguen funcionando normal.
+   ========================================================================== */
+html,
+body {
+    cursor: default;
+    caret-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]),
+textarea,
+[contenteditable=""],
+[contenteditable="true"] {
+    cursor: text;
+    caret-color: auto;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+select,
+input[type="date"],
+input[type="time"],
+input[type="month"] {
+    cursor: pointer;
+    caret-color: auto;
+}
+
+/* Lo que se puede tocar muestra la manito */
+a[href],
+button:not(:disabled),
+label[for],
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]),
+summary,
+[role="button"],
+[role="tab"],
+[onclick],
+input[type="checkbox"],
+input[type="radio"],
+input[type="button"],
+input[type="submit"],
+input[type="file"] {
+    cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+    cursor: not-allowed;
+}

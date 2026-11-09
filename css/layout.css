@@ -1,0 +1,571 @@
+/* ==========================================================================
+   Layout compartido (js/layout.js)
+   Navbar superior y menú lateral fijos; solo cambia el panel derecho (.sa-content).
+   Colores y fuente vienen del tema único (css/theme.css, variables --sa-*).
+   ========================================================================== */
+:root {
+    --sa-topbar-h: 80px;
+    --sa-sidebar-w: 240px;
+    --sa-sidebar-bg: var(--sa-brand-panel);
+    --sa-accent: var(--sa-gold);
+}
+
+/* --------------------------------------------------------------------------
+   Panel derecho: hereda el layout que el módulo le daba a <body>
+   -------------------------------------------------------------------------- */
+.sa-content {
+    display: inherit;
+    flex-direction: inherit;
+    flex-wrap: inherit;
+    align-items: inherit;
+    justify-content: inherit;
+    gap: inherit;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding-top: var(--sa-topbar-h);
+}
+
+/* Los headers propios de los módulos ya no se pegan arriba (el navbar fijo ocupa ese lugar) */
+.sa-content .navbar {
+    position: static !important;
+}
+
+.sa-content .app-header {
+    top: var(--sa-topbar-h) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Navbar superior
+   -------------------------------------------------------------------------- */
+.sa-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sa-topbar-h);
+    z-index: 90;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 24px;
+    background: var(--sa-bar-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--sa-border);
+    font-family: var(--sa-font);
+    color: var(--sa-text);
+}
+
+.sa-topbar *,
+.sa-sidebar * {
+    box-sizing: border-box;
+}
+
+.sa-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    min-width: 0;
+}
+
+.sa-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.sa-brand img {
+    display: block;
+    height: calc(var(--sa-topbar-h) - 6px);
+    width: auto;
+}
+
+.sa-topnav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sa-topnav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--sa-border);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--sa-text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.sa-topnav-link[hidden] {
+    display: none;
+}
+
+.sa-topnav-link i {
+    font-size: 12px;
+}
+
+.sa-topnav-link:hover,
+.sa-topnav-link.active {
+    color: var(--sa-accent);
+    background: rgba(212, 167, 44, 0.06);
+    border-color: rgba(212, 167, 44, 0.2);
+}
+
+.sa-link-sheets { color: #10b981; }
+.sa-link-backup { color: #f59e0b; }
+
+.sa-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.sa-greeting {
+    font-size: 14px;
+    color: var(--sa-text-secondary);
+    white-space: nowrap;
+}
+
+.sa-greeting strong {
+    color: var(--sa-text);
+    font-weight: 600;
+}
+
+.sa-role-badge {
+    background: rgba(212, 167, 44, 0.1);
+    border: 1px solid rgba(212, 167, 44, 0.25);
+    color: var(--sa-accent);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.sa-role-badge[hidden] {
+    display: none;
+}
+
+
+.sa-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    font-family: var(--sa-font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sa-logout:hover {
+    background: rgba(239, 68, 68, 0.16);
+}
+
+.sa-topbar a:focus-visible,
+.sa-topbar button:focus-visible,
+.sa-sidebar a:focus-visible {
+    outline: 2px solid var(--sa-accent);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Menú lateral (solo computadora y tableta)
+   -------------------------------------------------------------------------- */
+.sa-sidebar {
+    display: none;
+}
+
+.sa-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sa-sidebar-section {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--sa-text-secondary);
+    opacity: 0.7;
+    padding: 18px 12px 8px;
+}
+
+.sa-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    color: var(--sa-text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sa-sidebar-link i {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+}
+
+.sa-sidebar-link:hover {
+    color: var(--sa-text);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.sa-sidebar-link.active {
+    color: var(--sa-accent);
+    background: rgba(212, 167, 44, 0.08);
+    border-color: rgba(212, 167, 44, 0.2);
+}
+
+.sa-sidebar-link.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+@media (min-width: 768px) {
+    .sa-sidebar {
+        display: block;
+        position: fixed;
+        top: var(--sa-topbar-h);
+        left: 0;
+        bottom: 0;
+        width: var(--sa-sidebar-w);
+        z-index: 80;
+        overflow-y: auto;
+        padding: 20px 14px;
+        background: var(--sa-sidebar-bg);
+        border-right: 1px solid var(--sa-border);
+        font-family: var(--sa-font);
+    }
+
+    .sa-content {
+        padding-left: var(--sa-sidebar-w);
+    }
+}
+
+/* Tableta: menú más angosto y navbar compacto */
+@media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+        --sa-sidebar-w: 210px;
+    }
+
+    .sa-sidebar {
+        padding: 18px 10px;
+    }
+
+    .sa-topnav-link span,
+    .sa-greeting {
+        display: none;
+    }
+
+    .sa-topnav-link {
+        padding: 8px 10px;
+    }
+}
+
+/* Celular: sin menú lateral; navbar compacto con solo íconos */
+@media (max-width: 767px) {
+    :root {
+        --sa-topbar-h: 66px;
+    }
+
+    .sa-topbar {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .sa-topbar-left {
+        gap: 10px;
+    }
+
+    .sa-brand span,
+    .sa-topnav-link span,
+    .sa-greeting,
+    .sa-logout span {
+        display: none;
+    }
+
+    .sa-topnav {
+        gap: 6px;
+    }
+
+    .sa-topnav-link {
+        padding: 8px 10px;
+    }
+
+    .sa-user {
+        gap: 8px;
+    }
+
+    .sa-logout {
+        padding: 8px 10px;
+    }
+}
+
+.sa-sidebar-link[hidden] {
+    display: none;
+}
+
+/* Fecha y hora en el navbar */
+.sa-clock {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding-right: 12px;
+    border-right: 1px solid var(--sa-border);
+}
+
+@media (max-width: 767px) {
+    .sa-clock {
+        font-size: 12px;
+        padding-right: 8px;
+    }
+}
+
+/* ==========================================================================
+   Notificaciones del sistema (SaNotificar en js/layout.js)
+   ========================================================================== */
+.sa-notif-stack {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(380px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.sa-notif {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 14px 14px 16px;
+    border-radius: 12px;
+    background: var(--sa-surface);
+    border: 1px solid var(--sa-border-strong);
+    border-left: 4px solid var(--sa-gold);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    color: var(--sa-text);
+    font-family: var(--sa-font);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sa-notif.is-visible { opacity: 1; transform: none; }
+.sa-notif.is-saliendo { opacity: 0; transform: translateY(8px); }
+
+.sa-notif-exito { border-left-color: var(--sa-success); }
+.sa-notif-error { border-left-color: var(--sa-error); }
+.sa-notif-advertencia { border-left-color: var(--sa-warning); }
+
+.sa-notif-icono { margin-top: 2px; font-size: 18px; color: var(--sa-gold); }
+.sa-notif-exito .sa-notif-icono { color: var(--sa-success); }
+.sa-notif-error .sa-notif-icono { color: var(--sa-error); }
+.sa-notif-advertencia .sa-notif-icono { color: var(--sa-warning); }
+
+.sa-notif-texto {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.sa-notif-texto strong { font-size: 14px; font-weight: 600; }
+.sa-notif-texto span { font-size: 13px; color: var(--sa-text-secondary); line-height: 1.45; word-wrap: break-word; }
+
+.sa-notif-cerrar {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--sa-text-muted);
+    cursor: pointer;
+}
+
+.sa-notif-cerrar:hover { color: var(--sa-text); background: rgba(255, 255, 255, 0.06); }
+
+/* Confirmación */
+.sa-confirm {
+    margin: auto;   /* centrada aunque el módulo quite los márgenes con * { margin: 0 } */
+    width: min(420px, calc(100vw - 32px));
+    padding: 0;
+    border: 1px solid var(--sa-border-strong);
+    border-radius: 16px;
+    background: var(--sa-surface);
+    color: var(--sa-text);
+    font-family: var(--sa-font);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.sa-confirm::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.sa-confirm-caja { padding: 22px; }
+
+.sa-confirm h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.sa-confirm-mensaje {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--sa-text-secondary);
+}
+
+.sa-confirm-botones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.sa-confirm-btn {
+    padding: 10px 18px;
+    border-radius: var(--sa-radius);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.sa-confirm-cancelar {
+    background: transparent;
+    color: var(--sa-text-secondary);
+    border-color: var(--sa-border-strong);
+}
+
+.sa-confirm-cancelar:hover { color: var(--sa-text); }
+
+.sa-confirm-ok { background: var(--sa-gold); color: #121212; }
+.sa-confirm-ok:hover { background: var(--sa-gold-hover); }
+.sa-confirm-ok.is-peligro { background: var(--sa-error); color: #fff; }
+.sa-confirm-ok.is-peligro:hover { filter: brightness(1.1); }
+
+.sa-confirm-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+}
+
+@media (max-width: 560px) {
+    .sa-notif-stack { right: 16px; left: 16px; bottom: 16px; width: auto; }
+}
+
+/* ==========================================================================
+   Menú en celular: botón ☰ y panel deslizable (js/layout.js setupMenuMovil)
+   ========================================================================== */
+.sa-menu-btn {
+    display: none;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid var(--sa-border-strong);
+    background: transparent;
+    color: var(--sa-text);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.sa-menu-btn:hover { border-color: rgba(212, 167, 44, 0.45); color: var(--sa-gold-light); }
+.sa-menu-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--sa-gold-soft); }
+
+.sa-menu-fondo { display: none; }
+
+@media (max-width: 767px) {
+    .sa-menu-btn { display: inline-flex; }
+
+    /* El menú lateral pasa a ser un panel que entra desde la izquierda */
+    .sa-sidebar {
+        display: block;
+        position: fixed;
+        top: var(--sa-topbar-h);
+        left: 0;
+        bottom: 0;
+        width: min(290px, 84vw);
+        z-index: 95;
+        overflow-y: auto;
+        padding: 18px 14px 32px;
+        background: var(--sa-sidebar-bg, var(--sa-surface));
+        border-right: 1px solid var(--sa-border);
+        font-family: var(--sa-font);
+        transform: translateX(-102%);
+        visibility: hidden;
+        transition: transform 0.22s ease, visibility 0.22s;
+    }
+
+    body.sa-menu-abierto .sa-sidebar {
+        transform: none;
+        visibility: visible;
+        box-shadow: 12px 0 40px rgba(0, 0, 0, 0.55);
+    }
+
+    .sa-menu-fondo {
+        display: block;
+        position: fixed;
+        inset: var(--sa-topbar-h) 0 0 0;
+        z-index: 94;
+        background: rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+    }
+
+    body.sa-menu-abierto .sa-menu-fondo { opacity: 1; pointer-events: auto; }
+    body.sa-menu-abierto { overflow: hidden; }
+
+    /* Enlaces del menú más altos: fáciles de tocar con el dedo */
+    .sa-sidebar-link { min-height: 46px; }
+
+    .sa-brand img { height: calc(var(--sa-topbar-h) - 14px); width: auto; }
+}
+
+/* Celulares angostos: se oculta la hora para que quepan logo, accesos y cerrar sesión */
+@media (max-width: 420px) {
+    .sa-clock { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sa-sidebar, .sa-menu-fondo { transition: none; }
+}

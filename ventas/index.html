@@ -8,13 +8,18 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=2">
     <!-- Auth Guard -->
-    <script src="../js/auth_guard.js"></script>
+    <!-- Tema negro y dorado para los módulos (va de último) -->
+    <link rel="stylesheet" href="../css/tema-modulos.css?v=3">
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
     <div class="pos-layout">
@@ -23,14 +28,6 @@
             <div class="navbar-brand">
                 <i class="fa-solid fa-box-open logo-icon"></i>
                 <span class="brand-text">Venta de Productos</span>
-            </div>
-            
-            <div class="user-profile">
-                <span class="user-greeting">Cajero: <strong id="display-user">...</strong></span>
-                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Volver al Dashboard</span>
-                </button>
             </div>
         </header>
 
@@ -41,7 +38,6 @@
                 <div class="form-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                         <h2 class="section-title" style="margin-bottom: 0;"><i class="fa-solid fa-cart-plus"></i> Nueva Venta</h2>
-                        <span style="font-size: 13px; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 12px;" id="responsable-text">Responsable: ...</span>
                     </div>
                     
                     <form id="sale-form">
@@ -202,7 +198,7 @@
                     
                     <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 16px; margin-top: 8px;">
                         <span style="font-size: 18px; font-weight: 600;">TOTAL</span>
-                        <span id="detail-total" style="font-size: 18px; font-weight: 700; color: var(--success-color); font-family: 'JetBrains Mono', monospace;">₡0</span>
+                        <span id="detail-total" style="font-size: 18px; font-weight: 700; color: var(--success-color); font-family: var(--sa-font);">₡0</span>
                     </div>
                 </div>
             </div>
@@ -217,7 +213,7 @@
     <!-- Supabase Client Configuration -->
     <script src="../js/supabase.js"></script>
     <!-- Application Script -->
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=9"></script>
 </body>
 </html>
 

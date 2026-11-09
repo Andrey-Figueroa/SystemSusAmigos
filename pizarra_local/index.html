@@ -6,16 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pizarra del Local - Sistema Sus Amigos</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="style.css?v=4">
     <!-- Auth Guard -->
-    <script src="../js/auth_guard.js"></script>
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
     <div class="app-container">
@@ -24,17 +27,11 @@
             <div class="navbar-brand">
                 <i class="fa-solid fa-chess-board logo-icon"></i>
                 <h1>Pizarra del Local</h1>
-                <button id="btn-tickets" onclick="window.open('https://drive.google.com/drive/u/1/folders/1pm-3JBbNB64jjtE14DLqq28kf2WYEd1I', '_blank')" style="margin-left: 24px; background-color: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif;">
+                <button id="btn-tickets" onclick="window.open('https://drive.google.com/drive/u/1/folders/1pm-3JBbNB64jjtE14DLqq28kf2WYEd1I', '_blank')" class="btn-header">
                     <i class="fa-solid fa-ticket"></i> Tickets
                 </button>
-                <button id="btn-sync-all" onclick="sincronizarTodasSheets()" style="margin-left: 12px; background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">
+                <button id="btn-sync-all" onclick="sincronizarTodasSheets()" class="btn-header btn-header-gold">
                     <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Sheets
-                </button>
-            </div>
-            <div class="navbar-actions">
-                <span class="user-greeting">Usuario: <strong id="display-user">...</strong></span>
-                <button class="btn-back" onclick="window.location.href='../dashboard/index.html'">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
                 </button>
             </div>
         </header>
@@ -76,6 +73,24 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- Modal: ¿quién realizó el trabajo? (al pasar a Terminado) -->
+    <div id="modal-terminar" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="terminar-titulo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="terminar-titulo">¿Quién realizó el trabajo?</h2>
+                <button class="btn-close" id="btn-close-terminar" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="terminar-info" id="terminar-info"></p>
+                <div id="terminar-secciones"></div>
+                <p class="terminar-error" id="terminar-error" role="alert"></p>
+                <button type="button" class="btn-primary" id="btn-confirmar-terminar" style="width: 100%;">
+                    <i class="fa-solid fa-check-double"></i> Pasar a Terminado
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Pago -->
@@ -183,7 +198,7 @@
                     <div id="sync-auth-error-msg" style="color: var(--danger-color); margin-bottom: 14px; font-size: 14px; display: none;"></div>
                     <div style="display: flex; gap: 10px;">
                         <button type="button" class="btn-back" id="btn-cancel-sync-auth" style="flex: 1; padding: 12px; justify-content: center;">Cancelar</button>
-                        <button type="submit" class="btn-primary" id="btn-submit-sync-auth" style="flex: 1; padding: 12px; justify-content: center; background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+                        <button type="submit" class="btn-primary" id="btn-submit-sync-auth" style="flex: 1; padding: 12px; justify-content: center;">
                             <i class="fa-solid fa-arrows-rotate"></i> Sincronizar
                         </button>
                     </div>
@@ -197,7 +212,7 @@
 
     <!-- Scripts -->
     <script src="../js/supabase.js?v=2"></script>
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>
 

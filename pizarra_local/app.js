@@ -1,4 +1,5 @@
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbykRunJyxYMbrWyeQl7pyOxUPVr7trGFp4qS9avRi4giNaadHeo4SIs41oX7nh5j7HIRw/exec";
+// Dirección en js/config.js (único lugar donde se define)
+const GOOGLE_SHEETS_WEBHOOK_URL = window.APP_CONFIG.sheetsWebhookUrl;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Auth Check
@@ -8,12 +9,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '../login/index.html';
         return;
     }
-    document.getElementById('display-user').textContent = activeUser;
 
     loadOrdenes();
     
     // Configurar Modal Pago
     setupPagoModal();
+
+    // Modal "¿Quién realizó el trabajo?" (al pasar a Terminado)
+    setupTerminarModal();
     
     // Configurar Modal Confirmación Password para Sincronización
     setupSyncAuthModal();
@@ -118,7 +121,7 @@ function renderPizarra() {
         
         const activeUserRole = localStorage.getItem('activeUserRole');
 
-        if (activeUserRole === 'Dueño' || activeUserRole === 'Administrador' || activeUserRole === 'Soporte TI / Programador') {
+        if (window.AppSession.puedeEliminar()) {
             deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="eliminarOrden(${orden.id})"><i class="fa-solid fa-trash-can"></i></button>`;
         }
 
@@ -175,7 +178,19 @@ function renderPizarra() {
 }
 
 // ============== ESTADOS =================
-window.cambiarEstado = async function(ordenId, nuevoEstado) {
+/**
+ * Al pasar a Terminado se pregunta quién realizó el trabajo (productividad);
+ * los demás cambios de estado se aplican directo.
+ */
+window.cambiarEstado = function(ordenId, nuevoEstado) {
+    if (nuevoEstado === 'Terminado') {
+        abrirTerminar(ordenId);
+        return;
+    }
+    return aplicarCambioEstado(ordenId, nuevoEstado);
+};
+
+async function aplicarCambioEstado(ordenId, nuevoEstado) {
     try {
         const updateData = { estado: nuevoEstado };
         if (nuevoEstado === 'Terminado') {
@@ -223,9 +238,268 @@ window.cambiarEstado = async function(ordenId, nuevoEstado) {
     }
 }
 
+// ============== ¿QUIÉN REALIZÓ EL TRABAJO? (Productividad) =================
+// Al pasar a Terminado se elige el personal de cada área de la orden:
+//   - Detallado (detallado y lavado / detallados especiales) -> solo rol Detallador
+//   - Mecánica (mecánica / entrada con servicios pendientes) -> solo rol Mecánico
+// Quien tenga ambos roles aparece en las dos listas (se marca dos veces).
+// Cada área usa su propio monto (no se reparte): cada persona queda con el monto del área.
+// El tiempo es aproximado: desde que entró la orden hasta ahora (compartido por las áreas).
+// Tabla: supabase/productividad.sql (orden_trabajos)
+
+const AREAS_TRABAJO = {
+    detallado: {
+        titulo: 'Detallado',
+        icono: 'fa-spray-can-sparkles',
+        rol: 'detallador',
+        rolTexto: 'Detallador',
+        servicios: ['Detallado y lavado', 'Detallados especiales'],
+        montoCampo: 'detallado_monto'
+    },
+    mecanica: {
+        titulo: 'Mecánica',
+        icono: 'fa-wrench',
+        rol: 'mecanico',
+        rolTexto: 'Mecánico',
+        servicios: ['Mecanica', 'Entrada pero servicios pendientes'],
+        montoCampo: 'mecanica_monto'
+    }
+};
+
+let terminarOrdenId = null;
+let personalActivo = null;   // se carga una vez
+
+const escHtml = (t) => String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const formatoCRC = (n) => '₡' + Math.round(Number(n) || 0).toLocaleString('es-CR');
+
+/** Personal activo con sus roles (la columna 'roles' puede no existir aún). */
+async function cargarPersonalActivo() {
+    if (personalActivo) return personalActivo;
+    const buscar = (cols) => window.supabase.from('personal').select(cols).eq('estado', 'Activo').order('nombre', { ascending: true });
+    let { data, error } = await buscar('id, nombre, rol, roles');
+    if (error && (error.code === '42703' || /roles/i.test(error.message || ''))) {
+        ({ data, error } = await buscar('id, nombre, rol'));
+    }
+    if (error) throw error;
+    personalActivo = data || [];
+    return personalActivo;
+}
+
+function tieneRol(persona, rolNorm) {
+    return window.AppSession.rolesDe(persona).some(r => window.AppSession.normalizarRol(r) === rolNorm);
+}
+
+/** Servicios principales de la orden como lista (por si vienen como texto). */
+function listaServicios(orden) {
+    const v = orden.servicios_maestros;
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'string') {
+        try { const j = JSON.parse(v); if (Array.isArray(j)) return j; } catch (e) { /* texto plano */ }
+        return v.split(',').map(x => x.trim()).filter(Boolean);
+    }
+    return [];
+}
+
+/** Áreas que lleva la orden según sus servicios. */
+function areasDeOrden(orden) {
+    const servicios = listaServicios(orden);
+    return Object.keys(AREAS_TRABAJO).filter(k => AREAS_TRABAJO[k].servicios.some(s => servicios.includes(s)));
+}
+
+function minutosDesde(inicioIso) {
+    if (!inicioIso) return null;
+    const min = Math.round((Date.now() - new Date(inicioIso).getTime()) / 60000);
+    return min >= 0 ? min : null;
+}
+
+function textoDuracion(min) {
+    if (min == null) return 'sin dato';
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return h ? `${h} h ${m} min` : `${m} min`;
+}
+
+async function abrirTerminar(ordenId) {
+    const orden = ordenesGlobales.find(o => o.id === ordenId);
+    if (!orden) return;
+
+    const areas = areasDeOrden(orden);
+    // Sin áreas reconocibles: se termina directo
+    if (areas.length === 0) {
+        aplicarCambioEstado(ordenId, 'Terminado');
+        return;
+    }
+
+    let personal;
+    try {
+        personal = await cargarPersonalActivo();
+    } catch (e) {
+        console.error('[Terminar] Error al cargar el personal:', e);
+        showToast('Error', 'No se pudo cargar el personal. Inténtalo de nuevo.', 'error');
+        return;
+    }
+
+    terminarOrdenId = ordenId;
+    const minutos = minutosDesde(orden.created_at);
+    document.getElementById('terminar-info').textContent =
+        `Orden #${orden.id} · ${orden.placa || 'Sin placa'} · Tiempo aproximado: ${textoDuracion(minutos)}`;
+    document.getElementById('terminar-error').textContent = '';
+
+    const cont = document.getElementById('terminar-secciones');
+    cont.innerHTML = '';
+
+    areas.forEach(key => {
+        const area = AREAS_TRABAJO[key];
+        const candidatos = personal.filter(p => tieneRol(p, area.rol));
+        const monto = Number(orden[area.montoCampo]) || 0;
+
+        const seccion = document.createElement('section');
+        seccion.className = 'terminar-area';
+        seccion.dataset.area = key;
+        seccion.innerHTML = `
+            <div class="terminar-area-head">
+                <h3><i class="fa-solid ${area.icono}"></i> ${area.titulo}</h3>
+                <span class="terminar-monto">${formatoCRC(monto)}</span>
+            </div>
+            <div class="terminar-personas"></div>
+            <p class="terminar-hint"></p>`;
+
+        const lista = seccion.querySelector('.terminar-personas');
+        const hint = seccion.querySelector('.terminar-hint');
+
+        if (candidatos.length === 0) {
+            seccion.dataset.sinPersonal = '1';
+            hint.textContent = `No hay personal activo con rol ${area.rolTexto}. Asígnalo en Personal; esta área quedará sin registrar.`;
+            hint.classList.add('is-warning');
+        } else {
+            candidatos.forEach(p => {
+                const label = document.createElement('label');
+                label.className = 'terminar-chip';
+                label.innerHTML = '<input type="checkbox"><span></span>';
+                const input = label.querySelector('input');
+                input.value = String(p.id);
+                input.dataset.nombre = p.nombre;
+                label.querySelector('span').textContent = p.nombre;
+                lista.appendChild(label);
+            });
+        }
+        cont.appendChild(seccion);
+    });
+
+    document.getElementById('modal-terminar').style.display = 'flex';
+}
+
+function cerrarTerminar() {
+    document.getElementById('modal-terminar').style.display = 'none';
+    terminarOrdenId = null;
+}
+
+/** Foto de lo realizado en cada área (no cambia aunque cambie la configuración). */
+function detalleDeArea(orden, key) {
+    if (key === 'detallado') {
+        return {
+            servicios: listaServicios(orden).filter(s => AREAS_TRABAJO.detallado.servicios.includes(s)),
+            paquete: orden.detallado_tipo || null,
+            interior: orden.extra_interior || null,
+            aroma: orden.extra_aroma || null,
+            alfombras: orden.extra_alfombras || null,
+            especiales: orden.detallados_especiales || [],
+            extras: orden.extras_finales || []
+        };
+    }
+    return {
+        servicios: listaServicios(orden).filter(s => AREAS_TRABAJO.mecanica.servicios.includes(s)),
+        categorias: orden.mecanica_categorias || [],
+        detalles: orden.mecanica_detalles || {}
+    };
+}
+
+async function confirmarTerminar() {
+    const ordenId = terminarOrdenId;
+    const orden = ordenesGlobales.find(o => o.id === ordenId);
+    if (!orden) return;
+
+    const errorEl = document.getElementById('terminar-error');
+    errorEl.textContent = '';
+
+    const ahora = new Date().toISOString();
+    const minutos = minutosDesde(orden.created_at);
+    const filas = [];
+
+    for (const seccion of document.querySelectorAll('#terminar-secciones .terminar-area')) {
+        const key = seccion.dataset.area;
+        const area = AREAS_TRABAJO[key];
+        if (seccion.dataset.sinPersonal) continue;
+
+        const marcados = Array.from(seccion.querySelectorAll('input:checked'));
+        if (marcados.length === 0) {
+            errorEl.textContent = `Elige quién realizó ${area.titulo.toLowerCase()}.`;
+            return;
+        }
+
+        // El monto del área NO se reparte: cada persona queda con el monto del área
+        const monto = Number(orden[area.montoCampo]) || 0;
+        marcados.forEach(cb => {
+            filas.push({
+                orden_id: orden.id,
+                area: key,
+                personal_id: cb.value,
+                personal_nombre: cb.dataset.nombre,
+                participacion: 1,
+                monto_area: monto,
+                monto_asignado: monto,
+                inicio_at: orden.created_at || null,
+                fin_at: ahora,
+                minutos: minutos,
+                tipo_vehiculo: orden.tipo_vehiculo || null,
+                detalle: detalleDeArea(orden, key),
+                registrado_por: localStorage.getItem('activeUser') || null
+            });
+        });
+    }
+
+    const btn = document.getElementById('btn-confirmar-terminar');
+    btn.disabled = true;
+
+    try {
+        if (filas.length) {
+            // Si ya se había registrado (p. ej. un reintento), se reemplaza
+            const { error: errDel } = await window.supabase.from('orden_trabajos').delete().eq('orden_id', orden.id);
+            if (errDel) throw errDel;
+            const { error: errIns } = await window.supabase.from('orden_trabajos').insert(filas);
+            if (errIns) throw errIns;
+        }
+        cerrarTerminar();
+        await aplicarCambioEstado(ordenId, 'Terminado');
+    } catch (err) {
+        console.error('[Terminar] Error al guardar quién realizó el trabajo:', err);
+        const code = (err && err.code) || '';
+        const msg = ((err && err.message) || '').toLowerCase();
+        if (code === '42P01' || code === 'PGRST205' || msg.includes('could not find') || msg.includes('does not exist')) {
+            errorEl.textContent = 'Falta crear la tabla de productividad: ejecuta supabase/productividad.sql en Supabase.';
+        } else if (code === '42501' || (err && err.status === 403) || msg.includes('permission') || msg.includes('row-level security')) {
+            errorEl.textContent = 'Sin permiso para guardar: ejecuta supabase/productividad.sql en Supabase.';
+        } else {
+            errorEl.textContent = 'No se pudo guardar quién realizó el trabajo. Inténtalo de nuevo.';
+        }
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function setupTerminarModal() {
+    const modal = document.getElementById('modal-terminar');
+    document.getElementById('btn-close-terminar').addEventListener('click', cerrarTerminar);
+    document.getElementById('btn-confirmar-terminar').addEventListener('click', confirmarTerminar);
+    modal.addEventListener('click', (e) => { if (e.target === modal) cerrarTerminar(); });
+}
+
 window.eliminarOrden = async function(ordenId) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (activeUserRole !== 'Dueño' && activeUserRole !== 'Administrador' && activeUserRole !== 'Soporte TI / Programador') {
+    if (!window.AppSession.puedeEliminar()) {
         showToast('Acceso Denegado', 'Solo el Administrador o el Dueño pueden eliminar órdenes.', 'error');
         return;
     }
@@ -235,7 +509,7 @@ window.eliminarOrden = async function(ordenId) {
         ? `Orden ID: ${ordenId}\nCliente: ${o.clientes ? o.clientes.nombre : 'Desconocido'}\nVehículo Placa: ${o.placa || 'SIN PLACA'}\nModelo: ${o.marca || ''} ${o.modelo || ''}\nServicios: ${o.servicios_maestros ? o.servicios_maestros.join(', ') : 'Ninguno'}\nMonto Total: ₡${parseFloat(o.total_monto || 0).toLocaleString('en-US')}`
         : `Orden ID: ${ordenId}`;
 
-    if (!confirm(`¿Estás seguro de que deseas eliminar la orden #${ordenId}? Esto no se puede deshacer.`)) return;
+    if (!(await SaNotificar.confirmar({ titulo: 'Eliminar orden', textoConfirmar: 'Eliminar', peligro: true, mensaje: `¿Estás seguro de que deseas eliminar la orden #${ordenId}? Esto no se puede deshacer.`}))) return;
     
     try {
         const { error } = await window.supabase
@@ -517,7 +791,7 @@ function showToast(title, message, type = 'success') {
 // ==========================================
 window.sincronizarOrdenSheets = async function(ordenId, skipConfirm = false) {
     if (!skipConfirm) {
-        if (!confirm(`¿De verdad deseas reescribir en Google Sheets la orden #${ordenId}?`)) {
+        if (!(await SaNotificar.confirmar({ titulo: 'Reenviar a Google Sheets', textoConfirmar: 'Reenviar', peligro: false, mensaje: `¿De verdad deseas reescribir en Google Sheets la orden #${ordenId}?`}))) {
             return;
         }
     }

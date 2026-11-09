@@ -1,14 +1,14 @@
 ﻿:root {
-    --bg-color: #0f172a;
-    --card-bg: rgba(30, 38, 55, 0.7);
-    --primary-accent: #818cf8;
-    --secondary-accent: #6366f1;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --bg-color: var(--sa-bg);
+    --card-bg: rgba(20, 20, 21, 0.7);
+    --primary-accent: var(--sa-gold);
+    --secondary-accent: var(--sa-gold-dark);
+    --text-primary: var(--sa-text);
+    --text-secondary: var(--sa-text-secondary);
     --border-color: rgba(255, 255, 255, 0.1);
-    --input-bg: rgba(15, 23, 42, 0.6);
-    --danger-color: #ef4444;
-    --success-color: #10b981;
+    --input-bg: rgba(14, 14, 15, 0.6);
+    --danger-color: var(--sa-error);
+    --success-color: var(--sa-success);
     --warning-color: #f59e0b;
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -17,14 +17,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--sa-font);
 }
 
 body {
     background-color: var(--bg-color);
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(129, 140, 248, 0.1) 0px, transparent 50%);
+    background-image: none;
     color: var(--text-primary);
     min-height: 100vh;
 }
@@ -43,7 +41,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(14, 14, 15, 0.8);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -188,13 +186,13 @@ button {
 .input-wrapper input:focus {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+    box-shadow: 0 0 0 3px rgba(212, 167, 44, 0.1);
 }
 
 .large-number-input {
     font-size: 24px !important;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: var(--sa-font) !important;
     color: var(--success-color) !important;
     letter-spacing: 1px;
 }
@@ -225,20 +223,20 @@ button {
 }
 
 .balance-badge {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(229, 83, 75, 0.1);
     color: var(--danger-color);
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 14px;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-family: var(--sa-font);
+    border: 1px solid rgba(229, 83, 75, 0.2);
 }
 
 .balance-badge.balanced {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(63, 178, 127, 0.1);
     color: var(--success-color);
-    border-color: rgba(16, 185, 129, 0.2);
+    border-color: rgba(63, 178, 127, 0.2);
 }
 
 .payment-methods-grid {
@@ -268,7 +266,7 @@ button {
     padding: 10px 12px;
     border-radius: 8px;
     color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--sa-font);
     font-size: 16px;
     text-align: right;
     transition: var(--transition-smooth);
@@ -299,20 +297,20 @@ button {
     gap: 12px;
     width: 100%;
     padding: 16px;
-    background: #0ea5e9;
-    color: #fff;
+    background: var(--sa-gold);
+    color: #121212;
     font-size: 18px;
     font-weight: 600;
     border-radius: 12px;
     margin-top: 32px;
     transition: var(--transition-smooth);
-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    box-shadow: none;
 }
 
 .btn-submit:hover:not(:disabled) {
-    background: #0284c7;
+    background: var(--sa-gold-hover);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 6px 18px rgba(212, 167, 44, 0.25);
 }
 
 .btn-submit:disabled {
@@ -370,7 +368,7 @@ button {
 .stat-value {
     font-size: 18px;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--sa-font);
 }
 
 .text-green { color: var(--success-color); }
@@ -449,7 +447,7 @@ button {
 }
 
 .sale-total {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--sa-font);
     font-weight: 700;
     font-size: 16px;
     color: var(--success-color);
@@ -480,7 +478,7 @@ button {
 }
 
 .toast {
-    background: rgba(30, 38, 55, 0.95);
+    background: rgba(20, 20, 21, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     padding: 16px 20px;
@@ -537,7 +535,7 @@ button {
     color: var(--text-primary);
 }
 .toggle-btn.active {
-    background: rgba(129, 140, 248, 0.2);
+    background: rgba(212, 167, 44, 0.2);
     border-color: var(--primary-accent);
     color: var(--text-primary);
 }

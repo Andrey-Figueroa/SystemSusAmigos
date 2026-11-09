@@ -557,3 +557,112 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* --------------------------------------------------------------------------
+   Varios roles por persona
+   -------------------------------------------------------------------------- */
+.roles-group {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.roles-group legend {
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.roles-hint {
+    font-weight: 400;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.roles-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.role-chip {
+    cursor: pointer;
+    user-select: none;
+}
+
+.role-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.role-chip span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--sa-border-strong, var(--border-color));
+    color: var(--sa-text-secondary, var(--text-secondary));
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.role-chip:hover span {
+    border-color: rgba(212, 167, 44, 0.45);
+}
+
+.role-chip input:checked + span {
+    background: var(--sa-gold-faint, rgba(212, 167, 44, 0.08));
+    border-color: var(--sa-gold, #d4a72c);
+    color: var(--sa-gold-light, #f0cd6a);
+}
+
+.role-chip input:checked + span::before {
+    content: '✓';
+    font-weight: 700;
+}
+
+.role-chip input:focus-visible + span {
+    box-shadow: 0 0 0 3px var(--sa-gold-soft, rgba(212, 167, 44, 0.18));
+}
+
+.roles-help,
+.account-info {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: var(--sa-text-muted, var(--text-secondary));
+}
+
+.account-info.hidden,
+.form-actions.hidden {
+    display: none;
+}
+
+/* Etiquetas de roles en la tabla */
+.roles-cell {
+    line-height: 2;
+}
+
+.role-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid var(--sa-border-strong, var(--border-color));
+    color: var(--sa-text-secondary, var(--text-secondary));
+    white-space: nowrap;
+}
+
+.role-tag.is-main {
+    border-color: rgba(212, 167, 44, 0.5);
+    color: var(--sa-gold-light, #f0cd6a);
+}
+
+.btn-action.edit:hover {
+    color: var(--sa-gold, #d4a72c);
+    border-color: var(--sa-gold, #d4a72c);
+    background: var(--sa-gold-faint, rgba(212, 167, 44, 0.08));
+}

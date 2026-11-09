@@ -1,0 +1,151 @@
+/* ==========================================================================
+   Tema de módulos (Local Comercial, Domicilio, Venta de productos, Gastos)
+   Aplica el tema único negro y dorado (css/theme.css) a los módulos que traen
+   sus propios colores (índigo) en sus style.css.
+
+   Debe cargarse DE ÚLTIMO en cada página: aquí se redirigen esas variables al
+   tema y se ajustan las piezas que tenían colores escritos a mano (Domicilio
+   además usa pizarra_local/style.css).
+   ========================================================================== */
+
+:root {
+    /* Variables antiguas de los módulos -> tema único */
+    --bg-color: var(--sa-bg);
+    --bg-base: var(--sa-bg);
+    --bg-surface: var(--sa-surface);
+    --bg-surface-glass: rgba(20, 20, 21, 0.7);
+    --card-bg: var(--sa-surface);
+    --input-bg: var(--sa-surface-input);
+
+    --primary-accent: var(--sa-gold);
+    --secondary-accent: var(--sa-gold-hover);
+    --primary-glow: rgba(212, 167, 44, 0.3);
+
+    --text-primary: var(--sa-text);
+    --text-color: var(--sa-text);
+    --text-secondary: var(--sa-text-secondary);
+    --text-muted: var(--sa-text-muted);
+
+    --border-color: var(--sa-border);
+    --border-glow: var(--sa-border-strong);
+
+    --danger-color: var(--sa-error);
+    --success-color: var(--sa-success);
+    --warning-color: var(--sa-warning);
+
+    --transition-smooth: all var(--sa-transition);
+}
+
+/* Fuente del tema (los íconos de Font Awesome conservan la suya por su clase) */
+* {
+    font-family: var(--sa-font);
+}
+
+body {
+    background: var(--sa-bg);
+    background-image: none;
+    color: var(--sa-text);
+}
+
+/* Números (montos, placas): misma fuente, cifras alineadas */
+.monto-total,
+.total-monto,
+.pay-input,
+.stat-value {
+    font-family: var(--sa-font);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Botones
+   -------------------------------------------------------------------------- */
+.btn-primary {
+    background: var(--sa-gold);
+    color: #121212;
+    box-shadow: none;
+}
+
+.btn-primary:hover {
+    background: var(--sa-gold-hover);
+    box-shadow: 0 6px 18px rgba(212, 167, 44, 0.25);
+}
+
+.btn-primary i {
+    color: inherit;
+}
+
+.btn-icon.view:hover {
+    color: #121212;
+}
+
+.btn-move {
+    color: var(--sa-gold-light) !important;
+    border-color: rgba(212, 167, 44, 0.3) !important;
+    background: rgba(212, 167, 44, 0.05) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Indicador de paso del asistente
+   -------------------------------------------------------------------------- */
+#current-step-num,
+.step.completed .step-circle {
+    background: var(--sa-gold) !important;
+    color: #121212 !important;
+}
+
+.step.active .step-circle {
+    box-shadow: 0 0 15px rgba(212, 167, 44, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Tarjetas de opción (radio / checkbox) y campos
+   -------------------------------------------------------------------------- */
+.radio-card input:checked + .radio-card-content,
+.checkbox-card input:checked + .checkbox-card-content {
+    background: var(--sa-gold-faint);
+    border-color: var(--sa-gold);
+}
+
+.radio-card-content:hover,
+.checkbox-card-content:hover {
+    border-color: rgba(212, 167, 44, 0.45);
+}
+
+.form-control:focus,
+.pay-input:focus {
+    border-color: var(--sa-gold);
+    box-shadow: 0 0 0 3px var(--sa-gold-soft);
+    outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   Piezas de pizarra_local/style.css que usa Domicilio (lista del día y cobro)
+   -------------------------------------------------------------------------- */
+.badge {
+    background: var(--sa-gold-soft);
+    border: 1px solid rgba(212, 167, 44, 0.3);
+    color: var(--sa-gold-light);
+}
+
+.car-icon-wrapper {
+    background: var(--sa-gold-faint);
+    border: 1px solid rgba(212, 167, 44, 0.2);
+    color: var(--sa-gold);
+}
+
+.service-tag.principal {
+    background: rgba(212, 167, 44, 0.12);
+    border-color: rgba(212, 167, 44, 0.3);
+    color: var(--sa-gold-light);
+}
+
+.toggle-btn.active {
+    background: rgba(212, 167, 44, 0.12);
+    box-shadow: 0 4px 12px rgba(212, 167, 44, 0.15);
+    color: var(--sa-gold-light);
+}
+
+/* Avisos */
+.alert-info {
+    border-color: var(--sa-border);
+}

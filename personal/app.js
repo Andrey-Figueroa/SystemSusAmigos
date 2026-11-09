@@ -16,6 +16,24 @@
     const accountFields = document.getElementById('account-fields');
 
     let currentUser = null;
+    let staffList = [];        // personal cargado (para editar)
+    let editandoId = null;     // id de la persona en edición (null = nueva)
+
+    const modalTitle = document.getElementById('modal-staff-title');
+    const rolesBox = document.getElementById('staff-roles');
+    const accountInfo = document.getElementById('account-info');
+    const requireAccountRow = document.getElementById('require-account-row');
+
+    // Escapa texto antes de ponerlo en HTML
+    const esc = (t) => String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    /** Roles de una persona (lista nueva o el rol de siempre). */
+    const rolesDe = (person) => window.AppSession.rolesDe(person);
+
+    /** Mensaje si falta la columna 'roles' en la base de datos. */
+    const faltaColumnaRoles = (err) => !!err && (err.code === '42703' || err.code === 'PGRST204' || /roles/i.test(err.message || ''));
 
     // --- Authentication & Authorization ---
     async function checkSession() {
@@ -58,12 +76,8 @@
 
     // --- Logout Handling ---
     if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
-            await supabase.auth.signOut();
-            localStorage.removeItem('activeUser');
-            localStorage.removeItem('activeUserRole');
-            window.location.href = '../login/index.html';
-        });
+        // Cierre de sesión común, definido en js/auth_guard.js
+        btnLogout.addEventListener('click', () => window.cerrarSesion());
     }
 
     // --- Staff Management ---
@@ -76,6 +90,7 @@
 
             if (error) throw error;
 
+            staffList = staff || [];
             renderStaffTable(staff);
         } catch (error) {
             console.error('Error fetching staff:', error);
@@ -94,7 +109,14 @@
 
         staff.forEach(person => {
             const tr = document.createElement('tr');
-            
+
+            // Despedir = eliminar del sistema: solo Dueño y Soporte TI
+            const botonDespedir = window.AppSession.puedeEliminar()
+                ? `<button class="btn-action fire" onclick="changeStaffStatus('${esc(person.id)}', 'Despedido')" title="Despedir (elimina del sistema)">
+                        <i class="fa-solid fa-user-xmark"></i>
+                    </button>`
+                : '';
+
             // Status classes
             let statusActionHtml = '';
             if (person.estado === 'Activo') {
@@ -102,18 +124,14 @@
                     <button class="btn-action suspend" onclick="changeStaffStatus('${person.id}', 'Suspendido')" title="Suspender">
                         <i class="fa-solid fa-pause"></i>
                     </button>
-                    <button class="btn-action fire" onclick="changeStaffStatus('${person.id}', 'Despedido')" title="Despedir">
-                        <i class="fa-solid fa-user-xmark"></i>
-                    </button>
+                    ${botonDespedir}
                 `;
             } else if (person.estado === 'Suspendido') {
                 statusActionHtml = `
                     <button class="btn-action activate" onclick="changeStaffStatus('${person.id}', 'Activo')" title="Activar">
                         <i class="fa-solid fa-play"></i>
                     </button>
-                    <button class="btn-action fire" onclick="changeStaffStatus('${person.id}', 'Despedido')" title="Despedir">
-                        <i class="fa-solid fa-user-xmark"></i>
-                    </button>
+                    ${botonDespedir}
                 `;
             } else if (person.estado === 'Despedido') {
                 statusActionHtml = `
@@ -130,12 +148,22 @@
                 ? `<span class="account-status has-account"><i class="fa-solid fa-circle-check"></i> Sí</span>`
                 : `<span class="account-status"><i class="fa-solid fa-circle-xmark"></i> No</span>`;
 
+            // Todos sus roles como etiquetas (el principal primero)
+            const principal = window.AppSession.rolPrincipal(rolesDe(person));
+            const roles = rolesDe(person).slice().sort((a, b) => (b === principal) - (a === principal));
+            const rolesHtml = roles.length
+                ? roles.map(r => `<span class="role-tag${r === principal ? ' is-main' : ''}">${esc(window.canonicalRole(r))}</span>`).join(' ')
+                : '<span class="role-tag">Sin rol</span>';
+
             tr.innerHTML = `
-                <td><strong>${person.nombre}</strong></td>
-                <td>${person.rol}</td>
-                <td><span class="status-badge ${person.estado}">${person.estado}</span></td>
+                <td><strong>${esc(person.nombre)}</strong></td>
+                <td class="roles-cell">${rolesHtml}</td>
+                <td><span class="status-badge ${esc(person.estado)}">${esc(person.estado)}</span></td>
                 <td>${accountHtml}</td>
                 <td class="actions-cell">
+                    <button class="btn-action edit" onclick="editarPersonal('${esc(person.id)}')" title="Editar" aria-label="Editar ${esc(person.nombre)}">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
                     ${statusActionHtml}
                 </td>
             `;
@@ -145,7 +173,11 @@
 
     // Global function to be called from inline onclick handlers
     window.changeStaffStatus = async function(id, newStatus) {
-        if (!confirm(`¿Estás seguro de que deseas cambiar el estado a ${newStatus}?`)) return;
+        if (newStatus === 'Despedido' && !window.AppSession.puedeEliminar()) {
+            showToast('Solo el Dueño y Soporte TI pueden despedir (elimina del sistema).', 'error');
+            return;
+        }
+        if (!(await SaNotificar.confirmar({ titulo: 'Cambiar estado', textoConfirmar: 'Cambiar', peligro: false, mensaje: `¿Estás seguro de que deseas cambiar el estado a ${newStatus}?`}))) return;
 
         try {
             if (newStatus === 'Despedido') {
@@ -181,11 +213,53 @@
     };
 
     // --- Modal Handling ---
+    function marcarRoles(roles) {
+        const elegidos = (roles || []).map(r => window.AppSession.normalizarRol(r));
+        rolesBox.querySelectorAll('input[type=checkbox]').forEach(cb => {
+            cb.checked = elegidos.includes(window.AppSession.normalizarRol(cb.value));
+        });
+    }
+
+    // Nuevo
     btnAddStaff.addEventListener('click', () => {
+        editandoId = null;
         formAddStaff.reset();
+        marcarRoles([]);
+        modalTitle.textContent = 'Nuevo Miembro del Personal';
+        accountInfo.classList.add('hidden');
+        requireAccountRow.classList.remove('hidden');
         accountFields.classList.add('hidden');
+        document.getElementById('staff-email').required = false;
+        document.getElementById('staff-password').required = false;
         modalAddStaff.classList.remove('hidden');
+        document.getElementById('staff-name').focus();
     });
+
+    // Editar: nombre y roles. La cuenta de acceso (correo) no se cambia desde aquí.
+    window.editarPersonal = function(id) {
+        const person = staffList.find(p => String(p.id) === String(id));
+        if (!person) {
+            showToast('No se encontró a esa persona. Recarga la página.', 'error');
+            return;
+        }
+        editandoId = person.id;
+        formAddStaff.reset();
+        document.getElementById('staff-name').value = person.nombre || '';
+        marcarRoles(rolesDe(person));
+        modalTitle.textContent = 'Editar Personal';
+
+        requireAccountRow.classList.add('hidden');
+        accountFields.classList.add('hidden');
+        document.getElementById('staff-email').required = false;
+        document.getElementById('staff-password').required = false;
+        accountInfo.textContent = person.requiere_cuenta && person.email
+            ? `Cuenta de acceso: ${person.email} (el correo no se cambia desde aquí).`
+            : 'Sin cuenta de acceso al sistema.';
+        accountInfo.classList.remove('hidden');
+
+        modalAddStaff.classList.remove('hidden');
+        document.getElementById('staff-name').focus();
+    };
 
     const closeModal = () => {
         modalAddStaff.classList.add('hidden');
@@ -217,11 +291,40 @@
     formAddStaff.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const nombre = document.getElementById('staff-name').value.trim();
-        const rol = document.getElementById('staff-role').value;
-        const requiereCuenta = requireAccountCheckbox.checked;
+        const nombre = document.getElementById('staff-name').value.trim().replace(/\s+/g, ' ');
+        const roles = Array.from(rolesBox.querySelectorAll('input:checked')).map(cb => cb.value);
+        // 'rol' guarda el principal (el de más permisos) para lo que usa un solo rol
+        const rol = window.AppSession.rolPrincipal(roles);
+        const requiereCuenta = !editandoId && requireAccountCheckbox.checked;
+
+        if (!nombre) {
+            showToast('Escribe el nombre completo.', 'error');
+            document.getElementById('staff-name').focus();
+            return;
+        }
+        if (roles.length === 0) {
+            showToast('Marca al menos un rol.', 'error');
+            return;
+        }
+
+        const btnSubmit = document.getElementById('btn-submit-staff');
+        btnSubmit.disabled = true;
 
         try {
+            if (editandoId) {
+                // Editar: nombre y roles
+                const { error } = await window.supabase
+                    .from('personal')
+                    .update({ nombre, rol, roles })
+                    .eq('id', editandoId);
+                if (error) throw error;
+
+                showToast('Personal actualizado correctamente.', 'success');
+                closeModal();
+                await loadStaffData();
+                return;
+            }
+
             if (requiereCuenta) {
                 // 1. Crear cliente temporal para Auth que NO guarde sesión local (así no saca al Admin)
                 // supabaseUrl y supabaseAnonKey vienen de js/supabase.js
@@ -249,6 +352,7 @@
                     id: authData.user.id,
                     nombre: nombre,
                     rol: rol,
+                    roles: roles,
                     estado: 'Activo',
                     requiere_cuenta: true,
                     email: emailVal
@@ -265,6 +369,7 @@
                 const newStaff = {
                     nombre: nombre,
                     rol: rol,
+                    roles: roles,
                     estado: 'Activo',
                     requiere_cuenta: false,
                     email: null
@@ -283,8 +388,14 @@
             await loadStaffData();
 
         } catch (error) {
-            console.error('Error adding staff:', error);
-            showToast('Error al agregar personal. Verifica la base de datos.', 'error');
+            console.error('Error guardando personal:', error);
+            if (faltaColumnaRoles(error)) {
+                showToast('Falta ejecutar supabase/personal_roles.sql en Supabase para guardar varios roles.', 'error');
+            } else {
+                showToast(editandoId ? 'Error al actualizar el personal.' : 'Error al agregar personal. Verifica la base de datos.', 'error');
+            }
+        } finally {
+            btnSubmit.disabled = false;
         }
     });
 

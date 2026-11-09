@@ -1,31 +1,30 @@
+/* Colores y fuente del tema único negro y dorado (css/theme.css) */
 :root {
-    --bg-color: #0f172a;
-    --card-bg: rgba(30, 38, 55, 0.7);
-    --primary-accent: #00f2fe;
-    --secondary-accent: #4facfe;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --input-bg: rgba(15, 23, 42, 0.6);
-    --danger-color: #ef4444;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --bg-color: var(--sa-bg);
+    --card-bg: var(--sa-surface);
+    --primary-accent: var(--sa-gold);
+    --secondary-accent: var(--sa-gold-hover);
+    --text-primary: var(--sa-text);
+    --text-secondary: var(--sa-text-secondary);
+    --border-color: var(--sa-border);
+    --input-bg: var(--sa-surface-input);
+    --danger-color: var(--sa-error);
+    --success-color: var(--sa-success);
+    --warning-color: var(--sa-warning);
+    --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    --transition-smooth: all var(--sa-transition);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--sa-font);
 }
 
 body {
     background-color: var(--bg-color);
-    background-image:
-        radial-gradient(at 0% 0%, rgba(79, 172, 254, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(0, 242, 254, 0.1) 0px, transparent 50%);
+    background-image: none;
     color: var(--text-primary);
     min-height: 100vh;
     display: flex;
@@ -45,12 +44,9 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(14, 14, 15, 0.8);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 100;
 }
 
 .navbar-brand {
@@ -61,9 +57,7 @@ body {
 
 .logo-icon {
     font-size: 24px;
-    background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--sa-gold);
 }
 
 .brand-text {
@@ -105,8 +99,8 @@ button {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--secondary-accent), var(--primary-accent));
-    color: var(--bg-color);
+    background: var(--sa-gold);
+    color: #121212;
     padding: 12px 24px;
     border-radius: 12px;
     font-weight: 700;
@@ -114,11 +108,12 @@ button {
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+    box-shadow: none;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
+    background: var(--sa-gold-hover);
+    box-shadow: 0 6px 18px rgba(212, 167, 44, 0.25);
     transform: translateY(-2px);
 }
 
@@ -165,8 +160,8 @@ button {
 }
 
 .btn-icon.view:hover {
-    background: rgba(79, 172, 254, 0.1);
-    border-color: rgba(79, 172, 254, 0.2);
+    background: rgba(212, 167, 44, 0.1);
+    border-color: rgba(212, 167, 44, 0.2);
 }
 
 .btn-icon.edit {
@@ -183,8 +178,8 @@ button {
 }
 
 .btn-icon.delete:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(229, 83, 75, 0.1);
+    border-color: rgba(229, 83, 75, 0.2);
 }
 
 .btn-close {
@@ -248,7 +243,7 @@ button {
 .search-input:focus {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.1);
+    box-shadow: 0 0 0 3px rgba(212, 167, 44, 0.1);
 }
 
 /* ─── Table ───────────────────────────────────── */
@@ -314,8 +309,8 @@ button {
     width: 38px;
     height: 38px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
-    border: 1px solid rgba(0, 242, 254, 0.2);
+    background: var(--sa-gold-faint);
+    border: 1px solid rgba(212, 167, 44, 0.2);
     display: grid;
     place-content: center;
     font-size: 12px;
@@ -337,8 +332,8 @@ button {
 
 /* Placa tag */
 .placa-tag {
-    background: rgba(79, 172, 254, 0.1);
-    border: 1px solid rgba(79, 172, 254, 0.25);
+    background: rgba(212, 167, 44, 0.1);
+    border: 1px solid rgba(212, 167, 44, 0.25);
     color: var(--secondary-accent);
     padding: 4px 10px;
     border-radius: 8px;
@@ -378,15 +373,15 @@ button {
 }
 
 .badge-auto {
-    background: rgba(79, 172, 254, 0.1);
+    background: rgba(212, 167, 44, 0.1);
     color: var(--secondary-accent);
-    border: 1px solid rgba(79, 172, 254, 0.2);
+    border: 1px solid rgba(212, 167, 44, 0.2);
 }
 
 .badge-pendiente {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(229, 83, 75, 0.1);
     color: var(--danger-color);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(229, 83, 75, 0.2);
 }
 
 .badge-parcial {
@@ -396,9 +391,9 @@ button {
 }
 
 .badge-pagado {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(63, 178, 127, 0.1);
     color: var(--success-color);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(63, 178, 127, 0.2);
 }
 
 /* ─── Empty State ─────────────────────────────── */
@@ -443,7 +438,7 @@ button {
 }
 
 .wizard-panel {
-    background: #1a2235;
+    background: var(--sa-surface);
     border: 1px solid var(--border-color);
     border-radius: 24px;
     width: 100%;
@@ -482,9 +477,7 @@ button {
 
 .wizard-title i {
     font-size: 20px;
-    background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--sa-gold);
 }
 
 /* Progress */
@@ -528,13 +521,13 @@ button {
 .step.active .step-circle {
     border-color: var(--primary-accent);
     color: var(--primary-accent);
-    box-shadow: 0 0 16px rgba(0, 242, 254, 0.3);
+    box-shadow: 0 0 16px rgba(212, 167, 44, 0.3);
 }
 
 .step.completed .step-circle {
-    background: linear-gradient(135deg, var(--secondary-accent), var(--primary-accent));
-    border-color: var(--primary-accent);
-    color: #0f172a;
+    background: var(--sa-gold);
+    border-color: var(--sa-gold);
+    color: #121212;
 }
 
 .step-label {
@@ -559,7 +552,7 @@ button {
 }
 
 .step-line.completed {
-    background: linear-gradient(to right, var(--secondary-accent), var(--primary-accent));
+    background: var(--sa-gold);
 }
 
 /* Wizard Body */
@@ -617,7 +610,7 @@ button {
 
 .search-box:focus-within {
     border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.1);
+    box-shadow: 0 0 0 3px rgba(212, 167, 44, 0.1);
 }
 
 .search-box i {
@@ -643,8 +636,8 @@ button {
 
 /* Client found card */
 .client-found-card {
-    background: rgba(16, 185, 129, 0.05);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(63, 178, 127, 0.05);
+    border: 1px solid rgba(63, 178, 127, 0.2);
     border-radius: 14px;
     padding: 20px;
     animation: slideUpFade 0.3s ease;
@@ -678,8 +671,8 @@ button {
 
 /* Alert info */
 .alert-info {
-    background: rgba(79, 172, 254, 0.08);
-    border: 1px solid rgba(79, 172, 254, 0.2);
+    background: rgba(212, 167, 44, 0.08);
+    border: 1px solid rgba(212, 167, 44, 0.2);
     border-radius: 10px;
     padding: 12px 16px;
     font-size: 14px;
@@ -719,11 +712,11 @@ button {
 
 .form-control:focus {
     border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.08);
+    box-shadow: 0 0 0 3px rgba(212, 167, 44, 0.08);
 }
 
 select.form-control option {
-    background: #1a2235;
+    background: var(--sa-surface);
 }
 
 textarea.form-control {
@@ -763,9 +756,9 @@ textarea.form-control {
 
 .vehicle-select-card:hover {
     border-color: var(--primary-accent);
-    background: rgba(0, 242, 254, 0.05);
+    background: rgba(212, 167, 44, 0.05);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 242, 254, 0.1);
+    box-shadow: 0 8px 20px rgba(212, 167, 44, 0.1);
 }
 
 .vehicle-select-card h3 {
@@ -807,7 +800,7 @@ textarea.form-control {
 }
 
 .toast {
-    background: rgba(26, 34, 53, 0.97);
+    background: rgba(20, 20, 21, 0.97);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     padding: 16px 20px;
@@ -866,8 +859,8 @@ textarea.form-control {
 
 /* Total destacado tipo pizarra */
 .abono-total-display {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
-    border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+    background: linear-gradient(135deg, rgba(63, 178, 127, 0.12), rgba(63, 178, 127, 0.06));
+    border-bottom: 1px solid rgba(63, 178, 127, 0.2);
     padding: 20px 28px 18px;
     text-align: center;
 }
@@ -877,7 +870,7 @@ textarea.form-control {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: rgba(16, 185, 129, 0.7);
+    color: rgba(63, 178, 127, 0.7);
     margin-bottom: 6px;
 }
 
@@ -887,7 +880,8 @@ textarea.form-control {
     font-weight: 700;
     color: var(--success-color);
     letter-spacing: 1px;
-    font-family: 'Outfit', monospace;
+    font-family: var(--sa-font);
+    font-variant-numeric: tabular-nums;
 }
 
 /* Selector de tipo: Parcial vs Total */
@@ -925,7 +919,7 @@ textarea.form-control {
 
 .abono-type-btn.active {
     border-color: var(--success-color);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(63, 178, 127, 0.1);
     color: var(--success-color);
 }
 
@@ -970,7 +964,7 @@ textarea.form-control {
 
 .pay-method-card input:checked+.pay-method-content {
     border-color: var(--primary-accent);
-    background: rgba(0, 242, 254, 0.08);
+    background: rgba(212, 167, 44, 0.08);
     color: var(--primary-accent);
 }
 
@@ -979,8 +973,8 @@ textarea.form-control {
     width: 100%;
     padding: 16px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #6366f1, #818cf8);
-    color: white;
+    background: var(--sa-gold);
+    color: #121212;
     font-size: 16px;
     font-weight: 700;
     display: flex;
@@ -988,19 +982,20 @@ textarea.form-control {
     justify-content: center;
     gap: 10px;
     margin-top: 20px;
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    box-shadow: none;
     transition: var(--transition-smooth);
 }
 
 .btn-guardar-pago:hover {
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+    background: var(--sa-gold-hover);
+    box-shadow: 0 6px 18px rgba(212, 167, 44, 0.25);
     transform: translateY(-2px);
 }
 
 /* Alert success (dentro del modal) */
 .alert-success {
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    background: rgba(63, 178, 127, 0.08);
+    border: 1px solid rgba(63, 178, 127, 0.25);
     border-radius: 10px;
     padding: 14px 16px;
     font-size: 14px;
@@ -1029,7 +1024,7 @@ textarea.form-control {
 }
 
 .abono-summary-item.highlight {
-    background: rgba(16, 185, 129, 0.06);
+    background: rgba(63, 178, 127, 0.06);
 }
 
 .abono-summary-label {
@@ -1085,7 +1080,7 @@ textarea.form-control {
 
 .abono-type-btn.active {
     border-color: var(--success-color);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(63, 178, 127, 0.1);
     color: var(--success-color);
 }
 
@@ -1127,14 +1122,14 @@ textarea.form-control {
 
 .pay-method-card input:checked+.pay-method-content {
     border-color: var(--primary-accent);
-    background: rgba(0, 242, 254, 0.08);
+    background: rgba(212, 167, 44, 0.08);
     color: var(--primary-accent);
 }
 
 /* Alert success (dentro del modal) */
 .alert-success {
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    background: rgba(63, 178, 127, 0.08);
+    border: 1px solid rgba(63, 178, 127, 0.25);
     border-radius: 10px;
     padding: 14px 16px;
     font-size: 14px;
@@ -1280,4 +1275,214 @@ textarea.form-control {
     .abono-type-selector {
         flex-direction: column;
     }
+}
+
+
+/* --------------------------------------------------------------------------
+   Origen de la cuenta (tema): Local en dorado, Domicilio y Manual en neutro.
+   Los estados (Pendiente / Parcial / Pagado) conservan rojo / ámbar / verde.
+   -------------------------------------------------------------------------- */
+.badge-auto {
+    background: var(--sa-gold-faint);
+    color: var(--sa-gold-light);
+    border: 1px solid rgba(212, 167, 44, 0.3);
+}
+
+.badge-domicilio,
+.badge-manual {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--sa-text-secondary);
+    border: 1px solid var(--sa-border-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Vistas: Cuentas / Historial de abonos
+   -------------------------------------------------------------------------- */
+.cxc-vistas {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--sa-border-strong);
+    background: var(--sa-surface);
+}
+
+.cxc-vista {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--sa-text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cxc-vista:hover { color: var(--sa-text); }
+.cxc-vista.is-activa { background: var(--sa-gold); color: #121212; }
+.cxc-vista:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--sa-gold-soft); }
+
+[hidden] { display: none !important; }
+
+/* Filtro Pendientes / Pagadas / Todas */
+.cxc-filtro-estado {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--sa-border-strong);
+    background: var(--sa-surface-input);
+}
+
+.cxc-filtro-estado label { cursor: pointer; }
+.cxc-filtro-estado input { position: absolute; opacity: 0; pointer-events: none; }
+
+.cxc-filtro-estado span {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sa-text-secondary);
+    white-space: nowrap;
+}
+
+.cxc-filtro-estado input:checked + span { background: var(--sa-gold-faint); color: var(--sa-gold-light); box-shadow: inset 0 0 0 1px rgba(212, 167, 44, 0.35); }
+.cxc-filtro-estado input:focus-visible + span { box-shadow: 0 0 0 3px var(--sa-gold-soft); }
+
+/* Cuentas pagadas: historial, más tenue */
+.cxc-fila-pagada td { opacity: 0.75; }
+.cxc-fila-pagada:hover td { opacity: 1; }
+
+/* Historial de abonos */
+.cxc-select {
+    height: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--sa-text);
+    font-family: inherit;
+    font-size: 14px;
+    color-scheme: dark;
+}
+
+.cxc-select:focus { outline: none; border-color: var(--sa-gold); box-shadow: 0 0 0 3px var(--sa-gold-soft); }
+
+.cxc-abonos-resumen {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.cxc-abonos-resumen div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--sa-border);
+    background: var(--sa-surface);
+}
+
+.cxc-abonos-resumen span { font-size: 12px; color: var(--sa-text-secondary); }
+.cxc-abonos-resumen strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+
+.cxc-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--sa-gold-light);
+    font-family: inherit;
+    font-size: inherit;
+    text-align: left;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cxc-link:hover { text-decoration: underline; }
+
+/* Ficha de la cuenta */
+.cxc-dialog {
+    margin: auto;   /* centrada aunque el módulo quite los márgenes con * { margin: 0 } */
+    width: min(760px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    padding: 0;
+    border: 1px solid var(--sa-border-strong);
+    border-radius: 16px;
+    background: var(--sa-surface);
+    color: var(--sa-text);
+    font-family: var(--sa-font);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.cxc-dialog::backdrop { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); }
+
+.cxc-dialog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--sa-border);
+}
+
+.cxc-dialog-head h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.cxc-dialog-head p { margin: 4px 0 0; font-size: 14px; color: var(--sa-text-secondary); }
+.cxc-dialog-body { padding: 20px; }
+
+.cxc-detalle-datos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.cxc-dato {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--sa-border);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.cxc-dato span { font-size: 11px; color: var(--sa-text-secondary); }
+.cxc-dato strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.cxc-detalle-h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sa-text-secondary);
+}
+
+.cxc-detalle-h3 i { color: var(--sa-gold); }
+.cxc-detalle-vacio { padding: 16px 0; color: var(--sa-text-muted); font-size: 13px; }
+.cxc-detalle-tabla { max-height: 320px; overflow: auto; }
+
+@media (max-width: 760px) {
+    .cxc-detalle-datos { grid-template-columns: 1fr 1fr; }
+    .action-bar { flex-wrap: wrap; }
+}
+
+/* Barra de búsqueda, filtro y botón: bajan de línea si no caben */
+.action-bar { flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+    .action-bar .search-container { flex: 1 1 100%; max-width: none; }
+    .action-bar .btn-primary { flex: 1 1 100%; justify-content: center; }
+    .cxc-filtro-estado { flex: 1 1 100%; justify-content: space-between; }
+    .cxc-filtro-estado label { flex: 1; text-align: center; }
+    .cxc-vistas { display: flex; }
+    .cxc-vista { flex: 1; justify-content: center; }
+    .cxc-abonos-resumen div { min-width: 0; flex: 1; }
 }

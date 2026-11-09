@@ -8,8 +8,9 @@
  * Settings (Engranaje) -> API -> Project URL & API Key (anon/public)
  */
 
-const supabaseUrl = 'https://bsdeqwvyshwswgqpvvqs.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZGVxd3Z5c2h3c3dncXB2dnFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NzA4NjEsImV4cCI6MjA5ODU0Njg2MX0.Nkrc9hb4sX_X8nmua-rva7GM9gnipXCtuascW9yqd7Y';
+// Las credenciales viven en js/config.js (cargado antes que este archivo)
+const supabaseUrl = window.APP_CONFIG.supabaseUrl;
+const supabaseAnonKey = window.APP_CONFIG.supabaseAnonKey;
 
 if (supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
     console.warn(
@@ -31,7 +32,7 @@ window.supabase = supabaseClient || window.supabase;
 // ==========================================
 window.enviarAlertaEliminacion = async function(modulo, detalle) {
     try {
-        const webhookUrl = "https://script.google.com/macros/s/AKfycbzk_1S1D3r25jlfnNXHocOuzeQZiL-GpGwgqkuilgpC2ObP-YYdX09CLH5GePMFQ9GQ/exec";
+        const webhookUrl = window.APP_CONFIG.alertWebhookUrl;
         
         // Obtener el usuario actual si existe en localStorage
         const activeUser = localStorage.getItem('activeUser') || "Desconocido";

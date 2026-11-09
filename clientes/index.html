@@ -2,188 +2,157 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/jpeg" href="../LOGO SUS AMIGOS.jpg">
+    <link rel="icon" type="image/png" href="../favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Clientes | NeuraLoom Auto</title>
+    <title>Datos Clientes | Sus Amigos</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="style.css">
-    <!-- Auth Guard -->
-    <script src="../js/auth_guard.js"></script>
+    <!-- Tema único + estilos (mismo diseño que Datos Vehículos) -->
+    <link rel="stylesheet" href="../css/theme.css?v=2">
+    <link rel="stylesheet" href="../vehiculos/style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=7">
+    <!-- Configuración, layout compartido y verificación de sesión -->
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/layout.js?v=17"></script>
+    <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
-    <div class="app-layout">
-        <!-- Top Navbar -->
-        <header class="navbar">
-            <div class="navbar-brand">
-                <i class="fa-solid fa-users logo-icon"></i>
-                <span class="brand-text">Gestión de Clientes</span>
+    <main class="veh-content">
+        <header class="veh-header">
+            <div>
+                <h1>Datos de Clientes</h1>
+                <p>Quiénes son nuestros clientes, cuánto vienen y qué se les ha hecho.</p>
             </div>
-            
-            <div class="user-profile">
-                <button onclick="window.location.href='../dashboard/index.html'" class="btn-back">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Volver al Dashboard</span>
-                </button>
-            </div>
+            <button type="button" class="veh-btn veh-btn-primary" id="btn-nuevo">
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Nuevo cliente
+            </button>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Action Bar (Search & Add) -->
-            <div class="action-bar">
-                <div class="search-container">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="search-input" placeholder="Buscar por nombre o número de teléfono..." class="search-input">
-                </div>
-                <button id="btn-add-client" class="btn-primary">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>Nuevo Cliente</span>
-                </button>
-            </div>
+        <p class="veh-aviso" id="aviso-sql" hidden></p>
 
-            <!-- Table Container -->
-            <div class="table-container">
-                <table class="data-table">
+        <!-- ===================== Resumen ===================== -->
+        <section class="veh-kpis" aria-label="Resumen">
+            <article class="veh-kpi"><span class="veh-kpi-label">Clientes registrados</span><strong class="veh-kpi-valor" id="kpi-total">—</strong></article>
+            <article class="veh-kpi"><span class="veh-kpi-label">Nuevos en los últimos 30 días</span><strong class="veh-kpi-valor" id="kpi-nuevos">—</strong></article>
+            <article class="veh-kpi"><span class="veh-kpi-label">Vinieron este mes</span><strong class="veh-kpi-valor" id="kpi-mes">—</strong></article>
+            <article class="veh-kpi veh-kpi-alerta">
+                <span class="veh-kpi-label">Más de 3 meses sin venir</span>
+                <strong class="veh-kpi-valor" id="kpi-inactivos">—</strong>
+                <button type="button" class="veh-link" id="ver-inactivos">Ver en la lista <i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+            </article>
+        </section>
+
+        <section class="veh-graficos cli-una-columna">
+            <article class="veh-card">
+                <h2>Clientes que más han gastado</h2>
+                <div class="veh-bars" id="grafico-gasto"><div class="veh-sk"></div><div class="veh-sk"></div><div class="veh-sk"></div></div>
+            </article>
+        </section>
+
+        <section class="veh-graficos">
+            <article class="veh-card">
+                <h2>Últimas visitas</h2>
+                <ul class="veh-mini-lista" id="lista-ultimos"><li class="veh-sk"></li><li class="veh-sk"></li></ul>
+            </article>
+            <article class="veh-card">
+                <h2>Hace más tiempo que no vienen <small>(más de 3 meses)</small></h2>
+                <ul class="veh-mini-lista" id="lista-inactivos"><li class="veh-sk"></li><li class="veh-sk"></li></ul>
+            </article>
+        </section>
+
+        <!-- ===================== Lista ===================== -->
+        <section class="veh-card" id="seccion-lista" aria-labelledby="titulo-lista">
+            <div class="veh-lista-head">
+                <h2 id="titulo-lista">Todos los clientes</h2>
+                <div class="veh-lista-filtros">
+                    <label class="veh-buscar">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" id="buscar" placeholder="Buscar por nombre, teléfono o placa…" aria-label="Buscar clientes">
+                    </label>
+                    <label class="veh-check"><input type="checkbox" id="filtro-inactivos"> Solo +3 meses sin venir</label>
+                </div>
+            </div>
+            <div class="veh-table-wrap">
+                <table class="veh-table">
                     <thead>
                         <tr>
-                            <th>Nombre Completo</th>
-                            <th>Teléfono</th>
-                            <th>Última Visita</th>
-                            <th>Registro</th>
-                            <th class="text-right">Acciones</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Teléfono</th>
+                            <th scope="col">Vehículos</th>
+                            <th scope="col" class="num">Visitas</th>
+                            <th scope="col" class="num">Total gastado</th>
+                            <th scope="col">Última visita</th>
+                            <th scope="col" class="col-acciones"><span class="sr-only">Acciones</span></th>
                         </tr>
                     </thead>
-                    <tbody id="clients-table-body">
-                        <!-- Rows injected via JS -->
+                    <tbody id="tabla-clientes">
+                        <tr><td colspan="7"><div class="veh-sk"></div></td></tr>
                     </tbody>
                 </table>
-                <div id="empty-state" class="empty-state" style="display: none;">
-                    <i class="fa-solid fa-users-slash"></i>
-                    <h3>No hay clientes registrados</h3>
-                    <p>Comienza agregando tu primer cliente a la base de datos.</p>
-                </div>
             </div>
-        </main>
-    </div>
+            <p class="veh-contador" id="contador" aria-live="polite"></p>
+            <button type="button" class="veh-btn veh-btn-ghost veh-mas" id="btn-mas" hidden>Mostrar más</button>
+        </section>
+    </main>
 
-    <!-- Add/Edit Client Modal -->
-    <div id="client-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modal-title">Registrar Nuevo Cliente</h2>
-                <button class="btn-close" id="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+    <!-- ===================== Formulario crear / editar ===================== -->
+    <dialog class="veh-dialog" id="dialog-cliente" aria-labelledby="form-titulo">
+        <form id="form-cliente" novalidate>
+            <div class="veh-dialog-head">
+                <h2 id="form-titulo">Nuevo cliente</h2>
+                <button type="button" class="veh-icon-btn" data-cerrar aria-label="Cerrar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
             </div>
-            <form id="client-form" class="modal-body">
-                <input type="hidden" id="client-id">
-                
-                <div class="form-group">
-                    <label for="client-name">Nombre Completo</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-user"></i>
-                        <input type="text" id="client-name" placeholder="Ej. Juan Pérez" required>
-                    </div>
+            <div class="veh-dialog-body">
+                <div class="veh-field">
+                    <label for="campo-nombre">Nombre completo <span class="veh-req">*</span></label>
+                    <input type="text" id="campo-nombre" class="veh-input" maxlength="100" autocomplete="off" placeholder="Ej.: Juan Pérez">
                 </div>
+                <div class="veh-field">
+                    <label for="campo-telefono">Teléfono <span class="veh-req">*</span></label>
+                    <input type="tel" id="campo-telefono" class="veh-input" maxlength="15" inputmode="numeric" autocomplete="off" placeholder="Ej.: 88888888">
+                </div>
+                <p class="veh-form-error" id="form-error" role="alert"></p>
+            </div>
+            <div class="veh-dialog-foot">
+                <button type="button" class="veh-btn veh-btn-ghost" data-cerrar>Cancelar</button>
+                <button type="submit" class="veh-btn veh-btn-primary" id="btn-guardar"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar</button>
+            </div>
+        </form>
+    </dialog>
 
-                <div class="form-group">
-                    <label for="client-phone">Número de Teléfono</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-phone"></i>
-                        <input type="tel" id="client-phone" placeholder="Ej. 8888-8888" required>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btn-save-client">
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cliente
-                    </button>
-                </div>
-            </form>
+    <!-- ===================== Ficha del cliente ===================== -->
+    <dialog class="veh-dialog cli-dialog-ancho" id="dialog-ficha" aria-labelledby="ficha-nombre">
+        <div class="veh-dialog-head">
+            <div>
+                <h2 id="ficha-nombre">—</h2>
+                <p class="veh-ficha-sub" id="ficha-telefono"></p>
+            </div>
+            <button type="button" class="veh-icon-btn" data-cerrar aria-label="Cerrar"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
-    </div>
+        <div class="veh-dialog-body">
+            <div class="cli-ficha-datos" id="ficha-datos"></div>
 
-    <!-- View Details Modal (toString equivalent) -->
-    <div id="details-modal" class="modal-overlay">
-        <div class="modal-content details-card">
-            <div class="modal-header">
-                <h2>Ficha del Cliente</h2>
-                <button class="btn-close" id="btn-close-details"><i class="fa-solid fa-xmark"></i></button>
+            <div class="veh-ficha-seccion">
+                <h3><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Historial de servicios</h3>
+                <div id="ficha-historial"><div class="veh-sk"></div></div>
             </div>
-            <div class="modal-body">
-                <div class="client-profile-header">
-                    <div class="profile-avatar"><i class="fa-solid fa-user-large"></i></div>
-                    <div class="profile-title">
-                        <h3 id="detail-name">Nombre del Cliente</h3>
-                        <span id="detail-phone" class="tag"><i class="fa-solid fa-phone"></i> Teléfono</span>
-                    </div>
-                </div>
-                
-                <div class="client-stats-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="stat-box">
-                        <span class="stat-label">Última Visita</span>
-                        <strong class="stat-value" id="detail-last-visit">-</strong>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Cliente Desde</span>
-                        <strong class="stat-value" id="detail-created-at">-</strong>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Saldo Pendiente (CxC)</span>
-                        <strong class="stat-value" id="detail-saldo-cxc" style="color: var(--gold);">-</strong>
-                    </div>
-                </div>
 
-                <div class="vehicles-section mt-4">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h4><i class="fa-solid fa-car"></i> Vehículos Asignados</h4>
-                        <button class="btn-icon view" title="Vincular Vehículo" id="btn-open-assign-vehicle"><i class="fa-solid fa-link"></i></button>
-                    </div>
-                    <div id="assigned-vehicles-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
-                        <!-- Loaded dynamically -->
-                    </div>
-                </div>
+            <div class="veh-ficha-seccion">
+                <h3><i class="fa-solid fa-car" aria-hidden="true"></i> Vehículos</h3>
+                <ul class="veh-duenos" id="ficha-vehiculos"></ul>
+                <input type="search" id="buscar-vehiculo" class="veh-input cli-buscar-veh" placeholder="Vincular un vehículo: placa, marca o modelo (mínimo 2 letras)…" autocomplete="off" aria-label="Buscar vehículo para vincular">
+                <ul class="veh-resultados" id="resultados-vehiculo"></ul>
             </div>
         </div>
-    </div>
+    </dialog>
 
-    <!-- Sub-Modal to search and assign a vehicle -->
-    <div id="assign-vehicle-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px; border-color: var(--secondary-accent);">
-            <div class="modal-header" style="background: rgba(79, 172, 254, 0.1);">
-                <h2 style="font-size: 18px;">Vincular Vehículo</h2>
-                <button class="btn-close" id="btn-close-assign-vehicle"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Buscar Vehículo (Placa, Marca o Modelo)</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" id="assign-vehicle-search" placeholder="Escribe la placa..." autocomplete="off">
-                    </div>
-                </div>
-                <div id="assign-vehicle-results" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
-                    <!-- Dropdown results -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="toast-container"></div>
-
-    <!-- Supabase SDK via CDN -->
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Supabase Client Configuration -->
     <script src="../js/supabase.js"></script>
-    <!-- Application Script -->
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>
-
-
