@@ -49,6 +49,20 @@
         link.href = href;
         document.head.appendChild(link);
     }
+    // Favicon ÚNICO del sistema (carro dorado sobre negro): se fija aquí para que
+    // ninguna página quede con otro ícono aunque su HTML diga algo distinto.
+    (function fijarFavicon() {
+        const FAVICON = '../favicon.png';
+        document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]').forEach(l => l.remove());
+        [['icon', 'image/png'], ['apple-touch-icon', null]].forEach(([rel, type]) => {
+            const link = document.createElement('link');
+            link.rel = rel;
+            if (type) link.type = type;
+            link.href = FAVICON;
+            document.head.appendChild(link);
+        });
+    })();
+
     addStylesheet('../css/theme.css?v=2');
     addStylesheet('../css/layout.css?v=9');
     addStylesheet('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
