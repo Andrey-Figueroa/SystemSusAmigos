@@ -127,9 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             const publicUrl = publicUrlData.publicUrl;
 
-            // 2. Ejecutar RPC para vaciar tablas y reiniciar contadores
-            const { error: rpcError } = await window.supabase.rpc('reiniciar_contadores_diarios');
-            if (rpcError) throw new Error('Error reiniciando base de datos: ' + rpcError.message);
+            // 2. Los datos del día YA NO se borran al cerrar: quedan guardados para la Hoja de
+            //    Reporte, Productividad y el historial de clientes. (Antes aquí se llamaba a
+            //    'reiniciar_contadores_diarios', que vaciaba las tablas y reiniciaba los números.)
+            //    Las pantallas del día (Pizarra, Domicilio, Ventas, Gastos) ya muestran solo lo de hoy.
 
             // 3. Obtener fecha y hora actual formateada localmente
             const now = new Date();
@@ -161,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnRemoveFile.click();
             document.getElementById('comentarios-cierre').value = '';
             
-            showToast('Éxito', 'El cierre de operaciones se ha completado. Historial guardado y base reseteada a 1.');
+            showToast('Éxito', 'El cierre de operaciones se ha completado. Los datos del día quedan guardados en el historial.');
             
         } catch (err) {
             console.error(err);

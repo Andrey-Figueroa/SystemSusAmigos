@@ -12,9 +12,9 @@
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Estilos (también los usa personal/index.html) -->
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=17">
     <!-- Configuración, layout compartido y verificación de sesión -->
-    <script src="../js/config.js?v=13"></script>
+    <script src="../js/config.js?v=15"></script>
     <script src="../js/layout.js?v=18"></script>
     <script src="../js/auth_guard.js?v=10"></script>
 </head>
@@ -33,8 +33,18 @@
                             <span class="dash-kpi-icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></span>
                             <h3 class="dash-kpi-label">Ticket promedio</h3>
                         </div>
-                        <p class="dash-kpi-value" id="kpi-ticket-valor">₡0</p>
-                        <p class="dash-kpi-detail" id="kpi-ticket-detalle">Calculando…</p>
+                        <div class="dash-ticket-split">
+                            <div class="dash-ticket-parte">
+                                <span class="dash-ticket-area"><i class="fa-solid fa-spray-can-sparkles" aria-hidden="true"></i> Lavacar</span>
+                                <p class="dash-kpi-value" id="kpi-ticket-lavacar-valor">₡0</p>
+                                <p class="dash-kpi-detail" id="kpi-ticket-lavacar-detalle">Calculando…</p>
+                            </div>
+                            <div class="dash-ticket-parte">
+                                <span class="dash-ticket-area"><i class="fa-solid fa-wrench" aria-hidden="true"></i> Mecánica</span>
+                                <p class="dash-kpi-value" id="kpi-ticket-mecanica-valor">₡0</p>
+                                <p class="dash-kpi-detail" id="kpi-ticket-mecanica-detalle">Calculando…</p>
+                            </div>
+                        </div>
                     </article>
 
                     <article class="dash-kpi" id="kpi-caja-inicial">
@@ -112,6 +122,6 @@
     <!-- Supabase Client Configuration -->
     <script src="../js/supabase.js"></script>
     <!-- Application Script -->
-    <script src="app.js?v=20"></script>
+    <script src="app.js?v=22"></script>
 </body>
 </html>

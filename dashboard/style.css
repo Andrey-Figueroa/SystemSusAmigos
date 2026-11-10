@@ -1366,3 +1366,40 @@ body {
     color: #c4c1ba;
     font-weight: 600;
 }
+
+/* --------------------------------------------------------------------------
+   Ticket promedio dividido: Lavacar arriba, Mecánica abajo (en la misma tarjeta)
+   -------------------------------------------------------------------------- */
+.dash-ticket-split {
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-ticket-parte {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    column-gap: 10px;
+    row-gap: 2px;
+    min-width: 0;
+}
+
+.dash-ticket-parte + .dash-ticket-parte {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sa-border);
+}
+
+.dash-ticket-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.dash-ticket-area i { color: var(--sa-gold); font-size: 12px; }
+
+.dash-ticket-parte .dash-kpi-value { font-size: 22px; white-space: nowrap; text-align: right; }
+.dash-ticket-parte .dash-kpi-detail { grid-column: 1 / -1; font-size: 12px; }

@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="../css/theme.css?v=2">
     <link rel="stylesheet" href="style.css?v=1">
     <!-- Configuración, layout compartido y verificación de sesión -->
-    <script src="../js/config.js?v=13"></script>
+    <script src="../js/config.js?v=15"></script>
     <script src="../js/layout.js?v=18"></script>
     <script src="../js/auth_guard.js?v=10"></script>
 </head>
@@ -87,7 +87,7 @@
                 <ul id="lista-pesos"></ul>
                 <p><strong>Eficiencia:</strong> cada trabajo se compara contra el tiempo promedio del equipo para <em>el mismo servicio en el mismo tipo de vehículo</em>. Más de 1,00 = más rápido que el promedio.</p>
                 <p><strong>Tiempo:</strong> es aproximado, desde que entró la orden hasta que se pasó a Terminado. Si una persona hizo detallado y mecánica en la misma orden, ese tiempo se cuenta una sola vez.</p>
-                <p><strong>Ingreso:</strong> el monto del área (detallado o mecánica) tal como se cobró. Si varias personas hicieron la misma área, cada una queda con el monto completo.</p>
+                <p><strong>Ingreso:</strong> el monto del área (detallado o mecánica) tal como se cobró. Si varias personas hicieron la misma área, el monto se divide en partes iguales (2 personas = la mitad cada una, 3 personas = un tercio cada una). Los trabajos terminados antes de este cambio conservan el monto completo para cada persona.</p>
             </div>
         </details>
     </main>

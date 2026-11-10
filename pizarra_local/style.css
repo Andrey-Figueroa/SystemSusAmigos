@@ -903,3 +903,14 @@ button {
     .car-actions { flex-wrap: wrap; gap: 8px; }
     .car-actions button { min-width: 42px; min-height: 40px; }
 }
+
+/* Reparto del monto entre varias personas (Terminar orden) */
+.terminar-reparto {
+    margin: 10px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sa-gold-light);
+    font-variant-numeric: tabular-nums;
+}
+
+.terminar-reparto:empty { display: none; }

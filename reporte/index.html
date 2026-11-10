@@ -13,28 +13,164 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Tema único + estilos del módulo -->
     <link rel="stylesheet" href="../css/theme.css?v=2">
-    <link rel="stylesheet" href="style.css?v=1">
+    <link rel="stylesheet" href="style.css?v=3">
     <!-- Configuración, layout compartido y verificación de sesión -->
-    <script src="../js/config.js?v=13"></script>
+    <script src="../js/config.js?v=15"></script>
     <script src="../js/layout.js?v=18"></script>
     <script src="../js/auth_guard.js?v=10"></script>
 </head>
 <body>
     <main class="rep-content">
         <header class="rep-header">
-            <h1>Hoja de Reporte</h1>
+            <div>
+                <h1>Hoja de Reporte</h1>
+                <p>Ingresos por área, métodos de pago, gastos y utilidad del período elegido.</p>
+            </div>
+            <div class="rep-header-acciones">
+                <div class="rep-periodo">
+                    <button type="button" class="rep-periodo-btn" id="btn-periodo">
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        <span class="rep-periodo-label">Período</span>
+                        <span class="rc-boton-texto">—</span>
+                        <i class="fa-solid fa-chevron-down rep-periodo-flecha" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="rep-vistas" role="group" aria-label="Vista">
+                    <button type="button" class="rep-vista-btn" data-vista="reporte" aria-pressed="true"><i class="fa-solid fa-table-list" aria-hidden="true"></i> Reporte</button>
+                    <button type="button" class="rep-vista-btn" data-vista="dashboard" aria-pressed="false"><i class="fa-solid fa-chart-column" aria-hidden="true"></i> Dashboard</button>
+                </div>
+            </div>
         </header>
 
-        <!-- Módulo en construcción: el contenido se define después -->
-        <section class="rep-vacio">
-            <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
-            <strong>Módulo en construcción</strong>
-            <p>Aquí irá la Hoja de Reporte.</p>
+        <p class="rep-aviso" id="aviso-error" role="alert" hidden></p>
+
+        <!-- ===================== Vista: REPORTE (detalle) ===================== -->
+        <section class="rep-card" id="vista-reporte" aria-labelledby="titulo-detalle">
+            <div class="rep-card-head">
+                <h2 id="titulo-detalle">Detalle del período</h2>
+                <div class="rep-herramientas">
+                    <div class="rep-chips" role="group" aria-label="Filtrar por tipo" id="chips-tipo">
+                        <button type="button" class="rep-chip" data-tipo="" aria-pressed="true">Todo</button>
+                        <button type="button" class="rep-chip" data-tipo="local" aria-pressed="false">Local</button>
+                        <button type="button" class="rep-chip" data-tipo="domicilio" aria-pressed="false">Domicilio</button>
+                        <button type="button" class="rep-chip" data-tipo="producto" aria-pressed="false">Productos</button>
+                        <button type="button" class="rep-chip" data-tipo="gasto" aria-pressed="false">Gastos</button>
+                    </div>
+                    <label class="rep-buscar">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" id="buscar" placeholder="Buscar: cliente, placa, producto, gasto…" aria-label="Buscar en el detalle">
+                    </label>
+                    <button type="button" class="rep-btn rep-btn-ghost" id="btn-csv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Exportar</button>
+                </div>
+            </div>
+
+            <div class="rep-table-wrap">
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Detalle</th>
+                            <th scope="col">Método de pago</th>
+                            <th scope="col" class="num">Lavacar</th>
+                            <th scope="col" class="num">Mecánica</th>
+                            <th scope="col" class="num">Domicilio</th>
+                            <th scope="col" class="num">Productos</th>
+                            <th scope="col" class="num">Gastos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-detalle">
+                        <tr><td colspan="9"><div class="rep-sk"></div><div class="rep-sk"></div><div class="rep-sk"></div></td></tr>
+                    </tbody>
+                    <tfoot id="tabla-totales"></tfoot>
+                </table>
+            </div>
+            <p class="rep-contador" id="contador" aria-live="polite"></p>
+            <button type="button" class="rep-btn rep-btn-ghost rep-mas" id="btn-mas" hidden>Mostrar más</button>
+
+            <!-- Totales al final -->
+            <div class="rep-resumen" id="resumen-final" hidden>
+                <div class="rep-resumen-bloque">
+                    <h3>Resultado</h3>
+                    <dl class="rep-dl" id="resumen-resultado"></dl>
+                </div>
+                <div class="rep-resumen-bloque">
+                    <h3>Ingresos por método de pago</h3>
+                    <dl class="rep-dl" id="resumen-pagos"></dl>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== Vista: DASHBOARD ===================== -->
+        <section id="vista-dashboard" class="rep-dash" hidden aria-label="Dashboard del reporte">
+            <div class="rep-kpis" id="d-kpis">
+                <div class="rep-sk rep-sk-kpi"></div><div class="rep-sk rep-sk-kpi"></div><div class="rep-sk rep-sk-kpi"></div><div class="rep-sk rep-sk-kpi"></div>
+            </div>
+
+            <article class="rep-card">
+                <div class="rep-card-head">
+                    <h2 id="d-evo-titulo">Ingresos en el tiempo</h2>
+                    <div class="rep-ctrls">
+                        <select id="d-evo-metrica" class="rep-ctrl" aria-label="Qué ver">
+                            <option value="ingresos">Ingresos</option>
+                            <option value="gastos">Gastos</option>
+                            <option value="utilidad">Utilidad</option>
+                        </select>
+                        <select id="d-evo-grupo" class="rep-ctrl" aria-label="Agrupar por">
+                            <option value="auto">Agrupar: automático</option>
+                            <option value="dia">Por día</option>
+                            <option value="semana">Por semana</option>
+                            <option value="mes">Por mes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="rep-columnas" id="d-evo"></div>
+            </article>
+
+            <div class="rep-grid-2">
+                <article class="rep-card">
+                    <div class="rep-card-head">
+                        <h2>Ingresos por área</h2>
+                    </div>
+                    <div id="d-areas"></div>
+                </article>
+
+                <article class="rep-card">
+                    <div class="rep-card-head">
+                        <h2>Métodos de pago</h2>
+                        <div class="rep-ctrls">
+                            <select id="d-pago-origen" class="rep-ctrl" aria-label="De qué área">
+                                <option value="">Todas las áreas</option>
+                                <option value="local">Local (lavacar y mecánica)</option>
+                                <option value="domicilio">Domicilio</option>
+                                <option value="producto">Productos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rep-bars" id="d-pagos"></div>
+                </article>
+
+                <article class="rep-card">
+                    <div class="rep-card-head">
+                        <h2>Ingresos, gastos y utilidad</h2>
+                    </div>
+                    <div id="d-utilidad"></div>
+                </article>
+
+                <article class="rep-card">
+                    <div class="rep-card-head">
+                        <h2>Gastos más grandes</h2>
+                    </div>
+                    <ul class="rep-lista" id="d-gastos"></ul>
+                </article>
+            </div>
         </section>
     </main>
 
-    <!-- Supabase SDK (lo usa auth_guard.js para verificar la sesión) -->
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/supabase.js"></script>
+    <script src="calendario.js?v=2"></script>
+    <script src="app.js?v=1"></script>
 </body>
 </html>

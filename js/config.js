@@ -121,8 +121,13 @@ window.AppSession = {
             return ['/dashboard/', '/mecanica/', '/vehiculos/'].some(r => path.includes(r));
         }
 
+        // Configuración: Dueño, Soporte TI y Administrador (con todos los permisos adentro)
+        if (path.includes('/configuracion/')) {
+            return this.ROLES_DUENO_TI.includes(role) || role === 'administrador';
+        }
+
         // Solo Dueño y Soporte TI (el Administrador no)
-        const soloDuenoTI = ['/productividad/', '/reporte/', '/configuracion/'];
+        const soloDuenoTI = ['/productividad/', '/reporte/'];
         if (soloDuenoTI.some(r => path.includes(r))) {
             return this.ROLES_DUENO_TI.includes(role);
         }
@@ -136,7 +141,7 @@ window.AppSession = {
         return true;
     },
 
-    /** Roles con permisos máximos: entrar a Productividad / Reporte / Configuración y ELIMINAR. */
+    /** Roles con permisos máximos: entrar a Productividad / Reporte / Configuración y ELIMINAR (el Administrador también entra a Configuración). */
     ROLES_DUENO_TI: ['dueno', 'soporte ti', 'soporte ti / programador'],
 
     /**
@@ -154,6 +159,24 @@ window.AppSession = {
             roles = roles.concat(localStorage.getItem('activeUserRole') || []);
         }
         return roles.some(r => this.ROLES_DUENO_TI.includes(this.normalizarRol(r)));
+    },
+
+    /**
+     * ¿Puede eliminar lo operativo del día? Dueño, Soporte TI y también el Administrador.
+     * Se usa en: órdenes de la Pizarra, órdenes a Domicilio y Gastos.
+     * (En los demás módulos el Administrador sigue sin poder eliminar: ver puedeEliminar.)
+     */
+    puedeEliminarOrdenes(perfilORoles) {
+        if (this.puedeEliminar(perfilORoles)) return true;
+        let roles;
+        if (Array.isArray(perfilORoles)) roles = perfilORoles;
+        else if (perfilORoles) roles = this.rolesDe(perfilORoles);
+        else if (window.SaUser) roles = this.rolesDe(window.SaUser);
+        else {
+            try { roles = JSON.parse(localStorage.getItem('activeUserRoles') || '[]'); } catch (e) { roles = []; }
+            roles = roles.concat(localStorage.getItem('activeUserRole') || []);
+        }
+        return roles.some(r => this.normalizarRol(r) === 'administrador');
     },
 
     /**

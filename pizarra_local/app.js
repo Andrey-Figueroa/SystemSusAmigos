@@ -121,7 +121,7 @@ function renderPizarra() {
         
         const activeUserRole = localStorage.getItem('activeUserRole');
 
-        if (window.AppSession.puedeEliminar()) {
+        if (window.AppSession.puedeEliminarOrdenes()) {
             deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="eliminarOrden(${orden.id})"><i class="fa-solid fa-trash-can"></i></button>`;
         }
 
@@ -243,7 +243,8 @@ async function aplicarCambioEstado(ordenId, nuevoEstado) {
 //   - Detallado (detallado y lavado / detallados especiales) -> solo rol Detallador
 //   - Mecánica (mecánica / entrada con servicios pendientes) -> solo rol Mecánico
 // Quien tenga ambos roles aparece en las dos listas (se marca dos veces).
-// Cada área usa su propio monto (no se reparte): cada persona queda con el monto del área.
+// Cada área usa su propio monto y se REPARTE en partes iguales entre quienes la hicieron
+// (2 personas = la mitad cada una, 3 personas = un tercio cada una).
 // El tiempo es aproximado: desde que entró la orden hasta ahora (compartido por las áreas).
 // Tabla: supabase/productividad.sql (orden_trabajos)
 
@@ -365,6 +366,7 @@ async function abrirTerminar(ordenId) {
                 <span class="terminar-monto">${formatoCRC(monto)}</span>
             </div>
             <div class="terminar-personas"></div>
+            <p class="terminar-reparto" aria-live="polite"></p>
             <p class="terminar-hint"></p>`;
 
         const lista = seccion.querySelector('.terminar-personas');
@@ -384,6 +386,14 @@ async function abrirTerminar(ordenId) {
                 input.dataset.nombre = p.nombre;
                 label.querySelector('span').textContent = p.nombre;
                 lista.appendChild(label);
+            });
+            // Muestra en vivo cuánto le toca a cada persona
+            const reparto = seccion.querySelector('.terminar-reparto');
+            lista.addEventListener('change', () => {
+                const n = lista.querySelectorAll('input:checked').length;
+                reparto.textContent = n > 1
+                    ? `Se divide entre ${n} personas: ${formatoCRC(monto / n)} para cada una`
+                    : '';
             });
         }
         cont.appendChild(seccion);
@@ -440,17 +450,23 @@ async function confirmarTerminar() {
             return;
         }
 
-        // El monto del área NO se reparte: cada persona queda con el monto del área
+        // El monto del área se reparte en partes iguales entre quienes la hicieron.
+        // Se trabaja en céntimos para que la suma de las partes dé exacto el monto del área
+        // (el sobrante de redondeo se le suma a la primera persona).
         const monto = Number(orden[area.montoCampo]) || 0;
-        marcados.forEach(cb => {
+        const n = marcados.length;
+        const centimos = Math.round(monto * 100);
+        const parte = Math.floor(centimos / n);
+        const sobrante = centimos - parte * n;
+        marcados.forEach((cb, i) => {
             filas.push({
                 orden_id: orden.id,
                 area: key,
                 personal_id: cb.value,
                 personal_nombre: cb.dataset.nombre,
-                participacion: 1,
+                participacion: Number((1 / n).toFixed(4)),
                 monto_area: monto,
-                monto_asignado: monto,
+                monto_asignado: (parte + (i === 0 ? sobrante : 0)) / 100,
                 inicio_at: orden.created_at || null,
                 fin_at: ahora,
                 minutos: minutos,
@@ -499,7 +515,7 @@ function setupTerminarModal() {
 
 window.eliminarOrden = async function(ordenId) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (!window.AppSession.puedeEliminar()) {
+    if (!window.AppSession.puedeEliminarOrdenes()) {
         showToast('Acceso Denegado', 'Solo el Administrador o el Dueño pueden eliminar órdenes.', 'error');
         return;
     }

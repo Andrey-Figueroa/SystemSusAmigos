@@ -806,7 +806,7 @@ async function loadTodayDomicilios() {
             
             const activeUserRole = localStorage.getItem('activeUserRole');
 
-            if (window.AppSession.puedeEliminar()) {
+            if (window.AppSession.puedeEliminarOrdenes()) {
                 deleteBtnHtml = `<button class="btn-delete" title="Eliminar Orden" onclick="deleteDomicilio('${ord.id}')"><i class="fa-solid fa-trash-can"></i></button>`;
             }
 
@@ -1104,7 +1104,7 @@ window.modificarDomicilio = async function(id) {
 
 window.deleteDomicilio = async function(id) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (!window.AppSession.puedeEliminar()) {
+    if (!window.AppSession.puedeEliminarOrdenes()) {
         showToast('Acceso Denegado', 'Solo el Administrador o el Dueño pueden eliminar órdenes.', 'error');
         return;
     }

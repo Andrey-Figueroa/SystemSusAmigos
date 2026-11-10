@@ -31,15 +31,27 @@ function aNumero(valor) {
 }
 
 /* ==========================================================================
-   Indicador: Ticket promedio
-   Suma el total de todos los tickets del día y lo divide entre la cantidad de tickets.
-   Un ticket = una orden del local, una venta de productos o un servicio a domicilio
-   con monto mayor a 0.
+   Indicadores: Ticket promedio Lavacar y Ticket promedio Mecánica
+   Cada orden del local guarda por separado lo cobrado en lavacar (detallado_monto)
+   y en mecánica (mecanica_monto); cada área se promedia por su lado:
+   - Lavacar: parte de lavacar de las órdenes del local de hoy + servicios a domicilio.
+   - Mecánica: parte de mecánica de las órdenes del local de hoy.
+   Si una orden tiene las dos áreas, cuenta como un ticket en cada una (con su monto).
+   Solo cuentan montos mayores a 0. Las ventas de productos no entran en ninguno.
    ========================================================================== */
+function pintarTicket(area, montos, vacio) {
+    const valorEl = document.getElementById(`kpi-ticket-${area}-valor`);
+    const detalleEl = document.getElementById(`kpi-ticket-${area}-detalle`);
+    const total = montos.reduce((suma, m) => suma + m, 0);
+    const cantidad = montos.length;
+    valorEl.textContent = formatoColones.format(cantidad > 0 ? total / cantidad : 0);
+    detalleEl.textContent = cantidad === 0
+        ? vacio
+        : `${formatoNumero.format(cantidad)} ${cantidad === 1 ? 'ticket' : 'tickets'} · ${formatoColones.format(total)} en total`;
+}
+
 async function cargarTicketPromedio() {
     const card = document.getElementById('kpi-ticket-promedio');
-    const valorEl = document.getElementById('kpi-ticket-valor');
-    const detalleEl = document.getElementById('kpi-ticket-detalle');
     if (!card) return;
 
     card.classList.add('is-loading');
@@ -48,35 +60,29 @@ async function cargarTicketPromedio() {
     try {
         const desde = inicioDelDiaCR();
 
-        // Las tres consultas en paralelo y solo con la columna del monto
-        const [ordenes, productos, domicilio] = await Promise.all([
-            window.supabase.from('ordenes').select('total_monto').gte('created_at', desde),
-            window.supabase.from('ventas_productos_diarias').select('precio_total').gte('created_at', desde),
+        const [ordenes, domicilio] = await Promise.all([
+            window.supabase.from('ordenes').select('detallado_monto, mecanica_monto').gte('created_at', desde),
             window.supabase.from('ordenes_domicilio').select('total_monto').gte('created_at', desde)
         ]);
 
-        const error = ordenes.error || productos.error || domicilio.error;
+        const error = ordenes.error || domicilio.error;
         if (error) throw error;
 
-        const montos = [
-            ...ordenes.data.map(o => aNumero(o.total_monto)),
-            ...productos.data.map(v => aNumero(v.precio_total)),
+        const lavacar = [
+            ...ordenes.data.map(o => aNumero(o.detallado_monto)),
             ...domicilio.data.map(d => aNumero(d.total_monto))
         ].filter(m => m > 0);
+        const mecanica = ordenes.data.map(o => aNumero(o.mecanica_monto)).filter(m => m > 0);
 
-        const totalVendido = montos.reduce((suma, m) => suma + m, 0);
-        const cantidadTickets = montos.length;
-        const promedio = cantidadTickets > 0 ? totalVendido / cantidadTickets : 0;
-
-        valorEl.textContent = formatoColones.format(promedio);
-        detalleEl.textContent = cantidadTickets === 0
-            ? 'Aún no hay tickets hoy'
-            : `${formatoNumero.format(cantidadTickets)} ${cantidadTickets === 1 ? 'ticket' : 'tickets'} · ${formatoColones.format(totalVendido)} en total`;
+        pintarTicket('lavacar', lavacar, 'Sin tickets hoy');
+        pintarTicket('mecanica', mecanica, 'Sin tickets hoy');
     } catch (err) {
         console.error('[Dashboard] Error al calcular el ticket promedio:', err);
         card.classList.add('is-error');
-        valorEl.textContent = '—';
-        detalleEl.textContent = 'No se pudo cargar. Recarga la página.';
+        ['lavacar', 'mecanica'].forEach(a => {
+            document.getElementById(`kpi-ticket-${a}-valor`).textContent = '—';
+            document.getElementById(`kpi-ticket-${a}-detalle`).textContent = 'No se pudo cargar.';
+        });
     } finally {
         card.classList.remove('is-loading');
     }

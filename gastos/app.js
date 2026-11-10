@@ -107,7 +107,7 @@ async function loadGastos() {
             const gastoData = encodeURIComponent(JSON.stringify(gasto));
 
             const activeUserRole = localStorage.getItem('activeUserRole');
-            const deleteBtnHTML = window.AppSession.puedeEliminar() ? 
+            const deleteBtnHTML = window.AppSession.puedeEliminarOrdenes() ? 
                 `<button class="btn-icon delete" style="width:26px; height:26px;" title="Eliminar Gasto" onclick="eliminarGasto('${gasto.id}')"><i class="fa-solid fa-trash-can" style="font-size:10px;"></i></button>` : '';
 
             li.innerHTML = `
@@ -207,7 +207,7 @@ async function handleExpenseSubmit(e) {
 
 window.eliminarGasto = async function(id) {
     const activeUserRole = localStorage.getItem('activeUserRole');
-    if (!window.AppSession.puedeEliminar()) {
+    if (!window.AppSession.puedeEliminarOrdenes()) {
         showToast('Acceso Denegado', 'No tienes permisos para eliminar gastos.', 'error');
         return;
     }

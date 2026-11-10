@@ -4,8 +4,9 @@
 -- Se llena desde la Pizarra al pasar una orden a "Terminado":
 --   - Una fila por persona y por área (detallado / mecánica).
 --   - Si alguien hizo detallado Y mecánica en la misma orden, tiene dos filas.
---   - Si varias personas hicieron la misma área, el monto NO se reparte: cada
---     una queda con el monto del área (participacion = 1).
+--   - Si varias personas hicieron la misma área, el monto se REPARTE en partes
+--     iguales: participacion = 1/N y monto_asignado = monto_area / N.
+--     (Para corregir trabajos guardados antes de este cambio: productividad_reparto.sql)
 --   - El tiempo es APROXIMADO: desde que entró la orden hasta que se terminó,
 --     compartido por las áreas de la orden.
 --   - 'detalle' guarda una foto de lo realizado (paquete, especiales, categorías
@@ -23,7 +24,7 @@ create table if not exists public.orden_trabajos (
     personal_nombre text        not null check (length(trim(personal_nombre)) > 0),
     participacion   numeric(5, 4) not null default 1 check (participacion > 0 and participacion <= 1),
     monto_area      numeric(12, 2) not null default 0,   -- monto del área en la orden
-    monto_asignado  numeric(12, 2) not null default 0,   -- monto que se le acredita (hoy = monto_area)
+    monto_asignado  numeric(12, 2) not null default 0,   -- monto que se le acredita (= monto_area / N)
     inicio_at       timestamptz,                         -- entrada de la orden
     fin_at          timestamptz not null default now(),  -- cuando se pasó a Terminado
     minutos         integer,                             -- duración aproximada
